@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-primary-background dark:bg-primary-background-dark font-sans text-primary-text dark:text-primary-text-dark;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold;
+  }
+  
+  h1 {
+    @apply text-3xl md:text-4xl;
+  }
+  
+  h2 {
+    @apply text-2xl md:text-3xl;
+  }
+  
+  h3 {
+    @apply text-xl md:text-2xl;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-full font-medium transition-all duration-200;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-interactive text-white hover:bg-opacity-90 active:scale-95 dark:bg-primary-interactive-dark;
+  }
+  
+  .btn-accent {
+    @apply bg-primary-accent text-primary-text hover:bg-opacity-90 active:scale-95 dark:bg-primary-accent-dark dark:text-primary-text-dark;
+  }
+  
+  .btn-energetic {
+    @apply bg-primary-energetic text-white hover:bg-opacity-90 active:scale-95 dark:bg-primary-energetic-dark;
+  }
+  
+  .card {
+    @apply bg-primary-card dark:bg-primary-card-dark rounded-2xl shadow-md p-6 transition-all duration-200;
+  }
+  
+  .card-hover {
+    @apply hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  .input-field {
+    @apply w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-interactive dark:focus:ring-primary-interactive-dark dark:bg-primary-card-dark;
+  }
+}
+
+/* Filipino-inspired SVG background pattern */
+.bg-pattern {
+  background-color: theme('colors.primary.background');
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%237A89C2' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.dark .bg-pattern {
+  background-color: theme('colors.primary.background-dark');
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%238B9DD1' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}

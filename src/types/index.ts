@@ -70,6 +70,7 @@ export interface GameDTO {
   subject: 'tagalog' | 'araling_panlipunan';
   difficulty: 'easy' | 'medium' | 'hard';
   questions: GameQuestionDTO[];
+  type: 'quiz' | 'matching';
   baseXp: number;
   createdAt: string;
   updatedAt: string;
@@ -144,4 +145,20 @@ export interface ApiErrorResponse {
   error: string;
   message: string;
   path: string;
+}
+
+export interface MatchingPair {
+  id: number; // A unique ID for the pair (e.g., 1, 2, 3)
+  word: string; // The word content
+  imageUrl: string; // URL or path to the image for this pair
+}
+
+export interface MatchingCard {
+  id: string; // Unique ID for this specific card instance (e.g., "pair-1-word", "pair-1-picture")
+  pairId: number; // Links this card back to its pair ID
+  type: 'word' | 'picture'; // What this card displays
+  content: string; // The text content (for word card or alt text)
+  imageUrl?: string; // The image URL (only for picture cards)
+  isFaceUp: boolean; // Is the card currently flipped up?
+  isMatched: boolean; // Has this card been successfully matched?
 }

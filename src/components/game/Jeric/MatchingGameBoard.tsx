@@ -1,7 +1,7 @@
 // src/components/game/MatchingGameBoard.tsx
 import React from 'react';
-import MatchingCard from './Jeric/MatchingCard';
-import { MatchingCard as MatchingCardType } from '../../types'; // Use alias
+import MatchingCard from './MatchingCard';
+import { MatchingCard as MatchingCardType } from '../../../types'; // Use alias
 import './MatchingGameBoard.css'; // We'll create this CSS next
 
 interface MatchingGameBoardProps {

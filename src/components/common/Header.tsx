@@ -24,7 +24,7 @@ const Header: React.FC = () => {
 
   return (
     <header className="bg-white dark:bg-primary-card-dark shadow-sm">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="container mx-12 px-4 py-4 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2">
           <BookOpenCheck size={28} className="text-primary-interactive dark:text-primary-interactive-dark" />

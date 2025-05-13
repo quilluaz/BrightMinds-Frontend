@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ClassroomProvider } from './context/ClassroomContext';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -25,6 +25,9 @@ import TeacherClassroomViewPage from './pages/teacher/TeacherClassroomViewPage';
 import StudentClassroomsPage from './pages/student/StudentClassroomsPage';
 import StudentClassroomViewPage from './pages/student/StudentClassroomViewPage';
 import GameplayPage from './pages/student/GameplayPage';
+
+// Import the new game component
+import ImageMultipleChoiceGame from './components/game/Selina/ImageMultipleChoiceGame';
 
 // Protected Route HOC
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -87,6 +90,7 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/image-quiz" element={<ImageMultipleChoiceGame />} />
                 
                 {/* Protected Routes */}
                 <Route 

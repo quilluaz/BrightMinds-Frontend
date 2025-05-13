@@ -1,0 +1,88 @@
+/* src/components/game/MatchingCard.css */
+.matching-card {
+    width: 100%; /* Make cards flexible within the grid */
+    padding-bottom: 100%; /* Maintain aspect ratio (1:1) */
+    position: relative;
+    perspective: 1000px; /* For 3D flip effect */
+    cursor: pointer;
+    border-radius: 8px; /* Example styling */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Example styling */
+    overflow: hidden; /* Hide content that flips */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+.matching-card-inner {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s; /* Flip animation duration */
+    transform-style: preserve-3d; /* Preserve 3D space during transform */
+}
+
+.matching-card.face-up .matching-card-inner {
+    transform: rotateY(180deg);
+}
+
+.matching-card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden; /* Hide the back face during the flip */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px; /* Inner padding */
+    box-sizing: border-box;
+    border-radius: 8px; /* Match outer border radius */
+}
+
+.matching-card-back {
+    background-color: #007bff; /* Example back color - Primary energetic */
+    color: white;
+    transform: rotateY(0deg); /* Default position */
+}
+
+.card-back-icon {
+    max-width: 80%;
+    max-height: 80%;
+    object-fit: contain;
+    filter: invert(1); /* If your icon is dark */
+}
+
+
+.matching-card-front {
+    background-color: #fff; /* Example front color */
+    color: #333;
+    transform: rotateY(180deg); /* Start flipped */
+    border: 1px solid #eee; /* Subtle border */
+}
+
+.matching-card-word {
+    font-size: 1em; /* Adjust font size based on content */
+    font-weight: bold;
+    padding: 0 5px; /* Add some horizontal padding */
+    word-break: break-word; /* Break long words */
+    text-align: center;
+}
+
+.matching-card-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Ensure image fits without distortion */
+    border-radius: 4px; /* Slightly smaller radius for the image */
+}
+
+/* Styling for matched cards */
+.matching-card.matched .matching-card-inner {
+     /* Optional: keep face up or remove/fade out */
+     /* transform: rotateY(180deg); */
+}
+.matching-card.matched {
+    opacity: 0.5; /* Fade out matched cards */
+    pointer-events: none; /* Disable clicks on matched cards */
+}
+
+/* Add some simple keyframe for fade-in if needed */
+/* @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } } */
+/* .matching-card { animation: fade-in 0.5s ease forwards; } */

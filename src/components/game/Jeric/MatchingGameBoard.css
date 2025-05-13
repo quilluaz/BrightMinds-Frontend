@@ -1,0 +1,24 @@
+/* src/components/game/MatchingGameBoard.css */
+.matching-game-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* Adjust based on number of cards (e.g., 3 or 4 columns) */
+    gap: 15px; /* Space between cards */
+    max-width: 700px; /* Max width for the board - adjust as needed */
+    margin: 20px auto; /* Center the board */
+    padding: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .matching-game-board {
+        grid-template-columns: repeat(3, 1fr); /* Fewer columns on smaller screens */
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .matching-game-board {
+        grid-template-columns: repeat(2, 1fr); /* Even fewer columns on very small screens */
+        gap: 8px;
+    }
+}

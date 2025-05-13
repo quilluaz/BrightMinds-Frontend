@@ -1,0 +1,269 @@
+/* src/components/game/Zeke/Game.css */
+/* Duolingo for Kids Inspired Theme - with new learn-more style */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+/* Duolingo Palette Variables */
+:root {
+  --duo-green: #58CC02;
+  --duo-yellow: #FFDE59;
+  --duo-blue: #1CB0F6;
+  --duo-red: #FF5959;
+  --text-black: #333333; 
+  --text-white: #FFFFFF;
+  --bg-light-gray: #F7F7F7; 
+  --border-gray: #E5E5E5; 
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background-color: var(--bg-light-gray); 
+  color: var(--text-black);
+  line-height: 1.6;
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; 
+  min-height: 100vh;
+}
+
+.game-container {
+  background-color: var(--text-white); 
+  padding: 20px;
+  border-radius: 16px; 
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
+  width: 95%;
+  max-width: 1000px; 
+  text-align: center;
+  border: 1px solid var(--border-gray);
+}
+.loading-container {
+  padding: 50px;
+  font-size: 1.5em;
+  color: #777;
+}
+
+.game-header {
+  background-color: var(--duo-blue); 
+  color: var(--text-white);
+  padding: 15px 20px;
+  border-radius: 12px 12px 0 0; 
+  margin: -20px -20px 20px -20px; 
+}
+
+.game-header h1 {
+  margin: 0;
+  font-size: 1.8em; 
+  font-weight: 800; 
+}
+
+.score-level-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: rgba(255, 255, 255, 0.2); 
+  border-radius: 8px;
+  margin-top:10px;
+  font-size: 0.9em;
+}
+
+.score-level-info h2 {
+    font-size: 1.2em;
+    margin: 0;
+    font-weight: 700;
+}
+
+.score {
+  font-size: 1.2em;
+  font-weight: 800;
+  color: var(--duo-yellow); 
+}
+
+.feedback-message {
+  font-size: 1.1em;
+  color: var(--text-black);
+  background-color: #EBF8FF; 
+  padding: 10px 12px; /* Slightly reduced padding */
+  border-radius: 8px;
+  min-height: 30px; /* Adjusted min-height */
+  margin-bottom: 10px; /* Reduced margin-bottom */
+  border: 1px solid #BEE3F8; 
+  font-weight: 600;
+}
+
+/* New style for "Learn More" text */
+.learn-more-message {
+  font-size: 0.95em;
+  color: #2C5282; /* A darker, more informative blue */
+  background-color: #E0F2FE; /* A very light, distinct blue */
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-top: -5px; /* Pull it closer to feedback message */
+  margin-bottom: 15px;
+  border: 1px solid #A5D8FF;
+  text-align: left; /* Align text to the left for readability */
+  font-style: italic;
+}
+
+
+/* Items Area */
+.items-area {
+  background-color: var(--bg-light-gray); 
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border-gray);
+}
+
+.items-area h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--text-black);
+    font-size: 1.3em;
+    font-weight: 700;
+}
+
+.draggable-items-pool {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px; 
+  min-height: 80px; 
+}
+
+/* Draggable Item Styling */
+.draggable-item { 
+  width: auto; 
+  min-width: 80px; 
+  height: auto; 
+  min-height: 60px; 
+  padding: 10px 12px; 
+  background-color: var(--duo-yellow); 
+  border: 1px solid #FFCF2D; 
+  color: var(--text-black); 
+  border-radius: 8px; 
+  display: flex; 
+  justify-content: center;
+  align-items: center;
+  cursor: grab;
+  transition: transform 0.15s ease-in-out, box-shadow 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  text-align: center; 
+}
+
+.draggable-item:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+}
+
+.item-text-content {
+  font-size: 1em; 
+  font-weight: 700; 
+  word-wrap: break-word; 
+  max-width: 100%; 
+}
+
+/* Sorting Bins Area */
+.sorting-bins-area {
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+  gap: 15px; 
+  margin-top: 20px;
+}
+
+.sorting-bin {
+  min-height: 200px; 
+  background-color: var(--text-white); 
+  border-width: 2px;
+  border-style: solid; 
+  border-radius: 12px; 
+  padding: 0; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: box-shadow 0.2s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  overflow: hidden; 
+}
+
+.sorting-bin:hover {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.bin-title {
+  width: 100%;
+  padding: 12px 10px;
+  font-size: 1.15em;
+  font-weight: 700;
+  text-align: center;
+}
+
+.dropped-items-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px; 
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    flex-grow: 1; 
+}
+
+.dropped-item-preview {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+    font-size: 0.85em;
+    border-width: 1px;
+    border-style: solid;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Celebration & Next Level Buttons */
+.celebration-popup {
+  background-color: var(--duo-green); 
+  color: var(--text-white); 
+  padding: 20px 25px;
+  border-radius: 12px;
+  font-size: 1.5em;
+  text-align: center;
+  margin-top: 20px;
+  border: none; 
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.all-levels-complete-message, .all-sorted-message {
+    font-weight: 600;
+    margin-top: 8px;
+    font-size: 0.9em;
+}
+
+.next-level-button {
+  background-color: var(--duo-blue); 
+  color: white;
+  border: none;
+  padding: 10px 20px; 
+  font-size: 1em;
+  font-weight: 700; 
+  border-radius: 8px; 
+  cursor: pointer;
+  margin-top: 15px;
+  transition: background-color 0.2s, transform 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.next-level-button:hover {
+  background-color: #1899D6; 
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+.manual-next {
+    display: block;
+    margin: 20px auto; 
+}

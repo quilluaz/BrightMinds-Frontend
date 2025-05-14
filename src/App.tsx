@@ -28,6 +28,7 @@ import GameplayPage from './pages/student/GameplayPage';
 
 // Import the new game component
 import ImageMultipleChoiceGame from './components/game/Selina/ImageMultipleChoiceGame';
+import MatchingGamePage from './components/game/Jeric/MatchingGamePage'; 
 
 // Protected Route HOC
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -91,7 +92,7 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/image-quiz" element={<ImageMultipleChoiceGame />} />
-                
+                <Route path="/matching-game-test" element={<MatchingGamePage />} />
                 {/* Protected Routes */}
                 <Route 
                   path="/dashboard" 

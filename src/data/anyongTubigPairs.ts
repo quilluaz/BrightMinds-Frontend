@@ -1,7 +1,9 @@
-import { MatchingPair } from '../types'; // Import the type
+// src/data/anyongTubigPairs.ts
+import { MatchingPair } from '../types'; // This path ('../types') assumes your 'types/index.ts' is in 'src/types/'
 
-const anyongTubigPairs: MatchingPair[] = [
-    { id: 1, word: 'Ilog', imageUrl: '/images/anyong-tubig/ilog.jpg' }, // Update paths
+// Change 'export default' at the bottom to 'export const' here
+export const anyongTubigPairs: MatchingPair[] = [
+    { id: 1, word: 'Ilog', imageUrl: '/images/anyong-tubig/ilog.jpg' },
     { id: 2, word: 'Lawa', imageUrl: '/images/anyong-tubig/lawa.jpg' },
     { id: 3, word: 'Dagat', imageUrl: '/images/anyong-tubig/dagat.jpg' },
     { id: 4, word: 'Talon', imageUrl: '/images/anyong-tubig/talon.jpg' },
@@ -10,4 +12,4 @@ const anyongTubigPairs: MatchingPair[] = [
     // Add more pairs relevant to your province! Aim for 6-12 pairs for a good game size.
 ];
 
-export default anyongTubigPairs;
+// Remove the 'export default anyongTubigPairs;' line if you make the change above.

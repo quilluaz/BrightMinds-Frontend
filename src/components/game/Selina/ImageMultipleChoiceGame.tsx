@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 
-// Color Palette - (User provided, ensuring these are used)
-// Primary Background: #E8F9FF
-// Primary Text & Dark Elements: #1A1B41
-// Interactive Elements (Buttons, Links, Active States): #7A89C2
-// Primary Accent (Highlights, Rewards, Key Info): #DBD053
-// Energetic Secondary Accent (Gamification, CTAs, Positive Feedback): #FFA500
-// Neutral/Card Backgrounds: #FFFFFF
+// Color Palette
+const COLORS = {
+  primaryBackground: '#E8F9FF',
+  primaryText: '#1A1B41',
+  interactiveElements: '#7A89C2',
+  primaryAccent: '#DBD053',
+  secondaryAccent: '#FFA500',
+  neutralBackground: '#FFFFFF',
+};
 
 interface Choice {
   id: string;
@@ -25,23 +27,23 @@ const questionsData: Question[] = [
     id: 1,
     questionText: 'Aling larawan ang nagpapakita ng pamumuhay sa tabing-ilog?',
     choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Pamilyang nakatira sa kubo sa gilid ng ilog', isCorrect: true },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Gusaling mataas', isCorrect: false },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Palayan sa malayo', isCorrect: false },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Pabrika sa lungsod', isCorrect: false },
+      { id: 'A', imagePlaceholderText: '/images/multiple-choice/river1.jpg', isCorrect: true },
+      { id: 'B', imagePlaceholderText: '/images/multiple-choice/tower1.jpg', isCorrect: false },
+      { id: 'C', imagePlaceholderText: '/images/multiple-choice/rice-fields1.jpg', isCorrect: false },
+      { id: 'D', imagePlaceholderText: '/images/multiple-choice/factory1.jpg', isCorrect: false },
     ],
   },
   {
     id: 2,
     questionText: 'Alin sa mga ito ang nagpapakita ng hanapbuhay sa may bundok?',
     choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Pagtitinda ng isda', isCorrect: false },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Pagkakarpintero', isCorrect: false },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Pagsasaka sa terrace farm', isCorrect: true },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Pagmamaneho ng jeep', isCorrect: false },
+      { id: 'A', imagePlaceholderText: '/images/multiple-choice/fish2.jpg', isCorrect: false },
+      { id: 'B', imagePlaceholderText: '/images/multiple-choice/carpentry2.jpg', isCorrect: false },
+      { id: 'C', imagePlaceholderText: '/images/multiple-choice/farm2.jpg', isCorrect: true },
+      { id: 'D', imagePlaceholderText: '/images/multiple-choice/jeepney2.jpg', isCorrect: false },
     ],
   },
-  {
+ /* {
     id: 3,
     questionText: 'Ano ang tawag sa uri ng pamumuhay na simple at tahimik sa lalawigan?',
     choices: [
@@ -50,28 +52,28 @@ const questionsData: Question[] = [
       { id: 'C', imagePlaceholderText: 'Placeholder: Payak na pamumuhay', isCorrect: true },
       { id: 'D', imagePlaceholderText: 'Placeholder: Masayang pamumuhay', isCorrect: false },
     ],
+  },*/
+  {
+    id: 3,
+    questionText: 'Anong produkto ang karaniwang nakukuha sa pangingisda?',
+    choices: [
+      { id: 'A', imagePlaceholderText: '/images/multiple-choice/pigs3.jpg', isCorrect: false },
+      { id: 'B', imagePlaceholderText: '/images/multiple-choice/chickens3.jpg', isCorrect: false },
+      { id: 'C', imagePlaceholderText: '/images/multiple-choice/fish3.jpg', isCorrect: true },
+      { id: 'D', imagePlaceholderText: '/images/multiple-choice/bananas3.jpg', isCorrect: false },
+    ],
   },
   {
     id: 4,
-    questionText: 'Anong produkto ang karaniwang nakukuha sa pangingisda?',
-    choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Baboy', isCorrect: false },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Manok', isCorrect: false },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Isda', isCorrect: true },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Saging', isCorrect: false },
-    ],
-  },
-  {
-    id: 5,
     questionText: 'Alin ang hanapbuhay na hindi karaniwan sa lalawigan?',
     choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Magsasaka', isCorrect: false },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Mangangalakal', isCorrect: false },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Call center agent', isCorrect: true },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Mangingisda', isCorrect: false },
+      { id: 'A', imagePlaceholderText: '/images/multiple-choice/farmer4.jpg', isCorrect: false },
+      { id: 'B', imagePlaceholderText: '/images/multiple-choice/pangagalakal4.jpg', isCorrect: false },
+      { id: 'C', imagePlaceholderText: '/images/multiple-choice/agent4.jpg', isCorrect: true },
+      { id: 'D', imagePlaceholderText: '/images/multiple-choice/fisherman4.jpg', isCorrect: false },
     ],
   },
-  {
+ /* {
     id: 6,
     questionText: 'Ano ang ginagawa ng mangingisda pagkatapos manghuli ng isda?',
     choices: [
@@ -90,58 +92,58 @@ const questionsData: Question[] = [
       { id: 'C', imagePlaceholderText: 'Placeholder: Babaeng namamalengke', isCorrect: false },
       { id: 'D', imagePlaceholderText: 'Placeholder: Lolo na nagbabasa', isCorrect: false },
     ],
-  },
+  },*/
   {
-    id: 8,
+    id: 5,
     questionText: 'Anong hanapbuhay ang makikita sa kagubatan?',
     choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Pagkakahoy', isCorrect: true },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Pagluluto', isCorrect: false },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Pagpinta', isCorrect: false },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Paglalako', isCorrect: false },
+      { id: 'A', imagePlaceholderText: '/images/multiple-choice/pangangahoy5.jpg', isCorrect: true },
+      { id: 'B', imagePlaceholderText: '/images/multiple-choice/cooking5.jpg', isCorrect: false },
+      { id: 'C', imagePlaceholderText: '/images/multiple-choice/painting5.jpg', isCorrect: false },
+      { id: 'D', imagePlaceholderText: '/images/multiple-choice/paglalako5.jpg', isCorrect: false },
     ],
   },
-  {
+  /*{
     id: 9,
     questionText: 'Ano ang karaniwang tanim sa mga lalawigan?',
     choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Palay', isCorrect: true },
+      { id: 'A', imagePlaceholderText: '/assets/multiple-choice/rice-fields1.jpg', isCorrect: true },
       { id: 'B', imagePlaceholderText: 'Placeholder: Mansanas', isCorrect: false },
       { id: 'C', imagePlaceholderText: 'Placeholder: Ubas', isCorrect: false },
       { id: 'D', imagePlaceholderText: 'Placeholder: Repolyo', isCorrect: false },
     ],
-  },
+  },*/
   {
-    id: 10,
+    id: 6,
     questionText: 'Alin sa mga ito ang pamumuhay sa kabundukan?',
     choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Pagsasaka ng palay', isCorrect: false },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Pangingisda', isCorrect: false },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Pagkakahoy', isCorrect: true },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Paglalako sa kalsada', isCorrect: false },
+      { id: 'A', imagePlaceholderText: '/images/multiple-choice/farmer4.jpg', isCorrect: false },
+      { id: 'B', imagePlaceholderText: '/images/multiple-choice/fisherman4.jpg', isCorrect: false },
+      { id: 'C', imagePlaceholderText: '/images/multiple-choice/pagkakahoy6.jpg', isCorrect: true },
+      { id: 'D', imagePlaceholderText: '/images/multiple-choice/paglalako5.jpg', isCorrect: false },
     ],
   },
   {
-    id: 11,
+    id: 7,
     questionText: 'Ano ang pangunahing hanapbuhay sa palayan?',
     choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Mang-uukit', isCorrect: false },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Magsasaka', isCorrect: true },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Manggagawa sa pabrika', isCorrect: false },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Magtataho', isCorrect: false },
+      { id: 'A', imagePlaceholderText: '/images/multiple-choice/fisherman4.jpg', isCorrect: false },
+      { id: 'B', imagePlaceholderText: '/images/multiple-choice/farmer4.jpg', isCorrect: true },
+      { id: 'C', imagePlaceholderText: '/images/multiple-choice/pagkakahoy6.jpg', isCorrect: false },
+      { id: 'D', imagePlaceholderText: '/images/multiple-choice/paglalako5.jpg', isCorrect: false },
     ],
   },
   {
-    id: 12,
+    id: 8,
     questionText: 'Anong hanapbuhay ang karaniwang makikita sa tabing-dagat?',
     choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Mangingisda', isCorrect: true },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Magsasaka', isCorrect: false },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Guro', isCorrect: false },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Mang-aawit', isCorrect: false },
+      { id: 'A', imagePlaceholderText: '/images/multiple-choice/fisherman4.jpg', isCorrect: true },
+      { id: 'B', imagePlaceholderText: '/images/multiple-choice/farmer4.jpg', isCorrect: false },
+      { id: 'C', imagePlaceholderText: '/images/multiple-choice/pagkakahoy6.jpg', isCorrect: false },
+      { id: 'D', imagePlaceholderText: '/images/multiple-choice/paglalako5.jpg', isCorrect: false },
     ],
   },
-  {
+ /*  {
     id: 13,
     questionText: 'Alin sa mga ito ang gawain sa pamayanan?',
     choices: [
@@ -150,25 +152,25 @@ const questionsData: Question[] = [
       { id: 'C', imagePlaceholderText: 'Placeholder: Pagkain sa fast food', isCorrect: false },
       { id: 'D', imagePlaceholderText: 'Placeholder: Pamamasyal', isCorrect: false },
     ],
-  },
+  },*/
   {
-    id: 14,
+    id: 9,
     questionText: 'Anong hayop ang karaniwang kasama sa bukid?',
     choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Kalabaw', isCorrect: true },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Pusa', isCorrect: false },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Aso', isCorrect: false },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Langgam', isCorrect: false },
+      { id: 'A', imagePlaceholderText: '/images/multiple-choice/carabao9.jpg', isCorrect: true },
+      { id: 'B', imagePlaceholderText: '/images/multiple-choice/cat9.jpg', isCorrect: false },
+      { id: 'C', imagePlaceholderText: '/images/multiple-choice/dog9.jpg', isCorrect: false },
+      { id: 'D', imagePlaceholderText: '/images/multiple-choice/bird9.jpg', isCorrect: false },
     ],
   },
   {
-    id: 15,
+    id: 10,
     questionText: 'Alin sa mga ito ang anyong lupa?',
     choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Dagat', isCorrect: false },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Bundok', isCorrect: true },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Ilog', isCorrect: false },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Sapa', isCorrect: false },
+      { id: 'A', imagePlaceholderText: '/images/multiple-choice/dagat10.jpg', isCorrect: false },
+      { id: 'B', imagePlaceholderText: '/images/multiple-choice/bundok10.jpg', isCorrect: true },
+      { id: 'C', imagePlaceholderText: '/images/multiple-choice/ilog10.jpg', isCorrect: false },
+      { id: 'D', imagePlaceholderText: '/images/multiple-choice/falls10.jpg', isCorrect: false },
     ],
   },
 ];
@@ -220,6 +222,11 @@ const ImageMultipleChoiceGame: React.FC = () => {
     setShowFeedback(false);
     setShowScore(false);
     setHasGameStarted(false);
+  };
+
+  // Function to determine if the imagePlaceholderText is an actual image path
+  const isImagePath = (text: string) => {
+    return text.startsWith('/images/multiple-choice/') && text.endsWith('.jpg');
   };
 
   if (!hasGameStarted) {
@@ -298,8 +305,22 @@ const ImageMultipleChoiceGame: React.FC = () => {
               <div className="absolute top-3 left-3 bg-[#FFA500] text-white text-lg font-bold w-10 h-10 rounded-full flex items-center justify-center shadow-md">
                 {choice.id}
               </div>
-              <div className="w-full h-48 sm:h-60 bg-slate-100 flex items-center justify-center rounded-xl mb-3 group-hover:bg-slate-200">
-                <span className="text-slate-500 text-lg px-2 text-center">{choice.imagePlaceholderText}</span>
+              <div className="w-full h-48 sm:h-60 flex items-center justify-center rounded-xl mb-3 group-hover:bg-slate-200">
+                {isImagePath(choice.imagePlaceholderText) ? (
+                  <img
+                    src={choice.imagePlaceholderText}
+                    alt={`Choice ${choice.id}`}
+                    className="w-full h-full object-cover rounded-xl"
+                    onError={(e) => {
+                      e.currentTarget.src = '/path/to/fallback-image.jpg'; // Optional fallback image
+                      console.error(`Failed to load image: ${choice.imagePlaceholderText}`);
+                    }}
+                  />
+                ) : (
+                  <span className="text-slate-500 text-lg px-2 text-center bg-slate-100 w-full h-full flex items-center justify-center rounded-xl">
+                    {choice.imagePlaceholderText}
+                  </span>
+                )}
               </div>
             </button>
           ))}
@@ -324,4 +345,4 @@ const ImageMultipleChoiceGame: React.FC = () => {
   );
 };
 
-export default ImageMultipleChoiceGame; 
+export default ImageMultipleChoiceGame;

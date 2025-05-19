@@ -181,7 +181,7 @@ const LoginPage: React.FC = () => {
           </div>
 
           {/* Demo Accounts section - remains unchanged */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
+          {/* <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-xs text-center text-gray-500 mb-3">
               Demo Accounts:
             </p>
@@ -201,7 +201,7 @@ const LoginPage: React.FC = () => {
                 Student Demo
               </Button>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

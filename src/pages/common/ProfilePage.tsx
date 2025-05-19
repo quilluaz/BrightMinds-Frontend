@@ -4,14 +4,14 @@ import Button from '../../components/common/Button';
 import { User, Mail, Check } from 'lucide-react';
 
 const AVATAR_OPTIONS = [
-  { seed: 'robot1', label: 'Robot 1' },
-  { seed: 'robot2', label: 'Robot 2' },
-  { seed: 'robot3', label: 'Robot 3' },
-  { seed: 'cat1', label: 'Cat 1' },
-  { seed: 'cat2', label: 'Cat 2' },
-  { seed: 'dog1', label: 'Dog 1' },
-  { seed: 'dog2', label: 'Dog 2' },
-  { seed: 'fox1', label: 'Fox 1' }
+  { seed: 'robot1', label: 'Profile 1' },
+  { seed: 'robot2', label: 'Profile 2' },
+  { seed: 'robot3', label: 'Profile 3' },
+  { seed: 'cat1', label: 'Profile 4' },
+  { seed: 'cat2', label: 'Profile 5' },
+  { seed: 'dog1', label: 'Profile 6' },
+  { seed: 'dog2', label: 'Profile 7' },
+  { seed: 'fox1', label: 'Profile 8' }
 ];
 
 const ProfilePage: React.FC = () => {
@@ -72,15 +72,6 @@ const ProfilePage: React.FC = () => {
               <div className="flex items-center border border-gray-300 rounded-lg px-4 py-2 bg-gray-50">
                 <Mail size={18} className="text-gray-500 mr-2" />
                 <span>{currentUser.email}</span>
-              </div>
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Role
-              </label>
-              <div className="flex items-center border border-gray-300 rounded-lg px-4 py-2 bg-gray-50">
-                <span className="capitalize">{currentUser.role}</span>
               </div>
             </div>
           </div>

@@ -3,7 +3,19 @@ import { Link } from 'react-router-dom';
 import { BookOpenCheck, Star, Users, Trophy, Sparkles, Globe } from 'lucide-react';
 import Button from '../../components/common/Button';
 
+
 const LandingPage: React.FC = () => {
+
+  const imageKitUrlEndpoint = 'https://ik.imagekit.io/JISQCITU/';
+  const heroImageFolderPath = 'shared-assets/';
+  const heroImageName = 'LandingPage.png';
+  
+  // Optimized ImageKit URL with transformations
+  // w-550: Target width slightly above max display width for sharpness
+  // q-80: Quality level 80
+  // ImageKit will auto-convert format (e.g., PNG to WebP/AVIF)
+  const optimizedHeroImageUrl = `${imageKitUrlEndpoint}tr:w-550,q-80/${heroImageFolderPath}${heroImageName}`;
+
   return (
     <>
       <section className="bg-gradient-to-b from-primary-background to-white dark:from-primary-background-dark dark:to-primary-background-dark py-16 md:py-24">
@@ -32,8 +44,8 @@ const LandingPage: React.FC = () => {
             
             <div className="md:w-1/2 lg:w-2/5 flex justify-center">
               <img 
-                src="https://images.pexels.com/photos/5905497/pexels-photo-5905497.jpeg" 
-                alt="Children learning" 
+                src={optimizedHeroImageUrl} 
+                alt="BrightMinds Landing Page Hero"
                 className="rounded-lg shadow-xl w-full max-w-md lg:max-w-lg h-auto object-cover" 
               />
             </div>

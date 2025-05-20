@@ -234,19 +234,22 @@ const ImageMultipleChoiceGame: React.FC = () => {
       <div className="min-h-screen bg-[#E8F9FF] flex flex-col items-center justify-center p-6 text-[#1A1B41]">
         <div className="bg-white p-10 rounded-3xl shadow-xl text-center max-w-xl w-full">
           <h1 className="text-5xl sm:text-6xl font-bold mb-4 text-[#1A1B41]">
-            Maligayang Pagdating sa
+            Welcome to
           </h1>
           <h2 className="text-4xl sm:text-5xl font-bold mb-8 text-[#FFA500]">
-            Larong Hulaan ang Larawan!
+            Guess the Image!
           </h2>
+          <p className="text-xl sm:text-xl mb-3 text-[#1A1B41] opacity-80">
+            Subukan ang iyong kaalaman sa Araling Panlipunan at Tagalog sa masayang paraan!
+          </p>
           <p className="text-xl sm:text-2xl mb-12 text-[#1A1B41] opacity-80">
-            Subukan ang iyong kaalaman sa Araling Panlipunan at Tagalog sa masayang paraan! Piliin ang tamang larawan para sa bawat tanong.
+            Choose the correct picture for each question.
           </p>
           <button
             onClick={handleStartGame}
             className="bg-[#FFA500] hover:bg-[#db8e00] text-white font-bold py-4 px-12 rounded-full text-2xl sm:text-3xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
           >
-            Simulan ang Laro!
+            Start
           </button>
         </div>
         <footer className="mt-12 text-md text-[#1A1B41] opacity-70">
@@ -260,15 +263,15 @@ const ImageMultipleChoiceGame: React.FC = () => {
     return (
       <div className="min-h-screen bg-[#E8F9FF] flex flex-col items-center justify-center p-6 text-[#1A1B41]">
         <div className="bg-white p-10 rounded-3xl shadow-xl text-center max-w-md w-full">
-          <h2 className="text-5xl font-bold mb-6 text-[#DBD053]">Tapos na!</h2>
+          <h2 className="text-5xl font-bold mb-6 text-[#DBD053]">The Game has Finsihed </h2>
           <p className="text-3xl mb-10">
-            Ang iyong iskor: <span className="font-bold text-[#FFA500] text-4xl">{score}</span> / {questionsData.length}
+            Your Score: <span className="font-bold text-[#FFA500] text-4xl">{score}</span> / {questionsData.length}
           </p>
           <button
             onClick={restartGame}
             className="bg-[#7A89C2] hover:bg-[#5f6b9a] text-white font-bold py-4 px-10 rounded-full text-2xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
           >
-            Maglaro Ulit
+            Play Again
           </button>
         </div>
       </div>
@@ -335,7 +338,7 @@ const ImageMultipleChoiceGame: React.FC = () => {
         )}
         
         <div className="mt-10 text-center">
-          <p className="text-3xl font-bold text-[#FFA500]">Iskor: {score}</p>
+          <p className="text-3xl font-bold text-[#FFA500]">Score: {score}</p>
         </div>
       </div>
       <footer className="mt-12 text-md text-[#1A1B41] opacity-70">

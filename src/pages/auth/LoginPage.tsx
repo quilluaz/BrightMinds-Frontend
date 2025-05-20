@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BookOpenCheck, Mail, Lock, AlertCircle } from "lucide-react";
+import { Mail, Lock, AlertCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import Button from "../../components/common/Button";
+import { useTheme } from "../../context/ThemeContext";
+import logoForLightTheme from "../../assets/logos/LogoIconDark.svg";
+import logoForDarkTheme from "../../assets/logos/LogoIconLight.svg";
 
-// Create a simple Microsoft logo component (copied from RegisterPage)
 const MicrosoftLogo = () => (
   <svg
     width="18"
@@ -24,6 +26,8 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const { login, loginWithMicrosoft, isLoading } = useAuth();
+  const { theme } = useTheme();
+  const currentLogo = theme === "light" ? logoForLightTheme : logoForDarkTheme;
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,13 +73,15 @@ const LoginPage: React.FC = () => {
       <div className="w-full max-w-md">
         <div className="card border border-gray-100 animate-fade-in">
           <div className="text-center mb-6">
-            <div className="flex justify-center mb-3">
-              <BookOpenCheck size={40} className="text-primary-interactive" />
-            </div>
+            <img
+              src={currentLogo}
+              alt="BrightMinds Logo"
+              className="h-20 mb-3 inline-block"
+            />
             <h1 className="text-2xl font-bold text-primary-text dark:text-primary-text-dark">
-              Welcome to BrightMinds
+              Welcome Back
             </h1>
-            <p className="text-gray-600 mt-1">Sign in to continue learning</p>
+            <p className="text-gray-600 mt-1">Log in to continue learning</p>
           </div>
 
           {error && (
@@ -139,7 +145,7 @@ const LoginPage: React.FC = () => {
               fullWidth
               isLoading={isLoading && !error}
               disabled={isLoading}>
-              Sign In
+              Log In
             </Button>
 
             <div className="mt-4 text-center">

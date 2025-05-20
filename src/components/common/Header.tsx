@@ -5,7 +5,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import logoForLightThemeDesktop from "../../assets/logos/LogoIconSideDark.svg";
 import logoForDarkThemeDesktop from "../../assets/logos/LogoIconSideLight.svg";
-import mobileLogo from "../../assets/logos/LogoIcon.svg";
+import logoForLightThemeMobile from "../../assets/logos/LogoIconDark.svg";
+import logoForDarkThemeMobile from "../../assets/logos/LogoIconLight.svg";
 import UserMenu from "./UserMenu";
 
 const Header: React.FC = () => {
@@ -20,7 +21,11 @@ const Header: React.FC = () => {
     return "Good Evening";
   };
 
-  const desktopLogo = theme === "light" ? logoForLightThemeDesktop : logoForDarkThemeDesktop;
+  const desktopLogo =
+    theme === "light" ? logoForLightThemeDesktop : logoForDarkThemeDesktop;
+
+  const mobileLogo =
+    theme === "light" ? logoForLightThemeMobile : logoForDarkThemeMobile;
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -29,7 +34,6 @@ const Header: React.FC = () => {
   return (
     <header className="bg-white dark:bg-primary-card-dark shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between md:justify-between relative md:static">
-        
         <div className="absolute inset-0 flex items-center justify-center md:hidden pointer-events-none">
           <Link to="/" className="inline-flex pointer-events-auto">
             <img
@@ -47,7 +51,7 @@ const Header: React.FC = () => {
             className="h-8 sm:h-9 w-auto"
           />
         </Link>
-        
+
         <div className="flex-1 md:hidden"></div>
 
         <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
@@ -79,13 +83,13 @@ const Header: React.FC = () => {
             <>
               <Link
                 to="/login"
-                className="text-sm lg:text-base text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark transition-colors">
+                className="text-sm lg:text-base btn btn-outline border border-primary-interactive text-primary-interactive hover:bg-primary-interactive hover:text-white dark:border-primary-interactive-dark dark:text-primary-interactive-dark dark:hover:bg-primary-interactive-dark dark:hover:text-white transition-colors">
                 Log In
               </Link>
               <Link
                 to="/register"
                 className="text-sm lg:text-base btn btn-primary dark:bg-primary-interactive-dark dark:text-white">
-                Register
+                Sign Up
               </Link>
             </>
           )}
@@ -96,7 +100,7 @@ const Header: React.FC = () => {
                 {getGreeting()}, {currentUser?.name}!
               </span>
               <span className="lg:hidden text-sm font-medium text-primary-text dark:text-primary-text-dark">
-                Hi, {currentUser?.name?.split(' ')[0]}!
+                Hi, {currentUser?.name?.split(" ")[0]}!
               </span>
               <UserMenu />
             </div>
@@ -173,7 +177,7 @@ const Header: React.FC = () => {
                       My Profile
                     </Link>
                     <Link
-                      to="/logout" 
+                      to="/logout"
                       className="block text-center px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-opacity-10"
                       onClick={() => setIsMenuOpen(false)}>
                       Log Out

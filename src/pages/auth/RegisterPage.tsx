@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-// Lucide-react icons
 import {
   BookOpenCheck,
   Mail,
@@ -9,7 +8,10 @@ import {
   AlertCircle,
   KeyRound,
 } from "lucide-react";
-// Create a simple Microsoft logo component instead of importing from phosphor-react
+import { useTheme } from "../../context/ThemeContext";
+import logoForLightTheme from "../../assets/logos/LogoIconDark.svg";
+import logoForDarkTheme from "../../assets/logos/LogoIconLight.svg";
+
 const MicrosoftLogo = () => (
   <svg
     width="18"
@@ -36,6 +38,8 @@ const RegisterPage: React.FC = () => {
   const [teacherCode, setTeacherCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const { register, loginWithMicrosoft, isLoading } = useAuth();
+  const { theme } = useTheme();
+  const currentLogo = theme === "light" ? logoForLightTheme : logoForDarkTheme;
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,7 +88,11 @@ const RegisterPage: React.FC = () => {
         <div className="card border border-gray-100 animate-fade-in">
           <div className="text-center mb-6">
             <div className="flex justify-center mb-3">
-              <BookOpenCheck size={40} className="text-primary-interactive" />
+              <img
+                src={currentLogo}
+                alt="BrightMinds Logo"
+                className="h-20 mb-3 inline-block"
+              />
             </div>
             <h1 className="text-2xl font-bold text-primary-text dark:text-primary-text-dark">
               Create Your Account
@@ -281,7 +289,7 @@ const RegisterPage: React.FC = () => {
               <Link
                 to="/login"
                 className="text-primary-interactive hover:underline font-medium">
-                Sign In
+                Log In
               </Link>
             </p>
           </div>

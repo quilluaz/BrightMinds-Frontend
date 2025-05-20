@@ -13,8 +13,8 @@ const TeacherClassroomsPage: React.FC = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-primary-text">My Classrooms</h1>
-          <p className="text-gray-600 mt-1">Manage your teaching classes and learning activities</p>
+          <h1 className="text-3xl font-bold text-primary-text dark:text-primary-text-dark">My Classrooms</h1>
+          <p className="text-gray-600 dark:text-gray-300 mt-1">Manage your teaching classes and learning activities</p>
         </div>
         
         <Button 
@@ -29,10 +29,10 @@ const TeacherClassroomsPage: React.FC = () => {
       </div>
       
       {teacherClassrooms.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+        <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm p-8 text-center border dark:border-gray-700">
           <div className="max-w-md mx-auto">
-            <h2 className="text-xl font-semibold mb-2">No Classrooms Yet</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-xl font-semibold mb-2 text-primary-text dark:text-primary-text-dark">No Classrooms Yet</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
               Create your first classroom to start adding students and learning activities.
             </p>
             <Button 

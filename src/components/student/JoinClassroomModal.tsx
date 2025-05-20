@@ -73,16 +73,17 @@ const JoinClassroomModal: React.FC<JoinClassroomModalProps> = ({ isOpen, onClose
       {!success ? (
         <form onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 flex items-start">
+            <div className="bg-red-50 dark:bg-red-900 dark:bg-opacity-30 text-red-600 dark:text-red-300 p-3 rounded-lg mb-4 flex items-start border border-red-200 dark:border-red-700">
               <AlertCircle size={18} className="mr-2 mt-0.5 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
           
           <div className="mb-2">
-            <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Classroom Code
             </label>
+            {/* Input field relies on .input-field class from index.css which we'll update */}
             <input
               id="code"
               type="text"
@@ -96,20 +97,21 @@ const JoinClassroomModal: React.FC<JoinClassroomModalProps> = ({ isOpen, onClose
             />
           </div>
           
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             Ask your teacher for the 6-character classroom code.
           </p>
         </form>
       ) : (
+        // Success message styling
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center animate-celebrate">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-700 dark:bg-opacity-30 text-green-600 dark:text-green-300 rounded-full flex items-center justify-center animate-celebrate">
               <CheckCircle size={32} />
             </div>
           </div>
           
-          <h3 className="text-lg font-semibold mb-1">You've joined the classroom!</h3>
-          <p className="text-gray-600 mb-6">
+          <h3 className="text-lg font-semibold mb-1 text-primary-text dark:text-primary-text-dark">You've joined the classroom!</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             You now have access to all learning activities and materials.
           </p>
         </div>

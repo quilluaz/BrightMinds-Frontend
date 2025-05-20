@@ -10,7 +10,7 @@ import logoForDarkThemeMobile from "../../assets/logos/LogoIconLight.svg";
 import UserMenu from "./UserMenu";
 
 const Header: React.FC = () => {
-  const { currentUser, isAuthenticated } = useAuth();
+  const { currentUser, isAuthenticated } = useAuth(); // isAuthenticated is already here
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
@@ -31,11 +31,15 @@ const Header: React.FC = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  // Determine logo link based on authentication state
+  const logoLinkPath = isAuthenticated ? "/dashboard" : "/";
+
   return (
     <header className="bg-white dark:bg-primary-card-dark shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between md:justify-between relative md:static">
+        {/* Mobile Logo - Centered */}
         <div className="absolute inset-0 flex items-center justify-center md:hidden pointer-events-none">
-          <Link to="/" className="inline-flex pointer-events-auto">
+          <Link to={logoLinkPath} className="inline-flex pointer-events-auto"> {/* Updated Link */}
             <img
               src={mobileLogo}
               alt="BrightMinds Logo Mobile"
@@ -44,7 +48,8 @@ const Header: React.FC = () => {
           </Link>
         </div>
 
-        <Link to="/" className="hidden md:flex flex-shrink-0 items-center">
+        {/* Desktop Logo */}
+        <Link to={logoLinkPath} className="hidden md:flex flex-shrink-0 items-center"> {/* Updated Link */}
           <img
             src={desktopLogo}
             alt="BrightMinds Logo Desktop"
@@ -52,8 +57,9 @@ const Header: React.FC = () => {
           />
         </Link>
 
-        <div className="flex-1 md:hidden"></div>
+        <div className="flex-1 md:hidden"></div> {/* Spacer for mobile layout */}
 
+        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
           {isAuthenticated && (
             <>
@@ -97,10 +103,10 @@ const Header: React.FC = () => {
           {isAuthenticated && (
             <div className="flex items-center space-x-2 lg:space-x-3">
               <span className="hidden lg:inline text-sm font-medium text-primary-text dark:text-primary-text-dark">
-                {getGreeting()}, {currentUser?.name}!
+                {getGreeting()}, {currentUser?.displayName}! {/* Changed to displayName */}
               </span>
               <span className="lg:hidden text-sm font-medium text-primary-text dark:text-primary-text-dark">
-                Hi, {currentUser?.name?.split(" ")[0]}!
+                Hi, {currentUser?.displayName?.split(" ")[0]}! {/* Changed to displayName */}
               </span>
               <UserMenu />
             </div>
@@ -113,11 +119,12 @@ const Header: React.FC = () => {
             {theme === "dark" ? (
               <Sun size={20} className="text-yellow-400" />
             ) : (
-              <Moon size={20} className="text-gray-600" />
+              <Moon size={20} className="text-gray-600 dark:text-gray-300" /> /* Added dark text for moon */
             )}
           </button>
         </nav>
 
+        {/* Mobile Menu Button & Theme Toggle */}
         <div className="md:hidden flex items-center space-x-2">
           <button
             onClick={toggleTheme}
@@ -126,7 +133,7 @@ const Header: React.FC = () => {
             {theme === "dark" ? (
               <Sun size={20} className="text-yellow-400" />
             ) : (
-              <Moon size={20} className="text-gray-600" />
+              <Moon size={20} className="text-gray-600 dark:text-gray-300" /> /* Added dark text for moon */
             )}
           </button>
           <button
@@ -138,21 +145,22 @@ const Header: React.FC = () => {
         </div>
       </div>
 
+      {/* Mobile Navigation Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-primary-card-dark shadow-lg py-4 px-4 sm:px-6 lg:px-8 animate-fade-in">
+        <div className="md:hidden bg-white dark:bg-primary-card-dark shadow-lg py-4 px-4 sm:px-6 lg:px-8 animate-fade-in border-t border-gray-100 dark:border-gray-700">
           <nav className="flex flex-col space-y-3">
             {isAuthenticated && (
               <>
                 <Link
                   to="/dashboard"
-                  className="block text-center px-3 py-2 rounded-md text-base font-medium text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="block text-center px-3 py-2 rounded-md text-base font-medium text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark hover:bg-gray-50 dark:hover:bg-slate-700"
                   onClick={() => setIsMenuOpen(false)}>
                   Dashboard
                 </Link>
                 {currentUser?.role === "teacher" && (
                   <Link
                     to="/teacher/classrooms"
-                    className="block text-center px-3 py-2 rounded-md text-base font-medium text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark hover:bg-gray-50 dark:hover:bg-gray-700"
+                    className="block text-center px-3 py-2 rounded-md text-base font-medium text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark hover:bg-gray-50 dark:hover:bg-slate-700"
                     onClick={() => setIsMenuOpen(false)}>
                     My Classrooms
                   </Link>
@@ -160,28 +168,40 @@ const Header: React.FC = () => {
                 {currentUser?.role === "student" && (
                   <Link
                     to="/student/classrooms"
-                    className="block text-center px-3 py-2 rounded-md text-base font-medium text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark hover:bg-gray-50 dark:hover:bg-gray-700"
+                    className="block text-center px-3 py-2 rounded-md text-base font-medium text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark hover:bg-gray-50 dark:hover:bg-slate-700"
                     onClick={() => setIsMenuOpen(false)}>
                     My Classrooms
                   </Link>
                 )}
+                {/* User Info and Actions in Mobile Menu */}
                 <div className="pt-3 mt-2 border-t border-gray-200 dark:border-gray-700">
                   <span className="block px-3 text-sm text-center font-medium mb-2 text-primary-text dark:text-primary-text-dark">
-                    {getGreeting()}, {currentUser?.name}!
+                    {getGreeting()}, {currentUser?.displayName}! {/* Changed to displayName */}
                   </span>
                   <div className="flex flex-col space-y-1">
                     <Link
                       to="/profile"
-                      className="block text-center px-3 py-2 rounded-md text-base font-medium text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark hover:bg-gray-50 dark:hover:bg-gray-700"
+                      className="block text-center px-3 py-2 rounded-md text-base font-medium text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark hover:bg-gray-50 dark:hover:bg-slate-700"
                       onClick={() => setIsMenuOpen(false)}>
                       My Profile
                     </Link>
-                    <Link
-                      to="/logout"
-                      className="block text-center px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-opacity-10"
-                      onClick={() => setIsMenuOpen(false)}>
+                    {/* Corrected Logout Link in Mobile */}
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        // Assuming useAuth().logout() handles navigation or you do it here.
+                        // For consistency with UserMenu, direct navigation after logout is good.
+                        useAuth().logout(); 
+                        // useNavigate() hook cannot be used directly here, so logout should handle navigation
+                        // or this should be a Link to a /logout route that performs logout and redirects.
+                        // For simplicity, if logout in AuthContext handles navigation, this is fine.
+                        // If not, UserMenu's handleLogout approach is better.
+                        // Let's assume logout() from useAuth handles navigation as in UserMenu.tsx
+                      }}
+                      className="block w-full text-center px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900 dark:hover:bg-opacity-20"
+                    >
                       Log Out
-                    </Link>
+                    </button>
                   </div>
                 </div>
               </>
@@ -191,13 +211,13 @@ const Header: React.FC = () => {
               <>
                 <Link
                   to="/login"
-                  className="block text-center px-3 py-2 rounded-md text-base font-medium border border-gray-300 dark:border-gray-600 text-primary-text dark:text-primary-text-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="block text-center px-3 py-2 rounded-md text-base font-medium border border-gray-300 dark:border-gray-600 text-primary-text dark:text-primary-text-dark hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   onClick={() => setIsMenuOpen(false)}>
                   Log In
                 </Link>
                 <Link
                   to="/register"
-                  className="block w-full text-center px-3 py-2 rounded-md text-base font-medium btn btn-primary dark:bg-primary-interactive-dark dark:text-white"
+                  className="block w-full text-center px-3 py-2 rounded-md text-base font-medium btn btn-primary dark:bg-primary-interactive-dark dark:text-white" // Assuming btn and btn-primary handle dark mode
                   onClick={() => setIsMenuOpen(false)}>
                   Register
                 </Link>

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
-import Button from './Button';
+import Button from './Button'; // Assuming Button.tsx will be updated for dark mode
 
 interface ModalProps {
   isOpen: boolean;
@@ -21,7 +21,6 @@ const Modal: React.FC<ModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   
-  // Close modal when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
@@ -31,7 +30,6 @@ const Modal: React.FC<ModalProps> = ({
     
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      // Prevent scrolling on body when modal is open
       document.body.style.overflow = 'hidden';
     }
     
@@ -41,7 +39,6 @@ const Modal: React.FC<ModalProps> = ({
     };
   }, [isOpen, onClose]);
   
-  // Close modal on escape key
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -67,30 +64,34 @@ const Modal: React.FC<ModalProps> = ({
   }[size];
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 dark:bg-opacity-70 animate-fade-in">
+      {/* Modal panel */}
       <div 
         ref={modalRef}
-        className={`${sizeClass} w-full bg-white rounded-2xl shadow-xl animate-slide-up`}
+        className={`${sizeClass} w-full bg-white dark:bg-primary-card-dark rounded-2xl shadow-xl animate-slide-up border border-gray-200 dark:border-gray-700`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold">{title}</h3>
+        {/* Modal header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-primary-text dark:text-primary-text-dark">{title}</h3>
           <Button
             variant="text"
             size="sm"
             onClick={onClose}
-            className="p-1"
+            className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             aria-label="Close modal"
           >
             <X size={20} />
           </Button>
         </div>
         
-        <div className="p-4 max-h-[70vh] overflow-y-auto">
+        {/* Modal body */}
+        <div className="p-4 max-h-[70vh] overflow-y-auto text-primary-text dark:text-primary-text-dark">
           {children}
         </div>
         
+        {/* Modal footer */}
         {footer && (
-          <div className="p-4 border-t border-gray-200 flex justify-end space-x-2">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-2">
             {footer}
           </div>
         )}

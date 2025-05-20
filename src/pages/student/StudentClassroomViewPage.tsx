@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Table as Tabs, Component as TabsContent, List as TabsList, Refrigerator as TabsTrigger } from 'lucide-react';
 import { useClassroom } from '../../context/ClassroomContext';
 import GameCard from '../../components/common/GameCard';
 import LeaderboardTable from '../../components/common/LeaderboardTable';
 import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { ClassroomDTO, StudentClassroom } from '../../types';
 
 const StudentClassroomViewPage: React.FC = () => {
   const { classroomId } = useParams<{ classroomId: string }>();
@@ -13,23 +13,30 @@ const StudentClassroomViewPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('games');
   const { 
     studentClassrooms, 
-    teacherClassrooms,
     getClassroomGames, 
-    getClassroomLeaderboard 
+    getClassroomLeaderboard,
+    teacherClassrooms,
   } = useClassroom();
   
   const [isLoading, setIsLoading] = useState(true);
+  const [classroomData, setClassroomData] = useState<StudentClassroom | ClassroomDTO | null>(null);
   
   useEffect(() => {
-    // Simulate loading delay
     const timer = setTimeout(() => {
+      if (classroomId) {
+        let foundClassroom: StudentClassroom | ClassroomDTO | undefined = studentClassrooms.find(c => c.classroomId === classroomId);
+        if (!foundClassroom) {
+          foundClassroom = teacherClassrooms.find(c => c.id === classroomId);
+        }
+        setClassroomData(foundClassroom || null);
+      }
       setIsLoading(false);
     }, 1000);
     
     return () => clearTimeout(timer);
-  }, [classroomId]);
+  }, [classroomId, studentClassrooms, teacherClassrooms]);
   
-  if (!classroomId || isLoading) {
+  if (isLoading || !classroomId) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <LoadingSpinner size="lg" />
@@ -37,15 +44,11 @@ const StudentClassroomViewPage: React.FC = () => {
     );
   }
   
-  // Find the classroom from either teacher or student classrooms
-  const classroom = studentClassrooms.find(c => c.classroomId === classroomId) || 
-    teacherClassrooms.find(c => c.id === classroomId);
-  
-  if (!classroom) {
+  if (!classroomData) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <h2 className="text-2xl font-bold mb-4">Classroom Not Found</h2>
-        <p className="mb-6">The classroom you're looking for doesn't exist or you don't have access to it.</p>
+        <h2 className="text-2xl font-bold mb-4 text-primary-text dark:text-primary-text-dark">Classroom Not Found</h2>
+        <p className="mb-6 text-gray-600 dark:text-gray-300">The classroom you're looking for doesn't exist or you don't have access to it.</p>
         <Link to="/student/classrooms" className="btn btn-primary">
           Back to My Classrooms
         </Link>
@@ -53,25 +56,26 @@ const StudentClassroomViewPage: React.FC = () => {
     );
   }
   
-  const classroomName = 'classroomName' in classroom ? classroom.classroomName : classroom.name;
-  const teacherName = 'teacherName' in classroom ? classroom.teacherName : classroom.teacherName;
+  const classroomName = 'classroomName' in classroomData ? classroomData.classroomName : classroomData.name;
+  const teacherName = classroomData.teacherName;
+
   const games = getClassroomGames(classroomId);
   const leaderboard = getClassroomLeaderboard(classroomId);
 
   return (
     <div className="container mx-auto px-4 py-8">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-primary-text">{classroomName}</h1>
-        <p className="text-gray-600 mt-1">Teacher: {teacherName}</p>
+        <h1 className="text-3xl font-bold text-primary-text dark:text-primary-text-dark">{classroomName}</h1>
+        <p className="text-gray-600 dark:text-gray-300 mt-1">Teacher: {teacherName}</p>
       </header>
       
-      <div className="mb-6 border-b border-gray-200">
+      <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex space-x-4">
           <button
             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'games'
-                ? 'border-primary-interactive text-primary-interactive'
-                : 'border-transparent text-gray-600 hover:text-primary-text'
+                ? 'border-primary-interactive dark:border-primary-interactive-dark text-primary-interactive dark:text-primary-interactive-dark'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-primary-text dark:hover:text-primary-text-dark'
             }`}
             onClick={() => setActiveTab('games')}
           >
@@ -80,8 +84,8 @@ const StudentClassroomViewPage: React.FC = () => {
           <button
             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'leaderboard'
-                ? 'border-primary-interactive text-primary-interactive'
-                : 'border-transparent text-gray-600 hover:text-primary-text'
+                ? 'border-primary-interactive dark:border-primary-interactive-dark text-primary-interactive dark:text-primary-interactive-dark'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-primary-text dark:hover:text-primary-text-dark'
             }`}
             onClick={() => setActiveTab('leaderboard')}
           >
@@ -94,9 +98,9 @@ const StudentClassroomViewPage: React.FC = () => {
         {activeTab === 'games' && (
           <div>
             {games.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-                <h3 className="text-xl font-semibold mb-2">No Activities Yet</h3>
-                <p className="text-gray-600">
+              <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm p-8 text-center border dark:border-gray-700">
+                <h3 className="text-xl font-semibold mb-2 text-primary-text dark:text-primary-text-dark">No Activities Yet</h3>
+                <p className="text-gray-600 dark:text-gray-300">
                   Your teacher hasn't added any learning activities to this classroom yet.
                 </p>
               </div>
@@ -116,7 +120,7 @@ const StudentClassroomViewPage: React.FC = () => {
         
         {activeTab === 'leaderboard' && (
           <div>
-            <h2 className="text-xl font-semibold mb-4">Classroom Leaderboard</h2>
+            <h2 className="text-xl font-semibold mb-4 text-primary-text dark:text-primary-text-dark">Classroom Leaderboard</h2>
             <LeaderboardTable 
               entries={leaderboard} 
               highlightedUserId={currentUser?.id}

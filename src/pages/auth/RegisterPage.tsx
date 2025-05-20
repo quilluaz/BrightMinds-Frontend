@@ -1,43 +1,22 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  BookOpenCheck,
-  Mail,
-  Lock,
-  User,
-  AlertCircle,
-  KeyRound,
-} from "lucide-react";
+import { Mail, Lock, User, AlertCircle, KeyRound } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import logoForLightTheme from "../../assets/logos/LogoIconDark.svg";
 import logoForDarkTheme from "../../assets/logos/LogoIconLight.svg";
-
-const MicrosoftLogo = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg">
-    <path d="M11.4 3H3V11.4H11.4V3Z" fill="#F25022" />
-    <path d="M11.4 12.6H3V21H11.4V12.6Z" fill="#00A4EF" />
-    <path d="M21 3H12.6V11.4H21V3Z" fill="#7FBA00" />
-    <path d="M21 12.6H12.6V21H21V12.6Z" fill="#FFB900" />
-  </svg>
-);
-
 import { useAuth } from "../../context/AuthContext";
 import Button from "../../components/common/Button";
 import { UserRole } from "../../types";
 
 const RegisterPage: React.FC = () => {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("student");
   const [teacherCode, setTeacherCode] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const { register, loginWithMicrosoft, isLoading } = useAuth();
+  const { register, isLoading } = useAuth();
   const { theme } = useTheme();
   const currentLogo = theme === "light" ? logoForLightTheme : logoForDarkTheme;
   const navigate = useNavigate();
@@ -46,6 +25,15 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
+    if (!firstName.trim()) {
+      setError("First name is required.");
+      return;
+    }
+    if (!lastName.trim()) {
+      setError("Last name is required.");
+      return;
+    }
+
     if (role === "teacher" && !teacherCode.trim()) {
       setError("Teacher code is required for teacher registration.");
       return;
@@ -53,7 +41,8 @@ const RegisterPage: React.FC = () => {
 
     try {
       await register(
-        name,
+        firstName.trim(),
+        lastName.trim(),
         email,
         password,
         role === "teacher" ? teacherCode : undefined
@@ -68,31 +57,20 @@ const RegisterPage: React.FC = () => {
     }
   };
 
-  const handleMicrosoftLogin = async () => {
-    setError(null);
-    try {
-      await loginWithMicrosoft();
-      navigate("/dashboard");
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred with Microsoft Sign-In"
-      );
-    }
-  };
-
   return (
     <div className="min-h-screen bg-pattern flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      {/* Increased max-width here from md to lg */}
+      <div className="w-full max-w-lg">
         <div className="card border border-gray-100 animate-fade-in">
           <div className="text-center mb-6">
             <div className="flex justify-center mb-3">
-              <img
-                src={currentLogo}
-                alt="BrightMinds Logo"
-                className="h-20 mb-3 inline-block"
-              />
+              <Link to="/" className="inline-block">
+                <img
+                  src={currentLogo}
+                  alt="BrightMinds Logo"
+                  className="h-20"
+                />
+              </Link>
             </div>
             <h1 className="text-2xl font-bold text-primary-text dark:text-primary-text-dark">
               Create Your Account
@@ -110,28 +88,58 @@ const RegisterPage: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
-                  <User size={18} />
+            {/* Flex container for First Name and Last Name */}
+            {/* On medium screens (md) and up, they will be in a row. On smaller screens, they stack. */}
+            <div className="flex flex-col md:flex-row md:gap-4 mb-4"> {/* << ADDED: Flex container */}
+              {/* First Name Field */}
+              <div className="w-full md:w-1/2 mb-4 md:mb-0"> {/* << MODIFIED: Width and responsive margin */}
+                <label
+                  htmlFor="firstName"
+                  className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+                    <User size={18} />
+                  </div>
+                  <input
+                    id="firstName"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="input-field pl-10"
+                    placeholder="Your first name"
+                    required
+                  />
                 </div>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="input-field pl-10"
-                  placeholder="Your full name"
-                  required
-                />
               </div>
-            </div>
 
+              {/* Last Name Field */}
+              <div className="w-full md:w-1/2"> {/* << MODIFIED: Width */}
+                <label
+                  htmlFor="lastName"
+                  className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+                    <User size={18} />
+                  </div>
+                  <input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="input-field pl-10"
+                    placeholder="Your last name"
+                    required
+                  />
+                </div>
+              </div>
+            </div> {/* << ADDED: End of Flex container for names */}
+
+
+            {/* Email Field */}
             <div className="mb-4">
               <label
                 htmlFor="email"
@@ -154,6 +162,7 @@ const RegisterPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Password Field */}
             <div className="mb-4">
               <label
                 htmlFor="password"
@@ -180,6 +189,7 @@ const RegisterPage: React.FC = () => {
               </p>
             </div>
 
+            {/* Role Selection */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 I am a:
@@ -229,6 +239,7 @@ const RegisterPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Teacher Code Field */}
             {role === "teacher" && (
               <div className="mb-6">
                 <label
@@ -265,23 +276,6 @@ const RegisterPage: React.FC = () => {
               Create Account
             </Button>
           </form>
-
-          <div className="relative flex py-5 items-center">
-            <div className="flex-grow border-t border-gray-300"></div>
-            <span className="flex-shrink mx-4 text-gray-500 text-sm">OR</span>
-            <div className="flex-grow border-t border-gray-300"></div>
-          </div>
-
-          <Button
-            onClick={handleMicrosoftLogin}
-            variant="secondary"
-            fullWidth
-            isLoading={isLoading && !error}
-            disabled={isLoading}
-            className="flex items-center justify-center border border-gray-300">
-            <MicrosoftLogo />
-            <span className="ml-2">Sign up with Microsoft</span>
-          </Button>
 
           <div className="mt-6 pt-4 border-t border-gray-200 text-center">
             <p className="text-sm">

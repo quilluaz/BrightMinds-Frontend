@@ -7,25 +7,11 @@ import { useTheme } from "../../context/ThemeContext";
 import logoForLightTheme from "../../assets/logos/LogoIconDark.svg";
 import logoForDarkTheme from "../../assets/logos/LogoIconLight.svg";
 
-const MicrosoftLogo = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg">
-    <path d="M11.4 3H3V11.4H11.4V3Z" fill="#F25022" />
-    <path d="M11.4 12.6H3V21H11.4V12.6Z" fill="#00A4EF" />
-    <path d="M21 3H12.6V11.4H21V3Z" fill="#7FBA00" />
-    <path d="M21 12.6H12.6V21H21V12.6Z" fill="#FFB900" />
-  </svg>
-);
-
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const { login, loginWithMicrosoft, isLoading } = useAuth();
+  const { login, isLoading } = useAuth();
   const { theme } = useTheme();
   const currentLogo = theme === "light" ? logoForLightTheme : logoForDarkTheme;
   const navigate = useNavigate();
@@ -44,40 +30,14 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  const handleMicrosoftLogin = async () => {
-    setError(null);
-    try {
-      await loginWithMicrosoft();
-      navigate("/dashboard");
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred with Microsoft Sign-In"
-      );
-    }
-  };
-
-  const setDemoCredentials = (role: "teacher" | "student") => {
-    if (role === "teacher") {
-      setEmail("teacher@brightminds.com");
-      setPassword("password");
-    } else {
-      setEmail("student@brightminds.com");
-      setPassword("password");
-    }
-  };
-
   return (
     <div className="min-h-screen bg-pattern flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="card border border-gray-100 animate-fade-in">
           <div className="text-center mb-6">
-            <img
-              src={currentLogo}
-              alt="BrightMinds Logo"
-              className="h-20 mb-3 inline-block"
-            />
+            <Link to="/" className="inline-block">
+              <img src={currentLogo} alt="BrightMinds Logo" className="h-20" />
+            </Link>
             <h1 className="text-2xl font-bold text-primary-text dark:text-primary-text-dark">
               Welcome Back
             </h1>
@@ -156,23 +116,6 @@ const LoginPage: React.FC = () => {
               </Link>
             </div>
           </form>
-
-          <div className="relative flex py-5 items-center">
-            <div className="flex-grow border-t border-gray-300"></div>
-            <span className="flex-shrink mx-4 text-gray-500 text-sm">OR</span>
-            <div className="flex-grow border-t border-gray-300"></div>
-          </div>
-
-          <Button
-            onClick={handleMicrosoftLogin}
-            variant="secondary"
-            fullWidth
-            isLoading={isLoading && !error}
-            disabled={isLoading}
-            className="flex items-center justify-center border border-gray-300">
-            <MicrosoftLogo />
-            <span className="ml-2">Sign in with Microsoft</span>
-          </Button>
 
           {/* Updated "Don't have an account?" section */}
           <div className="mt-6 pt-4 border-t border-gray-200 text-center">

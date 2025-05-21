@@ -38,7 +38,7 @@
 }
 
 .matching-card-back {
-    background-color: #007bff; /* Example back color - Primary energetic */
+    background-color: #f5cc26; /* Example back color - Primary energetic */
     color: white;
     transform: rotateY(0deg); /* Default position */
 }
@@ -52,7 +52,7 @@
 
 
 .matching-card-front {
-    background-color: #fff; /* Example front color */
+    background-color: #ffffff; /* Example front color */
     color: #333;
     transform: rotateY(180deg); /* Start flipped */
     border: 1px solid #eee; /* Subtle border */

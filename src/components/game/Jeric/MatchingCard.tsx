@@ -26,7 +26,7 @@ const MatchingCard: React.FC<MatchingCardProps> = ({ card, handleCardClick, isDi
             <div className="matching-card-inner">
                 <div className="matching-card-face matching-card-back">
                     {/* Optional: Add a back image or pattern */}
-                     <img src="/images/card-back.png" alt="Card Back" className="card-back-icon" /> {/* Update path */}
+                     {/* <img src="/images/card-back.png" alt="Card Back" className="card-back-icon" /> Update path */}
                     {/* Or just a simple background color/pattern */}
                 </div>
                 <div className="matching-card-face matching-card-front">

@@ -3,6 +3,7 @@
 export interface GameItem {
   id: string;
   name: string; // Tagalog name - THIS STAYS TAGALOG
+  image?: string;
   imagePlaceholder?: string; 
   categoryKey: 'plantResources' | 'mineralResources' | 'edibleFauna' | 'edibleFlora' | 'nonEdibleProducts' | 'helpfulActions' | 'harmfulActions';
   careTip?: string; // English tip
@@ -34,16 +35,16 @@ const TEXT_WHITE = '#FFFFFF';
 
 // --- LEVEL 1 DATA: Land Resources (Expanded) ---
 const level1Items: GameItem[] = [
-  { id: 'l1item1', name: 'Puno', categoryKey: 'plantResources', careTip: 'Planting trees helps the environment.', learnMore: 'Trees give us oxygen to breathe and are homes for many animals!' },
-  { id: 'l1item2', name: 'Palay', categoryKey: 'plantResources', careTip: 'Rice is a staple food, conserve it.', learnMore: 'Palay is the plant, and Bigas is the grain. When cooked, it becomes Kanin!' },
-  { id: 'l1item3', name: 'Ginto', categoryKey: 'mineralResources', careTip: 'Gold is a valuable but finite resource.', learnMore: 'Gold is so soft, it can be molded into many shapes. It\'s used in jewelry and even electronics!' },
-  { id: 'l1item4', name: 'Tanso', categoryKey: 'mineralResources', careTip: 'Copper is used in wires and pipes.', learnMore: 'Copper is a great conductor of electricity, that\'s why it\'s in wires!' },
-  { id: 'l1item5', name: 'Mais', categoryKey: 'plantResources', careTip: 'Corn can be eaten or used for animal feed.', learnMore: 'Did you know popcorn is made from a special kind of mais (corn)?' },
-  { id: 'l1item6', name: 'Bakal', categoryKey: 'mineralResources', careTip: 'Iron is strong and used for construction.', learnMore: 'Bakal (Iron) can be made into steel, which is super strong for buildings and cars!' },
-  { id: 'l1item7', name: 'Bulaklak', categoryKey: 'plantResources', careTip: 'Flowers beautify our surroundings and help pollinators.', learnMore: 'Bees love bulaklak (flowers) because they get nectar to make honey!' },
-  { id: 'l1item8', name: 'Karbon (Coal)', categoryKey: 'mineralResources', careTip: 'Coal is a fossil fuel; burning it impacts air quality.', learnMore: 'Karbon (Coal) was formed from ancient plants millions of years ago!' },
-  { id: 'l1item9', name: 'Gulay (Kamatis)', categoryKey: 'plantResources', careTip: 'Vegetables are important for a healthy diet.', learnMore: 'Kamatis (Tomato) is actually a fruit, but we often use it like a vegetable in cooking!' },
-  { id: 'l1item10', name: 'Buhangin', categoryKey: 'mineralResources', careTip: 'Sand is used for construction and beaches.', learnMore: 'Buhangin (Sand) is made of tiny pieces of rocks and minerals, worn down over time.' },
+  { id: 'l1item1', name: 'Puno', image: '/images/likas-na-yaman/Puno.svg', categoryKey: 'plantResources', careTip: 'Planting trees helps the environment.', learnMore: 'Trees give us oxygen to breathe and are homes for many animals!' },
+  { id: 'l1item2', name: 'Palay', image: '/images/likas-na-yaman/palay.svg', categoryKey: 'plantResources', careTip: 'Rice is a staple food, conserve it.', learnMore: 'Palay is the plant, and Bigas is the grain. When cooked, it becomes Kanin!' },
+  { id: 'l1item3', name: 'Ginto', image: '/images/likas-na-yaman/ginto.svg', categoryKey: 'mineralResources', careTip: 'Gold is a valuable but finite resource.', learnMore: 'Gold is so soft, it can be molded into many shapes. It\'s used in jewelry and even electronics!' },
+  { id: 'l1item4', name: 'Tanso', image: '/images/likas-na-yaman/tanso.svg', categoryKey: 'mineralResources', careTip: 'Copper is used in wires and pipes.', learnMore: 'Copper is a great conductor of electricity, that\'s why it\'s in wires!' },
+  { id: 'l1item5', name: 'Mais', image: '/images/likas-na-yaman/mais.svg', categoryKey: 'plantResources', careTip: 'Corn can be eaten or used for animal feed.', learnMore: 'Did you know popcorn is made from a special kind of mais (corn)?' },
+  { id: 'l1item6', name: 'Bakal', image: '/images/likas-na-yaman/bakal.svg', categoryKey: 'mineralResources', careTip: 'Iron is strong and used for construction.', learnMore: 'Bakal (Iron) can be made into steel, which is super strong for buildings and cars!' },
+  { id: 'l1item7', name: 'Bulaklak', image: '/images/likas-na-yaman/bulaklak.svg', categoryKey: 'plantResources', careTip: 'Flowers beautify our surroundings and help pollinators.', learnMore: 'Bees love bulaklak (flowers) because they get nectar to make honey!' },
+  { id: 'l1item8', name: 'Karbon (Coal)', image: '/images/likas-na-yaman/coal.svg', categoryKey: 'mineralResources', careTip: 'Coal is a fossil fuel; burning it impacts air quality.', learnMore: 'Karbon (Coal) was formed from ancient plants millions of years ago!' },
+  { id: 'l1item9', name: 'Gulay (Kamatis)', image: '/images/likas-na-yaman/kamatis.svg', categoryKey: 'plantResources', careTip: 'Vegetables are important for a healthy diet.', learnMore: 'Kamatis (Tomato) is actually a fruit, but we often use it like a vegetable in cooking!' },
+  { id: 'l1item10', name: 'Buhangin', image: '/images/likas-na-yaman/buhangin.svg', categoryKey: 'mineralResources', careTip: 'Sand is used for construction and beaches.', learnMore: 'Buhangin (Sand) is made of tiny pieces of rocks and minerals, worn down over time.' },
 ];
 
 const level1Categories: Category[] = [

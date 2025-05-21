@@ -6,7 +6,7 @@
 /* Duolingo Palette Variables */
 :root {
   --duo-green: #58CC02;
-  --duo-yellow: #FFDE59;
+  --duo-yellow: #FFA500;
   --duo-blue: #1CB0F6;
   --duo-red: #FF5959;
   --text-black: #333333; 
@@ -15,6 +15,7 @@
   --border-gray: #E5E5E5; 
 }
 
+/*
 body {
   font-family: 'Nunito', sans-serif;
   background-color: var(--bg-light-gray); 
@@ -27,6 +28,7 @@ body {
   align-items: flex-start; 
   min-height: 100vh;
 }
+*/
 
 .game-container {
   background-color: var(--text-white); 

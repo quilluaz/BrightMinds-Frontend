@@ -8,28 +8,24 @@ import './Game.css';
 interface DraggableItemProps {
   item: GameItem;
   isPlaced: boolean;
-  onDragStartCustom?: () => void; // Optional prop for custom drag start logic (e.g. sound)
+  onDragStartCustom: () => void;
 }
 
 const DraggableItem: React.FC<DraggableItemProps> = ({ item, isPlaced, onDragStartCustom }) => {
-  const handleDragStart = (event: React.DragEvent<HTMLDivElement>) => {
-    event.dataTransfer.setData('application/json', JSON.stringify(item));
-    if (onDragStartCustom) {
-      onDragStartCustom(); // Play click sound
-    }
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify(item));
+    onDragStartCustom();
   };
 
   if (isPlaced) {
-    return null; 
+    return null;
   }
 
   return (
     <div
-      id={item.id}
-      className="draggable-item"
       draggable
       onDragStart={handleDragStart}
-      title={item.name} 
+      className="draggable-item"
     >
       <span className="item-text-content">{item.name}</span>
     </div>

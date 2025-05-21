@@ -38,6 +38,7 @@ import GameplayPage from "./pages/student/GameplayPage";
 // Game components
 import ImageMultipleChoiceGame from "./components/game/Selina/ImageMultipleChoiceGame";
 import MatchingGamePage from "./components/game/Jeric/MatchingGamePage";
+import LikasYamanGame from "./components/game/Zeke/LikasYamanGame";
 
 // Protected Route HOC (remains unchanged)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -114,6 +115,12 @@ function App() {
                   path="/matching-game-test"
                   element={<MatchingGamePage />}
                 />
+                 {<Route
+                  path="/likas-yaman"
+                  element={<LikasYamanGame />}
+                />
+                 }
+                
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
                 <Route

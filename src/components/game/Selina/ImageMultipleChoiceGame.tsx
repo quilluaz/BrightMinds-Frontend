@@ -1,13 +1,30 @@
 import React, { useState } from 'react';
+import { useTheme } from '../../../context/ThemeContext';
 
 // Color Palette
 const COLORS = {
-  primaryBackground: '#E8F9FF',
-  primaryText: '#1A1B41',
-  interactiveElements: '#7A89C2',
-  primaryAccent: '#DBD053',
-  secondaryAccent: '#FFA500',
-  neutralBackground: '#FFFFFF',
+  light: {
+    primaryBackground: '#E8F9FF',
+    primaryText: '#1A1B41',
+    interactiveElements: '#7A89C2',
+    primaryAccent: '#DBD053',
+    secondaryAccent: '#FFA500',
+    neutralBackground: '#FFFFFF',
+    cardBackground: '#FFFFFF',
+    borderColor: 'transparent',
+    hoverBg: 'bg-slate-200',
+  },
+  dark: {
+    primaryBackground: '#1A1B41',
+    primaryText: '#E8F9FF',
+    interactiveElements: '#9BA8E5',
+    primaryAccent: '#DBD053',
+    secondaryAccent: '#FFA500',
+    neutralBackground: '#2A2B51',
+    cardBackground: '#2A2B51',
+    borderColor: '#3A3B61',
+    hoverBg: 'bg-slate-700',
+  },
 };
 
 interface Choice {
@@ -176,6 +193,8 @@ const questionsData: Question[] = [
 ];
 
 const ImageMultipleChoiceGame: React.FC = () => {
+  const { theme } = useTheme();
+  const colors = COLORS[theme];
   const [hasGameStarted, setHasGameStarted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -231,45 +250,44 @@ const ImageMultipleChoiceGame: React.FC = () => {
 
   if (!hasGameStarted) {
     return (
-      <div className="min-h-screen bg-[#E8F9FF] flex flex-col items-center justify-center p-6 text-[#1A1B41]">
-        <div className="bg-white p-10 rounded-3xl shadow-xl text-center max-w-xl w-full">
-          <h1 className="text-5xl sm:text-6xl font-bold mb-4 text-[#1A1B41]">
+      <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
+        <div className={`p-10 rounded-3xl shadow-xl text-center max-w-xl w-full transition-colors duration-200`} style={{ backgroundColor: colors.cardBackground }}>
+          <h1 className="text-5xl sm:text-6xl font-bold mb-4" style={{ color: colors.primaryText }}>
             Welcome to
           </h1>
-          <h2 className="text-4xl sm:text-5xl font-bold mb-8 text-[#FFA500]">
+          <h2 className="text-4xl sm:text-5xl font-bold mb-8" style={{ color: colors.secondaryAccent }}>
             Guess the Image!
           </h2>
-          <p className="text-xl sm:text-xl mb-3 text-[#1A1B41] opacity-80">
+          <p className="text-xl sm:text-xl mb-3 opacity-80" style={{ color: colors.primaryText }}>
             Subukan ang iyong kaalaman sa Araling Panlipunan at Tagalog sa masayang paraan!
           </p>
-          <p className="text-xl sm:text-2xl mb-12 text-[#1A1B41] opacity-80">
+          <p className="text-xl sm:text-2xl mb-12 opacity-80" style={{ color: colors.primaryText }}>
             Choose the correct picture for each question.
           </p>
           <button
             onClick={handleStartGame}
-            className="bg-[#FFA500] hover:bg-[#db8e00] text-white font-bold py-4 px-12 rounded-full text-2xl sm:text-3xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
+            className="hover:bg-[#db8e00] text-white font-bold py-4 px-12 rounded-full text-2xl sm:text-3xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
+            style={{ backgroundColor: colors.secondaryAccent }}
           >
             Start
           </button>
         </div>
-        <footer className="mt-12 text-md text-[#1A1B41] opacity-70">
-          BrightMinds Gamified Learning
-        </footer>
       </div>
     );
   }
 
   if (showScore) {
     return (
-      <div className="min-h-screen bg-[#E8F9FF] flex flex-col items-center justify-center p-6 text-[#1A1B41]">
-        <div className="bg-white p-10 rounded-3xl shadow-xl text-center max-w-md w-full">
-          <h2 className="text-5xl font-bold mb-6 text-[#DBD053]">The Game has Finsihed </h2>
-          <p className="text-3xl mb-10">
-            Your Score: <span className="font-bold text-[#FFA500] text-4xl">{score}</span> / {questionsData.length}
+      <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
+        <div className={`p-10 rounded-3xl shadow-xl text-center max-w-md w-full transition-colors duration-200`} style={{ backgroundColor: colors.cardBackground }}>
+          <h2 className="text-5xl font-bold mb-6" style={{ color: colors.primaryAccent }}>The Game has Finished</h2>
+          <p className="text-3xl mb-10" style={{ color: colors.primaryText }}>
+            Your Score: <span className="font-bold text-4xl" style={{ color: colors.secondaryAccent }}>{score}</span> / {questionsData.length}
           </p>
           <button
             onClick={restartGame}
-            className="bg-[#7A89C2] hover:bg-[#5f6b9a] text-white font-bold py-4 px-10 rounded-full text-2xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
+            className="hover:bg-[#5f6b9a] text-white font-bold py-4 px-10 rounded-full text-2xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
+            style={{ backgroundColor: colors.interactiveElements }}
           >
             Play Again
           </button>
@@ -279,17 +297,17 @@ const ImageMultipleChoiceGame: React.FC = () => {
   }
 
   if (!currentQuestion) {
-    return <div className="min-h-screen bg-[#E8F9FF] flex items-center justify-center text-[#1A1B41]">Nagloloading ang laro...</div>;
+    return <div className={`bg-pattern min-h-screen flex items-center justify-center transition-colors duration-200`} style={{ color: colors.primaryText }}>Nagloloading ang laro...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-[#E8F9FF] flex flex-col items-center justify-center p-4 sm:p-6 text-[#1A1B41]">
-      <div className="bg-white p-6 sm:p-10 rounded-3xl shadow-xl w-full max-w-3xl">
+    <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
+      <div className={`p-6 sm:p-10 rounded-3xl shadow-xl w-full max-w-3xl transition-colors duration-200`} style={{ backgroundColor: colors.cardBackground }}>
         <div className="mb-8 text-center">
-          <p className="text-xl sm:text-2xl font-semibold text-[#7A89C2] mb-2">
+          <p className="text-xl sm:text-2xl font-semibold mb-2" style={{ color: colors.interactiveElements }}>
             Tanong {currentQuestionIndex + 1} ng {questionsData.length}
           </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1B41]">{currentQuestion.questionText}</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold" style={{ color: colors.primaryText }}>{currentQuestion.questionText}</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8">
@@ -298,29 +316,30 @@ const ImageMultipleChoiceGame: React.FC = () => {
               key={choice.id}
               onClick={() => handleAnswerSelection(choice.id)}
               disabled={showFeedback}
-              className={`relative bg-[#FFFFFF] border-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-150 ease-in-out transform hover:scale-105 focus:outline-none group p-6 pt-14 sm:p-8 sm:pt-16
+              className={`relative border-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-150 ease-in-out transform hover:scale-105 focus:outline-none group p-6 pt-14 sm:p-8 sm:pt-16
                 ${selectedAnswer === choice.id && showFeedback && isAnswerCorrect ? 'border-[#DBD053] ring-4 ring-[#DBD053]' : 'border-transparent'}
                 ${selectedAnswer === choice.id && showFeedback && !isAnswerCorrect ? 'border-red-500 ring-4 ring-red-500' : selectedAnswer !== choice.id ? 'border-transparent' : ''}
                 ${!selectedAnswer && !showFeedback ? 'focus:border-[#7A89C2]' : ''}
                 ${showFeedback ? 'cursor-not-allowed' : 'cursor-pointer'}
               `}
+              style={{ backgroundColor: colors.cardBackground, borderColor: colors.borderColor }}
             >
-              <div className="absolute top-3 left-3 bg-[#FFA500] text-white text-lg font-bold w-10 h-10 rounded-full flex items-center justify-center shadow-md">
+              <div className="absolute top-3 left-3 text-white text-lg font-bold w-10 h-10 rounded-full flex items-center justify-center shadow-md" style={{ backgroundColor: colors.secondaryAccent }}>
                 {choice.id}
               </div>
-              <div className="w-full h-48 sm:h-60 flex items-center justify-center rounded-xl mb-3 group-hover:bg-slate-200">
+              <div className={`w-full h-48 sm:h-60 flex items-center justify-center rounded-xl mb-3 group-hover:${colors.hoverBg}`}>
                 {isImagePath(choice.imagePlaceholderText) ? (
                   <img
                     src={choice.imagePlaceholderText}
                     alt={`Choice ${choice.id}`}
                     className="w-full h-full object-cover rounded-xl"
                     onError={(e) => {
-                      e.currentTarget.src = '/path/to/fallback-image.jpg'; // Optional fallback image
+                      e.currentTarget.src = '/path/to/fallback-image.jpg';
                       console.error(`Failed to load image: ${choice.imagePlaceholderText}`);
                     }}
                   />
                 ) : (
-                  <span className="text-slate-500 text-lg px-2 text-center bg-slate-100 w-full h-full flex items-center justify-center rounded-xl">
+                  <span className={`text-lg px-2 text-center w-full h-full flex items-center justify-center rounded-xl`} style={{ color: colors.primaryText, backgroundColor: colors.neutralBackground }}>
                     {choice.imagePlaceholderText}
                   </span>
                 )}
@@ -330,20 +349,18 @@ const ImageMultipleChoiceGame: React.FC = () => {
         </div>
 
         {showFeedback && (
-          <div className={`mt-6 p-5 rounded-xl text-2xl font-semibold shadow-md text-center
-            ${isAnswerCorrect ? 'bg-[#DBD053] text-[#1A1B41]' : 'bg-red-500 text-white'}`}
+          <div className={`mt-6 p-5 rounded-xl text-2xl font-semibold shadow-md text-center transition-colors duration-200
+            ${isAnswerCorrect ? 'text-[#1A1B41]' : 'text-white'}`}
+            style={{ backgroundColor: isAnswerCorrect ? colors.primaryAccent : 'rgb(239, 68, 68)' }}
           >
             {isAnswerCorrect ? 'Magaling! Tamang sagot!' : 'Oops! Subukan muli sa susunod.'}
           </div>
         )}
         
         <div className="mt-10 text-center">
-          <p className="text-3xl font-bold text-[#FFA500]">Score: {score}</p>
+          <p className="text-3xl font-bold" style={{ color: colors.secondaryAccent }}>Score: {score}</p>
         </div>
       </div>
-      <footer className="mt-12 text-md text-[#1A1B41] opacity-70">
-        BrightMinds Gamified Learning
-      </footer>
     </div>
   );
 };

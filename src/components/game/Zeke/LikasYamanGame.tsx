@@ -6,6 +6,7 @@ import DraggableItem from './DraggableItem';
 import SortingBin from './SortingBin';
 import './Game.css';
 import { useTheme } from '../../../context/ThemeContext';
+import { CelebrationAnimation, GameCompleteCelebration, animationStyles } from '../Selina/GameConfigurations';
 
 // Color palette for container and text
 const COLORS = {
@@ -71,6 +72,51 @@ const playSound = (soundType: 'correct' | 'incorrect' | 'levelComplete' | 'click
   oscillator.stop(audioContext.currentTime + 0.5);
 };
 
+// Grand Celebration Component
+const GrandCelebration: React.FC = () => {
+  const emojis = ['🎉', '🎊', '✨', '🌟', '🎈', '🎆', '🏆', '👑', '🥇', '🥳', '💎', '🎶', '💐', '🪅'];
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[100] overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-burst">
+        <div className="text-9xl drop-shadow-2xl">🏆</div>
+        <div className="text-4xl font-extrabold text-yellow-400 mt-4 animate-fadein">Congratulations! You are a Resource Master!</div>
+      </div>
+      {/* Massive floating emojis */}
+      {[...Array(80)].map((_, i) => (
+        <div
+          key={`grand-emoji-${i}`}
+          className="absolute animate-complete-float"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 0.5}s`,
+            fontSize: `${2 + Math.random() * 4}rem`,
+            transform: `rotate(${Math.random() * 360}deg)`
+          }}
+        >
+          {emojis[Math.floor(Math.random() * emojis.length)]}
+        </div>
+      ))}
+      {/* Extra sparkles */}
+      {[...Array(50)].map((_, i) => (
+        <div
+          key={`grand-sparkle-${i}`}
+          className="absolute animate-sparkle"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 0.5}s`,
+            fontSize: `${1.5 + Math.random()}rem`,
+            transform: `rotate(${Math.random() * 360}deg)`
+          }}
+        >
+          ✨
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const LikasYamanGame: React.FC = () => {
   const { theme } = useTheme();
   const colors = COLORS[theme];
@@ -84,8 +130,13 @@ const LikasYamanGame: React.FC = () => {
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [learnMoreText, setLearnMoreText] = useState('');
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showCorrectCelebration, setShowCorrectCelebration] = useState(false);
+  const [showLevelCelebration, setShowLevelCelebration] = useState(false);
+  const [showGrandCelebration, setShowGrandCelebration] = useState(false);
+  const [gameComplete, setGameComplete] = useState(false);
 
   useEffect(() => {
+    setShowCelebration(false); // Hide overlay immediately on level change
     const levelData = gameLevels[currentLevelIndex];
     if (levelData) {
       setCurrentLevelData(levelData);
@@ -99,9 +150,18 @@ const LikasYamanGame: React.FC = () => {
       );
       setFeedbackMessage(levelData.instructions);
       setLearnMoreText('');
-      setShowCelebration(false);
     }
   }, [currentLevelIndex]);
+
+  // Add animation styles to document head once
+  useEffect(() => {
+    if (!document.getElementById('likas-yaman-animations')) {
+      const styleSheet = document.createElement('style');
+      styleSheet.id = 'likas-yaman-animations';
+      styleSheet.innerText = animationStyles;
+      document.head.appendChild(styleSheet);
+    }
+  }, []);
 
   const handleDropItem = useCallback((droppedItem: GameItem, targetCategoryKey: Category['key']) => {
     setLearnMoreText('');
@@ -129,6 +189,8 @@ const LikasYamanGame: React.FC = () => {
         newPlacedItems[targetCategoryKey] = [...newPlacedItems[targetCategoryKey], droppedItem];
         return newPlacedItems;
       });
+      setShowCorrectCelebration(true);
+      setTimeout(() => setShowCorrectCelebration(false), 1200);
     } else {
       playSound('incorrect');
       setScore(prevScore => Math.max(0, prevScore - 5));
@@ -141,15 +203,24 @@ const LikasYamanGame: React.FC = () => {
       const allLevelItemsCorrectlyPlaced = currentItems.every(item =>
         Object.values(correctlyPlacedItems).flat().some(placedItem => placedItem.id === item.id)
       );
-
-      if (allLevelItemsCorrectlyPlaced) {
+      if (allLevelItemsCorrectlyPlaced && !showCelebration) {
         playSound('levelComplete');
         setFeedbackMessage(`Awesome! You've mastered ${currentLevelData.title}!`);
         setLearnMoreText('');
+        setShowLevelCelebration(true);
+        setTimeout(() => setShowLevelCelebration(false), 2000);
+        // If last level, show grand celebration and game complete modal
+        if (currentLevelIndex === gameLevels.length - 1) {
+          setTimeout(() => {
+            setShowGrandCelebration(true);
+            setGameComplete(true);
+          }, 2000);
+        }
         setShowCelebration(true);
       }
     }
-  }, [correctlyPlacedItems, currentItems, currentLevelData.title]);
+  // eslint-disable-next-line
+  }, [correctlyPlacedItems, currentItems, currentLevelData.title, currentLevelIndex]);
 
   const handleNextLevel = () => {
     playSound('click');
@@ -159,7 +230,18 @@ const LikasYamanGame: React.FC = () => {
       setFeedbackMessage('Congratulations! You\'ve completed all challenges and are a true Resource Expert!');
       setLearnMoreText('');
     }
+  };
+
+  const handlePlayAgain = () => {
+    setCurrentLevelIndex(0);
+    setScore(0);
     setShowCelebration(false);
+    setShowCorrectCelebration(false);
+    setShowLevelCelebration(false);
+    setShowGrandCelebration(false);
+    setGameComplete(false);
+    setFeedbackMessage(gameLevels[0].instructions);
+    setLearnMoreText('');
   };
 
   const itemsToDrag = currentItems.filter(
@@ -196,10 +278,88 @@ const LikasYamanGame: React.FC = () => {
           {learnMoreText}
         </p>
       )}
+      {showCorrectCelebration && <CelebrationAnimation />}
+      {showLevelCelebration && <GameCompleteCelebration />}
+      {showGrandCelebration && <GrandCelebration />}
+      {/* Modal for level cleared or game complete */}
+      {showCelebration && !gameComplete && (
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50"
+          style={{
+            background: theme === 'dark' ? 'rgba(35,36,74,0.95)' : 'rgba(255,255,255,0.95)',
+            transition: 'background 0.3s'
+          }}
+        >
+          <div
+            className="rounded-xl text-center max-w-md mx-4 p-8 shadow-2xl"
+            style={{
+              background: colors.cardBg,
+              color: colors.text,
+              boxShadow: theme === 'dark' ? '0 4px 32px 0 rgba(0,0,0,0.7)' : '0 4px 32px 0 rgba(0,0,0,0.15)',
+              border: theme === 'dark' ? '1.5px solid #35366a' : '1.5px solid #e5e5e5',
+              transition: 'background 0.3s, color 0.3s'
+            }}
+          >
+            <h2
+              className="text-2xl font-bold mb-4"
+              style={{ color: theme === 'dark' ? '#E8F9FF' : '#1A1B41', textShadow: theme === 'dark' ? '0 2px 8px #18192f' : 'none' }}
+            >
+              Level Cleared!
+            </h2>
+            {currentLevelIndex < gameLevels.length - 1 ? (
+              <button
+                onClick={handleNextLevel}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-colors"
+                style={{ boxShadow: theme === 'dark' ? '0 2px 8px #18192f' : undefined }}
+              >
+                Next Challenge &rarr;
+              </button>
+            ) : (
+              <p className="text-xl font-semibold text-green-600">You're a Resource Pro!</p>
+            )}
+          </div>
+        </div>
+      )}
+      {/* Modal for game complete */}
+      {gameComplete && (
+        <div
+          className="fixed inset-0 flex items-center justify-center z-[110]"
+          style={{
+            background: theme === 'dark' ? 'rgba(35,36,74,0.97)' : 'rgba(255,255,255,0.97)',
+            transition: 'background 0.3s'
+          }}
+        >
+          <div
+            className="rounded-xl text-center max-w-md mx-4 p-10 shadow-2xl"
+            style={{
+              background: colors.cardBg,
+              color: colors.text,
+              boxShadow: theme === 'dark' ? '0 4px 32px 0 rgba(0,0,0,0.7)' : '0 4px 32px 0 rgba(0,0,0,0.15)',
+              border: theme === 'dark' ? '1.5px solid #35366a' : '1.5px solid #e5e5e5',
+              transition: 'background 0.3s, color 0.3s'
+            }}
+          >
+            <h2
+              className="text-3xl font-extrabold mb-4 text-yellow-400"
+              style={{ textShadow: theme === 'dark' ? '0 2px 8px #18192f' : 'none' }}
+            >
+              Congratulations!
+            </h2>
+            <p className="text-2xl font-bold mb-2">You are a Resource Master!</p>
+            <p className="text-xl mb-6">Total Score: <span className="font-extrabold text-orange-500">{score}</span></p>
+            <button
+              onClick={handlePlayAgain}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-xl transition-colors shadow-lg"
+              style={{ boxShadow: theme === 'dark' ? '0 2px 8px #18192f' : undefined }}
+            >
+              Play Again
+            </button>
+          </div>
+        </div>
+      )}
       {showCelebration ? (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-8 rounded-xl text-center max-w-md mx-4">
-            <span role="img" aria-label="Party Popper" className="text-5xl block mb-4">🎉</span>
             <h2 className="text-2xl font-bold mb-4">Level Cleared!</h2>
             {currentLevelIndex < gameLevels.length - 1 ? (
               <button
@@ -250,16 +410,43 @@ const LikasYamanGame: React.FC = () => {
               }
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {categories.map(category => (
+          {categories.length === 3 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <SortingBin
-                key={category.key}
-                category={category}
+                key={categories[0].key}
+                category={categories[0]}
                 onDropItem={handleDropItem}
-                droppedItemsHere={correctlyPlacedItems[category.key] || []}
+                droppedItemsHere={correctlyPlacedItems[categories[0].key] || []}
               />
-            ))}
-          </div>
+              <SortingBin
+                key={categories[1].key}
+                category={categories[1]}
+                onDropItem={handleDropItem}
+                droppedItemsHere={correctlyPlacedItems[categories[1].key] || []}
+              />
+              <div className="col-span-2 flex justify-center">
+                <div className="w-full sm:w-1/2">
+                  <SortingBin
+                    key={categories[2].key}
+                    category={categories[2]}
+                    onDropItem={handleDropItem}
+                    droppedItemsHere={correctlyPlacedItems[categories[2].key] || []}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {categories.map(category => (
+                <SortingBin
+                  key={category.key}
+                  category={category}
+                  onDropItem={handleDropItem}
+                  droppedItemsHere={correctlyPlacedItems[category.key] || []}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
       {!showCelebration && itemsToDrag.length === 0 && currentItems.length > 0 && currentLevelIndex < gameLevels.length - 1 && (

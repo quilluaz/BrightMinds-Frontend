@@ -54,16 +54,16 @@ const level1Categories: Category[] = [
 
 // --- LEVEL 2 DATA: Uses of Natural Resources ---
 const level2Items: GameItem[] = [
-  { id: 'l2item1', name: 'Isda (Tilapia)', categoryKey: 'edibleFauna', careTip: 'Fish are a good source of protein.', learnMore: 'Tilapia can live in both fresh and slightly salty water!' },
-  { id: 'l2item2', name: 'Prutas (Mangga)', categoryKey: 'edibleFlora', careTip: 'Fruits are rich in vitamins.', learnMore: 'The Philippines is famous for its sweet Mangga (Mangoes)!' },
-  { id: 'l2item3', name: 'Mesa (Kahoy)', categoryKey: 'nonEdibleProducts', careTip: 'Wooden tables come from trees.', learnMore: 'Different kinds of kahoy (wood) make mesas (tables) of different colors and strengths.' },
-  { id: 'l2item4', name: 'Alahas (Ginto)', categoryKey: 'nonEdibleProducts', careTip: 'Jewelry can be made from precious metals.', learnMore: 'Alahas (Jewelry) made from ginto (gold) can last for a very, very long time!' },
-  { id: 'l2item5', name: 'Manok', categoryKey: 'edibleFauna', careTip: 'Chicken is a common food source.', learnMore: 'Manok (Chickens) can\'t fly very far, but they are great runners!' },
-  { id: 'l2item6', name: 'Kanin (Bigas)', categoryKey: 'edibleFlora', careTip: 'Cooked rice is a staple in many diets.', learnMore: 'Kanin (Cooked Rice) gives us energy to play and learn all day!' },
-  { id: 'l2item7', name: 'Damit (Bulak)', categoryKey: 'nonEdibleProducts', careTip: 'Cotton plants provide fiber for clothes.', learnMore: 'Bulak (Cotton) is a soft fiber that grows around the seeds of the cotton plant.' },
-  { id: 'l2item8', name: 'Lapis (Graphite/Kahoy)', categoryKey: 'nonEdibleProducts', careTip: 'Pencils use wood and graphite (a mineral).', learnMore: 'The "lead" in your lapis (pencil) is actually graphite, a type of mineral, mixed with clay!' },
-  { id: 'l2item9', name: 'Gatas (Baka)', categoryKey: 'edibleFauna', careTip: 'Milk comes from animals like cows.', learnMore: 'Gatas (Milk) from baka (cows) helps build strong bones because it has calcium!' },
-  { id: 'l2item10', name: 'Tinapay (Trigo)', categoryKey: 'edibleFlora', careTip: 'Bread is made from grains like wheat.', learnMore: 'Trigo (Wheat) is a type of grass, and its seeds are ground to make flour for tinapay (bread).' },
+  { id: 'l2item1', name: 'Isda (Tilapia)', image: '/images/likas-na-yaman/2isda.svg', categoryKey: 'edibleFauna', careTip: 'Fish are a good source of protein.', learnMore: 'Tilapia can live in both fresh and slightly salty water!' },
+  { id: 'l2item2', name: 'Prutas (Mangga)', image: '/images/likas-na-yaman/2mangga.svg', categoryKey: 'edibleFlora', careTip: 'Fruits are rich in vitamins.', learnMore: 'The Philippines is famous for its sweet Mangga (Mangoes)!' },
+  { id: 'l2item3', name: 'Mesa (Kahoy)', image: '/images/likas-na-yaman/2Mesa.svg', categoryKey: 'nonEdibleProducts', careTip: 'Wooden tables come from trees.', learnMore: 'Different kinds of kahoy (wood) make mesas (tables) of different colors and strengths.' },
+  { id: 'l2item4', name: 'Alahas (Ginto)', image: '/images/likas-na-yaman/alahas.svg', categoryKey: 'nonEdibleProducts', careTip: 'Jewelry can be made from precious metals.', learnMore: 'Alahas (Jewelry) made from ginto (gold) can last for a very, very long time!' },
+  { id: 'l2item5', name: 'Manok', image: '/images/likas-na-yaman/2manok.svg', categoryKey: 'edibleFauna', careTip: 'Chicken is a common food source.', learnMore: 'Manok (Chickens) can\'t fly very far, but they are great runners!' },
+  { id: 'l2item6', name: 'Kanin (Bigas)', image: '/images/likas-na-yaman/palay.svg', categoryKey: 'edibleFlora', careTip: 'Cooked rice is a staple in many diets.', learnMore: 'Kanin (Cooked Rice) gives us energy to play and learn all day!' },
+  { id: 'l2item7', name: 'Damit (Bulak)', image: '/images/likas-na-yaman/2bulak.svg', categoryKey: 'nonEdibleProducts', careTip: 'Cotton plants provide fiber for clothes.', learnMore: 'Bulak (Cotton) is a soft fiber that grows around the seeds of the cotton plant.' },
+  { id: 'l2item8', name: 'Lapis (Graphite/Kahoy)', image: '/images/likas-na-yaman/2lapis.svg', categoryKey: 'nonEdibleProducts', careTip: 'Pencils use wood and graphite (a mineral).', learnMore: 'The "lead" in your lapis (pencil) is actually graphite, a type of mineral, mixed with clay!' },
+  { id: 'l2item9', name: 'Gatas (Baka)', image: '/images/likas-na-yaman/2gatas.svg', categoryKey: 'edibleFauna', careTip: 'Milk comes from animals like cows.', learnMore: 'Gatas (Milk) from baka (cows) helps build strong bones because it has calcium!' },
+  { id: 'l2item10', name: 'Tinapay (Trigo)', image: '/images/likas-na-yaman/2tinapay.svg', categoryKey: 'edibleFlora', careTip: 'Bread is made from grains like wheat.', learnMore: 'Trigo (Wheat) is a type of grass, and its seeds are ground to make flour for tinapay (bread).' },
 ];
 
 const level2Categories: Category[] = [
@@ -74,14 +74,14 @@ const level2Categories: Category[] = [
 
 // --- LEVEL 3 DATA: Caring for Our Resources ---
 const level3Items: GameItem[] = [
-  { id: 'l3item1', name: 'Pagtatanim ng Puno', categoryKey: 'helpfulActions', careTip: 'Planting trees helps combat deforestation.', learnMore: 'One tree can absorb many kilograms of carbon dioxide in its lifetime!' },
-  { id: 'l3item2', name: 'Pag-recycle ng Basura', categoryKey: 'helpfulActions', careTip: 'Recycling reduces waste and conserves resources.', learnMore: 'Recycling an aluminum can saves enough energy to run a TV for 3 hours!' },
-  { id: 'l3item3', name: 'Pagtitipid ng Tubig', categoryKey: 'helpfulActions', careTip: 'Conserving water is crucial, especially in dry areas.', learnMore: 'Turning off the tap while brushing your teeth can save many liters of water each day!' },
-  { id: 'l3item4', name: 'Pagpuputol ng mga Puno (Illegal Logging)', categoryKey: 'harmfulActions', careTip: 'Illegal logging destroys habitats.', learnMore: 'When forests are cut down, animals lose their homes and the soil can wash away.' },
-  { id: 'l3item5', name: 'Pagtatapon ng Basura sa Ilog', categoryKey: 'harmfulActions', careTip: 'Polluting rivers harms aquatic life and water quality.', learnMore: 'Trash in rivers can travel to the ocean and harm sea creatures like turtles and fish.' },
-  { id: 'l3item6', name: 'Pagsusunog ng Plastik', categoryKey: 'harmfulActions', careTip: 'Burning plastics releases harmful toxins into the air.', learnMore: 'The smoke from burning plastic can make the air unhealthy to breathe for people and animals.' },
-  { id: 'l3item7', name: 'Paggamit ng Eco Bag', categoryKey: 'helpfulActions', careTip: 'Using reusable bags reduces plastic waste.', learnMore: 'One reusable bag can replace hundreds of single-use plastic bags over its lifetime!' },
-  { id: 'l3item8', name: 'Sobra-sobrang Pagmimina', categoryKey: 'harmfulActions', careTip: 'Over-mining can lead to land degradation and pollution.', learnMore: 'When too much is mined too quickly, it can damage the land and nearby water sources for a long time.' },
+  { id: 'l3item1', name: 'Pagtatanim ng Puno', image: '/images/likas-na-yaman/3pagtatanim.svg', categoryKey: 'helpfulActions', careTip: 'Planting trees helps combat deforestation.', learnMore: 'One tree can absorb many kilograms of carbon dioxide in its lifetime!' },
+  { id: 'l3item2', name: 'Pag-recycle ng Basura', image: '/images/likas-na-yaman/3pagrecyle.svg', categoryKey: 'helpfulActions', careTip: 'Recycling reduces waste and conserves resources.', learnMore: 'Recycling an aluminum can saves enough energy to run a TV for 3 hours!' },
+  { id: 'l3item3', name: 'Pagtitipid ng Tubig', image: '/images/likas-na-yaman/3pagtitipid.svg', categoryKey: 'helpfulActions', careTip: 'Conserving water is crucial, especially in dry areas.', learnMore: 'Turning off the tap while brushing your teeth can save many liters of water each day!' },
+  { id: 'l3item4', name: 'Pagpuputol ng mga Puno (Illegal Logging)', image: '/images/likas-na-yaman/3pagpuputol.svg', categoryKey: 'harmfulActions', careTip: 'Illegal logging destroys habitats.', learnMore: 'When forests are cut down, animals lose their homes and the soil can wash away.' },
+  { id: 'l3item5', name: 'Pagtatapon ng Basura sa Ilog', image: '/images/likas-na-yaman/3pagtatapon.svg', categoryKey: 'harmfulActions', careTip: 'Polluting rivers harms aquatic life and water quality.', learnMore: 'Trash in rivers can travel to the ocean and harm sea creatures like turtles and fish.' },
+  { id: 'l3item6', name: 'Pagsusunog ng Plastik', image: '/images/likas-na-yaman/3pagsusunog.svg', categoryKey: 'harmfulActions', careTip: 'Burning plastics releases harmful toxins into the air.', learnMore: 'The smoke from burning plastic can make the air unhealthy to breathe for people and animals.' },
+  { id: 'l3item7', name: 'Paggamit ng Eco Bag', image: '/images/likas-na-yaman/3ecobag.svg', categoryKey: 'helpfulActions', careTip: 'Using reusable bags reduces plastic waste.', learnMore: 'One reusable bag can replace hundreds of single-use plastic bags over its lifetime!' },
+  { id: 'l3item8', name: 'Sobra-sobrang Pagmimina', image: '/images/likas-na-yaman/3pagmimina.svg', categoryKey: 'harmfulActions', careTip: 'Over-mining can lead to land degradation and pollution.', learnMore: 'When too much is mined too quickly, it can damage the land and nearby water sources for a long time.' },
 ];
 
 const level3Categories: Category[] = [

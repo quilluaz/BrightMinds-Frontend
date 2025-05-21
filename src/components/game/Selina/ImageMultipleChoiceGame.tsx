@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../../context/ThemeContext';
+import { playSound, SoundType, CelebrationAnimation, GameCompleteCelebration, animationStyles } from './GameConfigurations';
 
 // Color Palette
 const COLORS = {
@@ -202,15 +203,20 @@ const ImageMultipleChoiceGame: React.FC = () => {
   const [showFeedback, setShowFeedback] = useState(false);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState(false);
   const [showScore, setShowScore] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showGameCompleteCelebration, setShowGameCompleteCelebration] = useState(false);
 
   const currentQuestion = questionsData[currentQuestionIndex];
 
   const handleStartGame = () => {
+    playSound('click');
     setHasGameStarted(true);
   };
 
   const handleAnswerSelection = (choiceId: string) => {
     if (showFeedback) return;
+
+    playSound('click');
 
     const choice = currentQuestion.choices.find(c => c.id === choiceId);
     if (choice) {
@@ -218,7 +224,12 @@ const ImageMultipleChoiceGame: React.FC = () => {
       const correct = choice.isCorrect;
       setIsAnswerCorrect(correct);
       if (correct) {
+        playSound('correct');
         setScore(prevScore => prevScore + 1);
+        setShowCelebration(true);
+        setTimeout(() => setShowCelebration(false), 2000);
+      } else {
+        playSound('incorrect');
       }
       setShowFeedback(true);
 
@@ -228,6 +239,8 @@ const ImageMultipleChoiceGame: React.FC = () => {
         if (currentQuestionIndex < questionsData.length - 1) {
           setCurrentQuestionIndex(prevIndex => prevIndex + 1);
         } else {
+          playSound('gameComplete');
+          setShowGameCompleteCelebration(true);
           setShowScore(true);
         }
       }, 2000);
@@ -235,11 +248,13 @@ const ImageMultipleChoiceGame: React.FC = () => {
   };
 
   const restartGame = () => {
+    playSound('click');
     setCurrentQuestionIndex(0);
     setScore(0);
     setSelectedAnswer(null);
     setShowFeedback(false);
     setShowScore(false);
+    setShowGameCompleteCelebration(false);
     setHasGameStarted(false);
   };
 
@@ -256,7 +271,7 @@ const ImageMultipleChoiceGame: React.FC = () => {
             Welcome to
           </h1>
           <h2 className="text-4xl sm:text-5xl font-bold mb-8" style={{ color: colors.secondaryAccent }}>
-            Guess the Image!
+            Identify the Correct Image!
           </h2>
           <p className="text-xl sm:text-xl mb-3 opacity-80" style={{ color: colors.primaryText }}>
             Subukan ang iyong kaalaman sa Araling Panlipunan at Tagalog sa masayang paraan!
@@ -279,6 +294,7 @@ const ImageMultipleChoiceGame: React.FC = () => {
   if (showScore) {
     return (
       <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
+        {showGameCompleteCelebration && <GameCompleteCelebration />}
         <div className={`p-10 rounded-3xl shadow-xl text-center max-w-md w-full transition-colors duration-200`} style={{ backgroundColor: colors.cardBackground }}>
           <h2 className="text-5xl font-bold mb-6" style={{ color: colors.primaryAccent }}>The Game has Finished</h2>
           <p className="text-3xl mb-10" style={{ color: colors.primaryText }}>
@@ -302,6 +318,7 @@ const ImageMultipleChoiceGame: React.FC = () => {
 
   return (
     <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
+      {showCelebration && <CelebrationAnimation />}
       <div className={`p-6 sm:p-10 rounded-3xl shadow-xl w-full max-w-3xl transition-colors duration-200`} style={{ backgroundColor: colors.cardBackground }}>
         <div className="mb-8 text-center">
           <p className="text-xl sm:text-2xl font-semibold mb-2" style={{ color: colors.interactiveElements }}>
@@ -364,5 +381,10 @@ const ImageMultipleChoiceGame: React.FC = () => {
     </div>
   );
 };
+
+// Add the styles to the document
+const styleSheet = document.createElement("style");
+styleSheet.innerText = animationStyles;
+document.head.appendChild(styleSheet);
 
 export default ImageMultipleChoiceGame;

@@ -5,7 +5,7 @@ import { useTheme } from "../../context/ThemeContext";
 import logoForLightTheme from "../../assets/logos/LogoIconDark.svg";
 import logoForDarkTheme from "../../assets/logos/LogoIconLight.svg";
 import { useAuth } from "../../context/AuthContext";
-import Button from "../../components/common/Button";
+import Button from "../../components/common/Button"
 import { UserRole } from "../../types";
 
 const RegisterPage: React.FC = () => {
@@ -14,7 +14,7 @@ const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("student");
-  const [teacherCode, setTeacherCode] = useState("");
+  const [teacherCode, setTeacherCode] = useState(""); 
   const [error, setError] = useState<string | null>(null);
   const { register, isLoading } = useAuth();
   const { theme } = useTheme();
@@ -33,11 +33,17 @@ const RegisterPage: React.FC = () => {
       setError("Last name is required.");
       return;
     }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
 
     if (role === "teacher" && !teacherCode.trim()) {
       setError("Teacher code is required for teacher registration.");
       return;
     }
+
+    const backendRole = role.toUpperCase();
 
     try {
       await register(
@@ -45,7 +51,7 @@ const RegisterPage: React.FC = () => {
         lastName.trim(),
         email,
         password,
-        role === "teacher" ? teacherCode : undefined
+        backendRole as "STUDENT" | "TEACHER"
       );
       navigate("/dashboard");
     } catch (err) {
@@ -59,7 +65,6 @@ const RegisterPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-pattern flex items-center justify-center p-4">
-      {/* Increased max-width here from md to lg */}
       <div className="w-full max-w-lg">
         <div className="card border border-gray-100 animate-fade-in">
           <div className="text-center mb-6">
@@ -88,11 +93,8 @@ const RegisterPage: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit}>
-            {/* Flex container for First Name and Last Name */}
-            {/* On medium screens (md) and up, they will be in a row. On smaller screens, they stack. */}
-            <div className="flex flex-col md:flex-row md:gap-4 mb-4"> {/* << ADDED: Flex container */}
-              {/* First Name Field */}
-              <div className="w-full md:w-1/2 mb-4 md:mb-0"> {/* << MODIFIED: Width and responsive margin */}
+            <div className="flex flex-col md:flex-row md:gap-4 mb-4">
+              <div className="w-full md:w-1/2 mb-4 md:mb-0">
                 <label
                   htmlFor="firstName"
                   className="block text-sm font-medium text-gray-700 mb-1">
@@ -114,8 +116,7 @@ const RegisterPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Last Name Field */}
-              <div className="w-full md:w-1/2"> {/* << MODIFIED: Width */}
+              <div className="w-full md:w-1/2">
                 <label
                   htmlFor="lastName"
                   className="block text-sm font-medium text-gray-700 mb-1">
@@ -136,10 +137,8 @@ const RegisterPage: React.FC = () => {
                   />
                 </div>
               </div>
-            </div> {/* << ADDED: End of Flex container for names */}
+            </div>
 
-
-            {/* Email Field */}
             <div className="mb-4">
               <label
                 htmlFor="email"
@@ -162,7 +161,6 @@ const RegisterPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Password Field */}
             <div className="mb-4">
               <label
                 htmlFor="password"
@@ -189,7 +187,6 @@ const RegisterPage: React.FC = () => {
               </p>
             </div>
 
-            {/* Role Selection */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 I am a:
@@ -239,7 +236,6 @@ const RegisterPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Teacher Code Field */}
             {role === "teacher" && (
               <div className="mb-6">
                 <label

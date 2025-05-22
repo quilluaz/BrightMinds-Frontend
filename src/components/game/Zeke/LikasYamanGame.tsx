@@ -13,6 +13,7 @@ const COLORS = {
   light: {
     cardBg: '#fff',
     text: '#1A1B41',
+    secondaryAccent: '#FFA500',
     feedback: {
       correct: 'bg-green-100 text-green-800',
       incorrect: 'bg-red-100 text-red-800',
@@ -22,6 +23,7 @@ const COLORS = {
   dark: {
     cardBg: '#23244a',
     text: '#E8F9FF',
+    secondaryAccent: '#FFA500',
     feedback: {
       correct: 'bg-green-900 text-green-200',
       incorrect: 'bg-red-900 text-red-200',
@@ -121,6 +123,7 @@ const LikasYamanGame: React.FC = () => {
   const { theme } = useTheme();
   const colors = COLORS[theme];
 
+  const [hasGameStarted, setHasGameStarted] = useState(false);
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
   const [currentLevelData, setCurrentLevelData] = useState<GameLevel>(gameLevels[currentLevelIndex]);
   const [currentItems, setCurrentItems] = useState<GameItem[]>([]);
@@ -134,6 +137,11 @@ const LikasYamanGame: React.FC = () => {
   const [showLevelCelebration, setShowLevelCelebration] = useState(false);
   const [showGrandCelebration, setShowGrandCelebration] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
+
+  const handleStartGame = () => {
+    playSound('click');
+    setHasGameStarted(true);
+  };
 
   useEffect(() => {
     setShowCelebration(false); // Hide overlay immediately on level change
@@ -233,6 +241,7 @@ const LikasYamanGame: React.FC = () => {
   };
 
   const handlePlayAgain = () => {
+    playSound('click');
     setCurrentLevelIndex(0);
     setScore(0);
     setShowCelebration(false);
@@ -242,11 +251,40 @@ const LikasYamanGame: React.FC = () => {
     setGameComplete(false);
     setFeedbackMessage(gameLevels[0].instructions);
     setLearnMoreText('');
+    setHasGameStarted(false);
   };
 
   const itemsToDrag = currentItems.filter(
     item => !Object.values(correctlyPlacedItems).flat().some(placedItem => placedItem.id === item.id)
   );
+
+  if (!hasGameStarted) {
+    return (
+      <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`} style={{ color: colors.text }}>
+        <div className={`p-10 rounded-3xl shadow-xl text-center max-w-xl w-full transition-colors duration-200`} style={{ backgroundColor: colors.cardBg }}>
+          <h1 className="text-5xl sm:text-6xl font-bold mb-4" style={{ color: colors.text }}>
+            Welcome to
+          </h1>
+          <h2 className="text-4xl sm:text-5xl font-bold mb-8" style={{ color: colors.secondaryAccent }}>
+            Resource Ranger Challenge!
+          </h2>
+          <p className="text-xl sm:text-xl mb-3 opacity-80" style={{ color: colors.text }}>
+            Test your knowledge about natural resources and their proper management!
+          </p>
+          <p className="text-xl sm:text-2xl mb-12 opacity-80" style={{ color: colors.text }}>
+            Sort the items into their correct categories and become a Resource Master!
+          </p>
+          <button
+            onClick={handleStartGame}
+            className="hover:bg-[#db8e00] text-white font-bold py-4 px-12 rounded-full text-2xl sm:text-3xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
+            style={{ backgroundColor: colors.secondaryAccent }}
+          >
+            Start
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!currentLevelData) {
     return (
@@ -286,12 +324,12 @@ const LikasYamanGame: React.FC = () => {
         <div
           className="fixed inset-0 flex items-center justify-center z-50"
           style={{
-            background: theme === 'dark' ? 'rgba(35,36,74,0.95)' : 'rgba(255,255,255,0.95)',
+            background: theme === 'dark' ? 'rgba(35,36,74,0.8)' : 'rgba(255,255,255,0.8)',
             transition: 'background 0.3s'
           }}
         >
           <div
-            className="rounded-xl text-center max-w-md mx-4 p-8 shadow-2xl"
+            className="rounded-xl text-center max-w-xl mx-4 p-8 shadow-2xl"
             style={{
               background: colors.cardBg,
               color: colors.text,
@@ -357,23 +395,8 @@ const LikasYamanGame: React.FC = () => {
           </div>
         </div>
       )}
-      {showCelebration ? (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-xl text-center max-w-md mx-4">
-            <h2 className="text-2xl font-bold mb-4">Level Cleared!</h2>
-            {currentLevelIndex < gameLevels.length - 1 ? (
-              <button
-                onClick={handleNextLevel}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-colors"
-              >
-                Next Challenge &rarr;
-              </button>
-            ) : (
-              <p className="text-xl font-semibold text-green-600">You're a Resource Pro!</p>
-            )}
-          </div>
-        </div>
-      ) : (
+      {/* Only show game content if no celebration/modals are active */}
+      {!showCelebration && !gameComplete && (
         <div className="mt-6 space-y-6">
           <div className="p-6 rounded-lg shadow-md" style={{ background: colors.cardBg }}>
             <h3 className="text-xl font-semibold mb-4" style={{ color: colors.text }}>Sort These Items:</h3>

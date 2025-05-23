@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import MatchingGameBoard from './MatchingGameBoard';
-import { anyongTubigPairs as rawPairsData } from '../../../data/anyongTubigPairs'; // Renamed for clarity
-import { MatchingPair, MatchingCard as MatchingCardType } from '../../../types'; // Import both types
-import shuffleArray from '../../../utils/shuffleArray'; // Your shuffle utility
+import { gameLevels, LevelConfiguration } from '../../../data/gameLevels'; // Adjust path as needed
+import { MatchingPair, MatchingCard as MatchingCardType } from '../../../types';
+import shuffleArray from '../../../utils/shuffleArray';
 import { playSound, CelebrationAnimation, GameCompleteCelebration, animationStyles } from './GameConfigurations';
 import { useTheme } from '../../../context/ThemeContext';
 
-// Color palette for container and text
+// Color palette for container and text (THIS WAS MISSING)
 const COLORS = {
   light: {
     cardBg: '#fff',
@@ -32,43 +32,57 @@ const COLORS = {
 
 const MatchingGamePage: React.FC = () => {
     const { theme } = useTheme();
-    const colors = COLORS[theme];
+    const colors = COLORS[theme]; // This line should now work
+
+    const [currentLevel, setCurrentLevel] = useState<number>(1);
+    const [currentLevelData, setCurrentLevelData] = useState<LevelConfiguration | undefined>(
+        gameLevels.find(l => l.level === currentLevel)
+    );
+
     const [cards, setCards] = useState<MatchingCardType[]>([]);
     const [flippedCards, setFlippedCards] = useState<MatchingCardType[]>([]);
     const [matchedPairIds, setMatchedPairIds] = useState<number[]>([]);
-    const [isBoardDisabled, setIsBoardDisabled] = useState(false); // To disable clicks during checks
+    const [isBoardDisabled, setIsBoardDisabled] = useState(false);
     const [hasGameStarted, setHasGameStarted] = useState(false);
     const [showCelebration, setShowCelebration] = useState(false);
+
+    const [showLevelComplete, setShowLevelComplete] = useState(false);
     const [showGameComplete, setShowGameComplete] = useState(false);
 
     useEffect(() => {
-        // Initialize and prepare cards from the raw data
-        const preparedCards: MatchingCardType[] = [];
-        rawPairsData.forEach((pair: MatchingPair) => {
-            // Word card
-            preparedCards.push({
-                id: `pair-${pair.id}-word`, // Unique ID for the word card
-                pairId: pair.id,
-                type: 'word',
-                content: pair.word,
-                isFaceUp: false,
-                isMatched: false,
-            });
-            // Picture card
-            preparedCards.push({
-                id: `pair-${pair.id}-image`, // Unique ID for the image card
-                pairId: pair.id,
-                type: 'picture',
-                content: pair.word, // Alt text or identifier for the image
-                imageUrl: pair.imageUrl,
-                isFaceUp: false,
-                isMatched: false,
-            });
-        });
-        setCards(shuffleArray(preparedCards));
-    }, []); // Empty dependency array means this runs once on mount
+        const levelData = gameLevels.find(l => l.level === currentLevel);
+        setCurrentLevelData(levelData);
 
-    // Add animation styles to document head once
+        if (levelData) {
+            const preparedCards: MatchingCardType[] = [];
+            levelData.pairs.forEach((pair: MatchingPair) => {
+                preparedCards.push({
+                    id: `pair-${pair.id}-word-${levelData.level}`,
+                    pairId: pair.id,
+                    type: 'word',
+                    content: pair.word,
+                    isFaceUp: false,
+                    isMatched: false,
+                });
+                preparedCards.push({
+                    id: `pair-${pair.id}-image-${levelData.level}`,
+                    pairId: pair.id,
+                    type: 'picture',
+                    content: pair.word,
+                    imageUrl: pair.imageUrl,
+                    isFaceUp: false,
+                    isMatched: false,
+                });
+            });
+            setCards(shuffleArray(preparedCards));
+            setFlippedCards([]);
+            setMatchedPairIds([]);
+            setIsBoardDisabled(false);
+            setShowLevelComplete(false);
+            setShowGameComplete(false);
+        }
+    }, [currentLevel]);
+
     useEffect(() => {
         if (!document.getElementById('matching-game-animations')) {
             const styleSheet = document.createElement('style');
@@ -80,40 +94,41 @@ const MatchingGamePage: React.FC = () => {
 
     const handleStartGame = () => {
         playSound('click');
+        setCurrentLevel(1);
         setHasGameStarted(true);
+        setShowLevelComplete(false);
+        setShowGameComplete(false);
     };
 
     const handleCardClick = (clickedCardId: string) => {
-        if (isBoardDisabled || flippedCards.length >= 2) {
-            return; // Do nothing if board is disabled or 2 cards are already flipped
+        if (isBoardDisabled || flippedCards.length >= 2 || !currentLevelData) {
+            return;
         }
 
         const cardToFlip = cards.find(c => c.id === clickedCardId);
         if (!cardToFlip || cardToFlip.isFaceUp || cardToFlip.isMatched) {
-            return; // Card already flipped, matched, or not found
+            return;
         }
 
         playSound('flip');
-
-        // Flip the card
         const newCards = cards.map(card =>
             card.id === clickedCardId ? { ...card, isFaceUp: true } : card
         );
         setCards(newCards);
 
-        const newlyFlippedCard = newCards.find(c => c.id === clickedCardId)!; // We know it exists
+        const newlyFlippedCard = newCards.find(c => c.id === clickedCardId)!;
         const currentFlipped = [...flippedCards, newlyFlippedCard];
         setFlippedCards(currentFlipped);
 
-        // If two cards are flipped, check for a match
         if (currentFlipped.length === 2) {
-            setIsBoardDisabled(true); // Disable board during check
+            setIsBoardDisabled(true);
             const [firstCard, secondCard] = currentFlipped;
 
             if (firstCard.pairId === secondCard.pairId) {
-                // It's a match!
                 playSound('match');
-                setMatchedPairIds(prev => [...prev, firstCard.pairId]);
+                const newMatchedPairIds = [...matchedPairIds, firstCard.pairId];
+                setMatchedPairIds(newMatchedPairIds);
+
                 setCards(prevCards =>
                     prevCards.map(card =>
                         card.pairId === firstCard.pairId ? { ...card, isMatched: true, isFaceUp: true } : card
@@ -124,15 +139,18 @@ const MatchingGamePage: React.FC = () => {
                 setShowCelebration(true);
                 setTimeout(() => setShowCelebration(false), 1200);
 
-                // Check if all pairs are matched
-                if (matchedPairIds.length + 1 === rawPairsData.length) {
+                if (newMatchedPairIds.length === currentLevelData.pairs.length) {
                     setTimeout(() => {
-                        playSound('gameComplete');
-                        setShowGameComplete(true);
+                        if (currentLevel < gameLevels.length) {
+                            playSound('gameComplete');
+                            setShowLevelComplete(true);
+                        } else {
+                            playSound('gameComplete');
+                            setShowGameComplete(true);
+                        }
                     }, 1000);
                 }
             } else {
-                // Not a match, flip them back after a delay
                 playSound('incorrect');
                 setTimeout(() => {
                     setCards(prevCards =>
@@ -144,32 +162,37 @@ const MatchingGamePage: React.FC = () => {
                     );
                     setFlippedCards([]);
                     setIsBoardDisabled(false);
-                }, 1000); // 1 second delay
+                }, 1000);
             }
         }
     };
 
-    // Update cards' isMatched status based on matchedPairIds (e.g. on initial load if game was saved)
-    // For now, we also need to ensure cards reflect their matched status correctly if only pairId is tracked for matches.
-     useEffect(() => {
+    useEffect(() => {
         if (matchedPairIds.length > 0) {
             setCards(prevCards =>
                 prevCards.map(card =>
                     matchedPairIds.includes(card.pairId)
-                        ? { ...card, isMatched: true, isFaceUp: true } // Keep matched cards face up
+                        ? { ...card, isMatched: true, isFaceUp: true }
                         : card
                 )
             );
         }
     }, [matchedPairIds]);
 
+    const handleNextLevel = () => {
+        playSound('click');
+        if (currentLevel < gameLevels.length) {
+            setCurrentLevel(prevLevel => prevLevel + 1);
+            setShowLevelComplete(false);
+        }
+    };
+
     const handlePlayAgain = () => {
         playSound('click');
-        setCards(shuffleArray(cards.map(card => ({ ...card, isFaceUp: false, isMatched: false }))));
-        setFlippedCards([]);
-        setMatchedPairIds([]);
-        setShowGameComplete(false);
+        setCurrentLevel(1);
         setHasGameStarted(false);
+        setShowGameComplete(false);
+        setShowLevelComplete(false);
     };
 
     if (!hasGameStarted) {
@@ -180,10 +203,10 @@ const MatchingGamePage: React.FC = () => {
                         Welcome to
                     </h1>
                     <h2 className="text-4xl sm:text-5xl font-bold mb-8" style={{ color: colors.secondaryAccent }}>
-                        Anyong Tubig Matching Game!
+                        Likas na Yaman Matching Game!
                     </h2>
                     <p className="text-xl sm:text-xl mb-3 opacity-80" style={{ color: colors.text }}>
-                        Test your knowledge about different bodies of water!
+                        Test your knowledge about natural resources!
                     </p>
                     <p className="text-xl sm:text-2xl mb-12 opacity-80" style={{ color: colors.text }}>
                         Match the words with their corresponding pictures!
@@ -200,14 +223,38 @@ const MatchingGamePage: React.FC = () => {
         );
     }
 
+    if (showLevelComplete) {
+        const nextLevelData = gameLevels.find(l => l.level === currentLevel + 1);
+        return (
+            <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`} style={{ color: colors.text }}>
+                <GameCompleteCelebration />
+                <div className={`p-10 rounded-3xl shadow-xl text-center max-w-md w-full transition-colors duration-200`} style={{ backgroundColor: colors.cardBg }}>
+                    <h2 className="text-5xl font-bold mb-6" style={{ color: colors.secondaryAccent }}>Level {currentLevelData?.level} Complete!</h2>
+                    <p className="text-3xl mb-10" style={{ color: colors.text }}>
+                        Great job matching all {currentLevelData?.title} pairs!
+                    </p>
+                    {nextLevelData && (
+                        <button
+                            onClick={handleNextLevel}
+                            className="hover:bg-[#db8e00] text-white font-bold py-4 px-10 rounded-full text-2xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
+                            style={{ backgroundColor: colors.secondaryAccent }}
+                        >
+                            Next Level: {nextLevelData.title}
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     if (showGameComplete) {
         return (
             <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`} style={{ color: colors.text }}>
-                {showGameComplete && <GameCompleteCelebration />}
+                <GameCompleteCelebration />
                 <div className={`p-10 rounded-3xl shadow-xl text-center max-w-md w-full transition-colors duration-200`} style={{ backgroundColor: colors.cardBg }}>
                     <h2 className="text-5xl font-bold mb-6" style={{ color: colors.secondaryAccent }}>Congratulations!</h2>
                     <p className="text-3xl mb-10" style={{ color: colors.text }}>
-                        You've matched all pairs!
+                        You've matched all pairs in all levels!
                     </p>
                     <button
                         onClick={handlePlayAgain}
@@ -221,24 +268,26 @@ const MatchingGamePage: React.FC = () => {
         );
     }
 
-    if (cards.length === 0) {
-        return <div>Loading game...</div>; // Or a loading spinner
+    if (cards.length === 0 || !currentLevelData) {
+        return <div>Loading Level {currentLevel}...</div>;
     }
 
     return (
         <div className="container mx-auto px-4 py-8">
             {showCelebration && <CelebrationAnimation />}
-            <h1 className="text-3xl font-bold text-center mb-6" style={{ color: colors.text }}>
-                Anyong Tubig - Matching Game
+            <h1 className="text-3xl font-bold text-center mb-2" style={{ color: colors.text }}>
+                Level {currentLevelData.level}: {currentLevelData.title}
             </h1>
+            <p className="text-xl text-center mb-6" style={{ color: colors.text, opacity: 0.8 }}>
+                Match the pairs!
+            </p>
             <MatchingGameBoard
                 cards={cards}
                 handleCardClick={handleCardClick}
                 isBoardDisabled={isBoardDisabled}
             />
-            {/* Optional: Add a score, timer, or reset button here */}
         </div>
     );
-};
+};  
 
 export default MatchingGamePage;

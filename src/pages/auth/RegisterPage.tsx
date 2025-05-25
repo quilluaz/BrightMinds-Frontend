@@ -1,30 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Added useEffect
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, User, AlertCircle, KeyRound } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import logoForLightTheme from "../../assets/logos/LogoIconDark.svg";
 import logoForDarkTheme from "../../assets/logos/LogoIconLight.svg";
 import { useAuth } from "../../context/AuthContext";
-import Button from "../../components/common/Button"
-import { UserRole } from "../../types";
+import Button from "../../components/common/Button";
+import { UserRole } from "../../types"; // Assuming UserRole is 'student' | 'teacher'
 
 const RegisterPage: React.FC = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRole>("student");
-  const [teacherCode, setTeacherCode] = useState(""); 
+  const [role, setRole] = useState<UserRole>("student"); // 'student' or 'teacher'
+  const [teacherCode, setTeacherCode] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const { register, isLoading } = useAuth();
+
+  // Make sure useAuth hook is correctly imported and provides the updated register function
+  const { register, isLoading, isAuthenticated, user } = useAuth();
   const { theme } = useTheme();
   const currentLogo = theme === "light" ? logoForLightTheme : logoForDarkTheme;
   const navigate = useNavigate();
+
+  // Effect to redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // Navigate to role-specific dashboard or general dashboard
+      if (user.role === "TEACHER") {
+        navigate("/teacher/classrooms", { replace: true });
+      } else if (user.role === "STUDENT") {
+        navigate("/student/classrooms", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
+    // Frontend Validations
     if (!firstName.trim()) {
       setError("First name is required.");
       return;
@@ -37,24 +54,35 @@ const RegisterPage: React.FC = () => {
       setError("Password must be at least 6 characters long.");
       return;
     }
-
+    // Ensure teacher code is provided if role is teacher
     if (role === "teacher" && !teacherCode.trim()) {
       setError("Teacher code is required for teacher registration.");
       return;
     }
 
-    const backendRole = role.toUpperCase();
+    // Convert role to uppercase for the backend
+    const backendRole = role.toUpperCase() as "STUDENT" | "TEACHER";
 
     try {
+      // Call the register function from AuthContext, now including teacherCode
       await register(
         firstName.trim(),
         lastName.trim(),
         email,
         password,
-        backendRole as "STUDENT" | "TEACHER"
+        backendRole, // Role should be "STUDENT" or "TEACHER" (uppercase)
+        // Pass teacherCode only if the role is 'teacher'
+        // The register function in AuthContext handles if it's undefined for students
+        backendRole === "TEACHER" ? teacherCode.trim() : undefined
       );
-      navigate("/dashboard");
+
+      // After successful registration, navigate to login page
+      // Or show a message asking them to check their email if verification is needed
+      console.log("Registration successful from RegisterPage, navigating to login.");
+      navigate("/login?registrationSuccess=true"); // Or a more specific success page/message
+
     } catch (err) {
+      console.error("RegisterPage handleSubmit error:", err);
       setError(
         err instanceof Error
           ? err.message
@@ -62,6 +90,11 @@ const RegisterPage: React.FC = () => {
       );
     }
   };
+  
+  // If user is already authenticated, show redirecting message or null
+  if (isAuthenticated && user) {
+      return <div className="flex justify-center items-center min-h-screen">Redirecting...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-pattern flex items-center justify-center p-4">
@@ -112,6 +145,7 @@ const RegisterPage: React.FC = () => {
                     className="input-field pl-10"
                     placeholder="Your first name"
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -134,6 +168,7 @@ const RegisterPage: React.FC = () => {
                     className="input-field pl-10"
                     placeholder="Your last name"
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -157,6 +192,7 @@ const RegisterPage: React.FC = () => {
                   className="input-field pl-10"
                   placeholder="your-email@example.com"
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -180,6 +216,7 @@ const RegisterPage: React.FC = () => {
                   placeholder="••••••••"
                   required
                   minLength={6}
+                  disabled={isLoading}
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">
@@ -209,8 +246,9 @@ const RegisterPage: React.FC = () => {
                     checked={role === "student"}
                     onChange={() => {
                       setRole("student");
-                      setTeacherCode("");
+                      setTeacherCode(""); // Clear teacher code when switching to student
                     }}
+                    disabled={isLoading}
                   />
                   <span>Student</span>
                 </label>
@@ -230,6 +268,7 @@ const RegisterPage: React.FC = () => {
                     value="teacher"
                     checked={role === "teacher"}
                     onChange={() => setRole("teacher")}
+                    disabled={isLoading}
                   />
                   <span>Teacher</span>
                 </label>
@@ -255,6 +294,7 @@ const RegisterPage: React.FC = () => {
                     className="input-field pl-10"
                     placeholder="Enter teacher enrollment code"
                     required={role === "teacher"}
+                    disabled={isLoading}
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
@@ -267,7 +307,7 @@ const RegisterPage: React.FC = () => {
               type="submit"
               variant="primary"
               fullWidth
-              isLoading={isLoading && !error}
+              isLoading={isLoading && !error} // Show loading only if not also showing an error
               disabled={isLoading}>
               Create Account
             </Button>

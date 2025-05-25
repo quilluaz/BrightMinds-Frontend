@@ -21,7 +21,8 @@ export interface AuthContextType {
     lastName: string,
     email: string,
     password: string,
-    role: "STUDENT" | "TEACHER"
+    role: "STUDENT" | "TEACHER",
+    teacherCode?: string
   ) => Promise<void>;
   login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;

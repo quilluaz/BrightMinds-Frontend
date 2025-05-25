@@ -5,7 +5,7 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import { User, AuthContextType, LoginResponse } from "../types";
+import { User, AuthContextType, LoginResponse } from "../types"; // Ensure path is correct
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -48,7 +48,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     } else {
       localStorage.removeItem("authToken");
     }
-
     if (user) {
       localStorage.setItem("authUser", JSON.stringify(user));
     } else {
@@ -62,39 +61,85 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     lastName: string,
     email: string,
     password: string,
-    role: "STUDENT" | "TEACHER"
+    role: "STUDENT" | "TEACHER",
+    teacherCode?: string // Ensure this matches AuthContextType in types/index.ts
   ): Promise<void> => {
     setIsLoading(true);
     try {
+      // Construct the request body dynamically
+      const requestBody: { [key: string]: any } = { // More specific type for clarity
+        firstName,
+        lastName,
+        email,
+        password,
+        role,
+      };
+
+      // Add teacherCode to the body ONLY if the role is TEACHER and teacherCode is provided
+      if (role === "TEACHER" && teacherCode) {
+        requestBody.teacherCode = teacherCode;
+      } else if (role === "TEACHER" && !teacherCode) {
+        // This case should ideally be caught by frontend validation in RegisterPage.tsx
+        // If backend strictly requires it, this request will fail.
+        console.warn("Attempting to register a TEACHER without a teacherCode.");
+      }
+
+      console.log("Registering with body:", JSON.stringify(requestBody)); // For debugging the payload
+
       const response = await fetch("http://localhost:8080/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email,
-          password,
-          role,
-        }),
+        body: JSON.stringify(requestBody),
       });
-      const data = await response.json();
+
+      let errorData: any = null;
+      const contentType = response.headers.get("content-type");
+
       if (!response.ok) {
+        // Attempt to get error message from body, prioritizing JSON
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            errorData = await response.json();
+          } catch (e) {
+            // If JSON parsing fails on an error response, use the statusText or a generic message
+            console.error("Failed to parse JSON error response:", e);
+            throw new Error(response.statusText || `Registration failed with status: ${response.status}. Malformed JSON error.`);
+          }
+        } else {
+          // For non-JSON error responses (like plain text or HTML error pages from server/proxy)
+          const textError = await response.text();
+          throw new Error(textError || `Registration failed with status: ${response.status}. Non-JSON response.`);
+        }
+        // If errorData was parsed as JSON and has a message/error property
         throw new Error(
-          data.message ||
-            data.error ||
-            `Registration failed with status: ${response.status}`
+          errorData?.message ||
+          errorData?.error ||
+          `Registration failed with status: ${response.status}`
         );
       }
-      console.log("Registration successful:", data);
+
+      // Handle successful response (even if body is empty or not JSON for success)
+      if (contentType && contentType.includes("application/json")) {
+        const successData = await response.json();
+        console.log("Registration successful:", successData);
+      } else {
+        console.log("Registration successful (non-JSON or empty response).");
+      }
+
     } catch (error) {
-      console.error("Registration error:", error);
-      throw error;
+      console.error("Registration error in AuthContext:", error);
+      // Ensure the error thrown is an Error object for consistent handling in UI
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error(String(error) || "An unknown registration error occurred.");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // --- Login Function ---
+  // --- Login Function (remains unchanged from your last working version) ---
   const login = async (
     email: string,
     password: string
@@ -102,30 +147,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     setIsLoading(true);
     try {
       const response = await fetch("http://localhost:8080/api/auth/login", {
-        // Backend login endpoint
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }), // Body as per LoginRequestDto
+        body: JSON.stringify({ email, password }),
       });
-
-      // Expects LoginResponse structure
       const data: LoginResponse | { message?: string; error?: string } =
         await response.json();
-
       if (!response.ok) {
-        // Backend returns error messages in the body for AuthException
         throw new Error(
           (data as { message?: string }).message ||
             (data as { error?: string }).error ||
             `Login failed`
         );
       }
-
       const loginData = data as LoginResponse;
       setToken(loginData.accessToken);
-      setUser(loginData.user); // User role here will be uppercase from backend
+      setUser(loginData.user);
       console.log("Login successful. Token and user set.");
-      return loginData.user; // Return user for immediate use in components
+      return loginData.user;
     } catch (error) {
       console.error("Login error:", error);
       setToken(null);
@@ -140,9 +179,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const logout = () => {
     setToken(null);
     setUser(null);
-    // localStorage is cleared by the useEffect hook
     console.log("User logged out.");
-    // Navigation after logout can be handled in components or by a route redirect
   };
 
   return (

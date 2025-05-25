@@ -3,12 +3,19 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: "STUDENT" | "TEACHER"; 
+  role: "STUDENT" | "TEACHER";
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  user: User;
 }
 
 export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  token: string | null;
+  isAuthenticated: boolean;
   register: (
     firstName: string,
     lastName: string,
@@ -16,9 +23,8 @@ export interface AuthContextType {
     password: string,
     role: "STUDENT" | "TEACHER"
   ) => Promise<void>;
-  // Add login, logout, etc. as needed for future functionality
-  // login: (email: string, password: string) => Promise<void>; // Example for login
-  // logout: () => void; // Example for logout
+  login: (email: string, password: string) => Promise<User | null>;
+  logout: () => void;
 }
 
-export type UserRole = "student" | "teacher"; 
+export type UserRole = "student" | "teacher";

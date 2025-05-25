@@ -1,6 +1,6 @@
 import React from "react";
 import { Menu, X, Moon, Sun } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import logoForLightThemeDesktop from "../../assets/logos/LogoIconSideDark.svg";
@@ -10,9 +10,10 @@ import logoForDarkThemeMobile from "../../assets/logos/LogoIconLight.svg";
 import UserMenu from "./UserMenu";
 
 const Header: React.FC = () => {
-  const { currentUser, isAuthenticated } = useAuth(); // isAuthenticated is already here
+  const { user: currentUser, isAuthenticated, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const navigate = useNavigate();
 
   const getGreeting = (): string => {
     const hour = new Date().getHours();
@@ -31,15 +32,32 @@ const Header: React.FC = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Determine logo link based on authentication state
-  const logoLinkPath = isAuthenticated ? "/dashboard" : "/";
+  const getLogoLinkPath = () => {
+    if (!isAuthenticated || !currentUser) {
+      return "/";
+    }
+    if (currentUser.role === "TEACHER") {
+      return "/teacher/classrooms";
+    } else if (currentUser.role === "STUDENT") {
+      return "/student/classrooms";
+    }
+    return "/dashboard";
+  };
+  const logoLinkPath = getLogoLinkPath();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+    setIsMenuOpen(false);
+  };
+
 
   return (
     <header className="bg-white dark:bg-primary-card-dark shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between md:justify-between relative md:static">
         {/* Mobile Logo - Centered */}
         <div className="absolute inset-0 flex items-center justify-center md:hidden pointer-events-none">
-          <Link to={logoLinkPath} className="inline-flex pointer-events-auto"> {/* Updated Link */}
+          <Link to={logoLinkPath} className="inline-flex pointer-events-auto">
             <img
               src={mobileLogo}
               alt="BrightMinds Logo Mobile"
@@ -49,7 +67,7 @@ const Header: React.FC = () => {
         </div>
 
         {/* Desktop Logo */}
-        <Link to={logoLinkPath} className="hidden md:flex flex-shrink-0 items-center"> {/* Updated Link */}
+        <Link to={logoLinkPath} className="hidden md:flex flex-shrink-0 items-center">
           <img
             src={desktopLogo}
             alt="BrightMinds Logo Desktop"
@@ -57,25 +75,25 @@ const Header: React.FC = () => {
           />
         </Link>
 
-        <div className="flex-1 md:hidden"></div> {/* Spacer for mobile layout */}
+        <div className="flex-1 md:hidden"></div>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
-          {isAuthenticated && (
+          {isAuthenticated && currentUser && (
             <>
               <Link
                 to="/dashboard"
                 className="text-sm lg:text-base text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark transition-colors">
                 Dashboard
               </Link>
-              {currentUser?.role === "teacher" && (
+              {currentUser.role === "TEACHER" && (
                 <Link
                   to="/teacher/classrooms"
                   className="text-sm lg:text-base text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark transition-colors">
                   My Classrooms
                 </Link>
               )}
-              {currentUser?.role === "student" && (
+              {currentUser.role === "STUDENT" && (
                 <Link
                   to="/student/classrooms"
                   className="text-sm lg:text-base text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark transition-colors">
@@ -100,13 +118,13 @@ const Header: React.FC = () => {
             </>
           )}
 
-          {isAuthenticated && (
+          {isAuthenticated && currentUser && (
             <div className="flex items-center space-x-2 lg:space-x-3">
               <span className="hidden lg:inline text-sm font-medium text-primary-text dark:text-primary-text-dark">
-                {getGreeting()}, {currentUser?.displayName}! {/* Changed to displayName */}
+                {getGreeting()}, {currentUser.firstName}!
               </span>
               <span className="lg:hidden text-sm font-medium text-primary-text dark:text-primary-text-dark">
-                Hi, {currentUser?.displayName?.split(" ")[0]}! {/* Changed to displayName */}
+                Hi, {currentUser.firstName}!
               </span>
               <UserMenu />
             </div>
@@ -119,7 +137,7 @@ const Header: React.FC = () => {
             {theme === "dark" ? (
               <Sun size={20} className="text-yellow-400" />
             ) : (
-              <Moon size={20} className="text-gray-600 dark:text-gray-300" /> /* Added dark text for moon */
+              <Moon size={20} className="text-gray-600 dark:text-gray-300" />
             )}
           </button>
         </nav>
@@ -133,7 +151,7 @@ const Header: React.FC = () => {
             {theme === "dark" ? (
               <Sun size={20} className="text-yellow-400" />
             ) : (
-              <Moon size={20} className="text-gray-600 dark:text-gray-300" /> /* Added dark text for moon */
+              <Moon size={20} className="text-gray-600 dark:text-gray-300" />
             )}
           </button>
           <button
@@ -149,7 +167,7 @@ const Header: React.FC = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-white dark:bg-primary-card-dark shadow-lg py-4 px-4 sm:px-6 lg:px-8 animate-fade-in border-t border-gray-100 dark:border-gray-700">
           <nav className="flex flex-col space-y-3">
-            {isAuthenticated && (
+            {isAuthenticated && currentUser && (
               <>
                 <Link
                   to="/dashboard"
@@ -157,7 +175,7 @@ const Header: React.FC = () => {
                   onClick={() => setIsMenuOpen(false)}>
                   Dashboard
                 </Link>
-                {currentUser?.role === "teacher" && (
+                {currentUser.role === "TEACHER" && (
                   <Link
                     to="/teacher/classrooms"
                     className="block text-center px-3 py-2 rounded-md text-base font-medium text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark hover:bg-gray-50 dark:hover:bg-slate-700"
@@ -165,7 +183,7 @@ const Header: React.FC = () => {
                     My Classrooms
                   </Link>
                 )}
-                {currentUser?.role === "student" && (
+                {currentUser.role === "STUDENT" && (
                   <Link
                     to="/student/classrooms"
                     className="block text-center px-3 py-2 rounded-md text-base font-medium text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark hover:bg-gray-50 dark:hover:bg-slate-700"
@@ -173,10 +191,9 @@ const Header: React.FC = () => {
                     My Classrooms
                   </Link>
                 )}
-                {/* User Info and Actions in Mobile Menu */}
                 <div className="pt-3 mt-2 border-t border-gray-200 dark:border-gray-700">
                   <span className="block px-3 text-sm text-center font-medium mb-2 text-primary-text dark:text-primary-text-dark">
-                    {getGreeting()}, {currentUser?.displayName}! {/* Changed to displayName */}
+                    {getGreeting()}, {currentUser.firstName}!
                   </span>
                   <div className="flex flex-col space-y-1">
                     <Link
@@ -185,21 +202,9 @@ const Header: React.FC = () => {
                       onClick={() => setIsMenuOpen(false)}>
                       My Profile
                     </Link>
-                    {/* Corrected Logout Link in Mobile */}
                     <button
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        // Assuming useAuth().logout() handles navigation or you do it here.
-                        // For consistency with UserMenu, direct navigation after logout is good.
-                        useAuth().logout(); 
-                        // useNavigate() hook cannot be used directly here, so logout should handle navigation
-                        // or this should be a Link to a /logout route that performs logout and redirects.
-                        // For simplicity, if logout in AuthContext handles navigation, this is fine.
-                        // If not, UserMenu's handleLogout approach is better.
-                        // Let's assume logout() from useAuth handles navigation as in UserMenu.tsx
-                      }}
-                      className="block w-full text-center px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900 dark:hover:bg-opacity-20"
-                    >
+                      onClick={handleLogout}
+                      className="block w-full text-center px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900 dark:hover:bg-opacity-20">
                       Log Out
                     </button>
                   </div>
@@ -217,7 +222,7 @@ const Header: React.FC = () => {
                 </Link>
                 <Link
                   to="/register"
-                  className="block w-full text-center px-3 py-2 rounded-md text-base font-medium btn btn-primary dark:bg-primary-interactive-dark dark:text-white" // Assuming btn and btn-primary handle dark mode
+                  className="block w-full text-center px-3 py-2 rounded-md text-base font-medium btn btn-primary dark:bg-primary-interactive-dark dark:text-white"
                   onClick={() => setIsMenuOpen(false)}>
                   Register
                 </Link>

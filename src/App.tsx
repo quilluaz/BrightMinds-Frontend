@@ -6,43 +6,44 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
-import { ClassroomProvider } from "./context/ClassroomContext";
-import { ThemeProvider } from "./context/ThemeContext";
+import { AuthProvider, useAuth } from "./context/AuthContext"; 
+import { ClassroomProvider } from "./context/ClassroomContext"; 
+import { ThemeProvider } from "./context/ThemeContext"; 
 
 // Layouts and Common Components
-import Header from "./components/common/Header";
-import Footer from "./components/common/Footer";
-import AuthLayout from "./layouts/AuthLayout";
+import Header from "./components/common/Header"; 
+import Footer from "./components/common/Footer"; 
+import AuthLayout from "./layouts/AuthLayout"; 
 
 // Auth Pages
-import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
+import LoginPage from "./pages/auth/LoginPage"; 
+import RegisterPage from "./pages/auth/RegisterPage"; 
 
 // Common Pages
-import LandingPage from "./pages/common/LandingPage";
-import DashboardPage from "./pages/common/DashboardPage";
-import ProfilePage from "./pages/common/ProfilePage";
-import AboutUsPage from "./pages/common/AboutUsPage";
-import PrivacyPolicyPage from "./pages/common/PrivacyPolicyPage";
+import LandingPage from "./pages/common/LandingPage"; 
+import DashboardPage from "./pages/common/DashboardPage"; 
+import ProfilePage from "./pages/common/ProfilePage"; 
+import AboutUsPage from "./pages/common/AboutUsPage"; 
+import PrivacyPolicyPage from "./pages/common/PrivacyPolicyPage"; 
 
 // Teacher Pages
-import TeacherClassroomsPage from "./pages/teacher/TeacherClassroomsPage";
-import TeacherClassroomViewPage from "./pages/teacher/TeacherClassroomViewPage";
+import TeacherClassroomsPage from "./pages/teacher/TeacherClassroomsPage"; 
+import TeacherClassroomViewPage from "./pages/teacher/TeacherClassroomViewPage"; 
 
 // Student Pages
-import StudentClassroomsPage from "./pages/student/StudentClassroomsPage";
-import StudentClassroomViewPage from "./pages/student/StudentClassroomViewPage";
-import GameplayPage from "./pages/student/GameplayPage";
+import StudentClassroomsPage from "./pages/student/StudentClassroomsPage"; 
+import StudentClassroomViewPage from "./pages/student/StudentClassroomViewPage"; 
+import GameplayPage from "./pages/student/GameplayPage"; 
 
 // Game components
 import ImageMultipleChoiceGame from "./components/game/Selina/ImageMultipleChoiceGame";
 import MatchingGamePage from "./components/game/Jeric/MatchingGamePage";
 import LikasYamanGame from "./components/game/Zeke/LikasYamanGame";
 
-// Protected Route HOC (remains unchanged)
+// --- ProtectedRoute Component ---
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -50,21 +51,24 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
+
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
+
   return <>{children}</>;
 };
 
-// Role-based Route
+// --- RoleRoute Component ---
 const RoleRoute = ({
   children,
   allowedRole,
 }: {
   children: React.ReactNode;
-  allowedRole: "teacher" | "student";
+  allowedRole: "TEACHER" | "STUDENT";
 }) => {
-  const { currentUser, isLoading } = useAuth();
+  const { user, isLoading, isAuthenticated } = useAuth();
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -72,13 +76,20 @@ const RoleRoute = ({
       </div>
     );
   }
-  if (!currentUser || currentUser.role !== allowedRole) {
-    return <Navigate to="/dashboard" />;
+
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
   }
+
+  if (user.role !== allowedRole) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <>{children}</>;
 };
 
-const AppLayout = ({ children }: { children?: React.ReactNode }) => {
+// --- AppLayout Component ---
+const AppLayout = () => {
   return (
     <div className="flex flex-col min-h-screen bg-pattern dark:bg-primary-background-dark">
       <Header />
@@ -90,6 +101,7 @@ const AppLayout = ({ children }: { children?: React.ReactNode }) => {
   );
 };
 
+// --- Main App Component ---
 function App() {
   return (
     <AuthProvider>
@@ -97,13 +109,13 @@ function App() {
         <ClassroomProvider>
           <Router>
             <Routes>
-              {/* Routes with AuthLayout */}
+              {/* Auth Routes: Login and Register */}
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
               </Route>
 
-              {/* Routes with AppLayout */}
+              {/* Main App Routes with AppLayout */}
               <Route element={<AppLayout />}>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/about" element={<AboutUsPage />} />
@@ -123,6 +135,7 @@ function App() {
                 
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
+                {/* Authenticated Routes */}
                 <Route
                   path="/dashboard"
                   element={
@@ -140,12 +153,12 @@ function App() {
                   }
                 />
 
-                {/* Teacher Routes */}
+                {/* Teacher Specific Routes */}
                 <Route
                   path="/teacher/classrooms"
                   element={
                     <ProtectedRoute>
-                      <RoleRoute allowedRole="teacher">
+                      <RoleRoute allowedRole="TEACHER">
                         <TeacherClassroomsPage />
                       </RoleRoute>
                     </ProtectedRoute>
@@ -155,19 +168,19 @@ function App() {
                   path="/teacher/classrooms/:classroomId"
                   element={
                     <ProtectedRoute>
-                      <RoleRoute allowedRole="teacher">
+                      <RoleRoute allowedRole="TEACHER">
                         <TeacherClassroomViewPage />
                       </RoleRoute>
                     </ProtectedRoute>
                   }
                 />
 
-                {/* Student Routes */}
+                {/* Student Specific Routes */}
                 <Route
                   path="/student/classrooms"
                   element={
                     <ProtectedRoute>
-                      <RoleRoute allowedRole="student">
+                      <RoleRoute allowedRole="STUDENT">
                         <StudentClassroomsPage />
                       </RoleRoute>
                     </ProtectedRoute>
@@ -177,7 +190,7 @@ function App() {
                   path="/student/classrooms/:classroomId"
                   element={
                     <ProtectedRoute>
-                      <RoleRoute allowedRole="student">
+                      <RoleRoute allowedRole="STUDENT">
                         <StudentClassroomViewPage />
                       </RoleRoute>
                     </ProtectedRoute>
@@ -187,13 +200,15 @@ function App() {
                   path="/student/classrooms/:classroomId/games/:gameId"
                   element={
                     <ProtectedRoute>
-                      <RoleRoute allowedRole="student">
+                      <RoleRoute allowedRole="STUDENT">
                         <GameplayPage />
                       </RoleRoute>
                     </ProtectedRoute>
                   }
                 />
-                <Route path="*" element={<Navigate to="/" />} />
+
+                {/* Fallback for any undefined routes */}
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>
           </Router>

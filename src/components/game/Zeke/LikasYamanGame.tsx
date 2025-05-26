@@ -8,6 +8,7 @@ import './Game.css';
 import { useTheme } from '../../../context/ThemeContext';
 import { CelebrationAnimation, GameCompleteCelebration, animationStyles } from '../Selina/GameConfigurations';
 import GameLandingPage from '../GameLandingPage';
+import BackgroundMusic from '../BackgroundMusic';
 
 // Color palette for container and text
 const COLORS = {
@@ -261,214 +262,232 @@ const LikasYamanGame: React.FC = () => {
 
   if (!hasGameStarted) {
     return (
-      <GameLandingPage
-        title="Resource Ranger Challenge"
-        subtitle="Test your knowledge about natural resources and their proper management!"
-        description="Sort the items into their correct categories and become a Resource Master!"
-        instruction="Drag and drop items into their correct categories to learn about natural resources."
-        onStart={handleStartGame}
-        gameIcon="/images/likas-yaman/game-icon.svg"
-      />
+      <>
+        <BackgroundMusic 
+          musicFile="/audio/Sneaky Business (Biz Baz Studio) - Comedy Background Music (HD).mp3" 
+          volume={0.15} 
+        />
+        <GameLandingPage
+          title="Resource Ranger Challenge"
+          subtitle="Test your knowledge about natural resources and their proper management!"
+          description="Sort the items into their correct categories and become a Resource Master!"
+          instruction="Drag and drop items into their correct categories to learn about natural resources."
+          onStart={handleStartGame}
+          gameIcon="/images/likas-yaman/game-icon.svg"
+        />
+      </>
     );
   }
 
   if (!currentLevelData) {
     return (
-      <div className="flex items-center justify-center min-h-[300px] p-4">
-        <p className="text-xl">Loading Game Adventure...</p>
-      </div>
+      <>
+        <BackgroundMusic 
+          musicFile="/audio/Sneaky Business (Biz Baz Studio) - Comedy Background Music (HD).mp3" 
+          volume={0.15} 
+        />
+        <div className="flex items-center justify-center min-h-[300px] p-4">
+          <p className="text-xl">Loading Game Adventure...</p>
+        </div>
+      </>
     );
   }
 
   return (
-    <div
-      className="p-10 rounded-3xl shadow-xl text-center max-w-6xl w-full mx-auto"
-      style={{ background: colors.cardBg, color: colors.text }}
-    >
-      <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: colors.text }}>Resource Ranger Challenge</h1>
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
-        <h2 className="text-xl font-semibold" style={{ color: colors.text }}>{currentLevelData.title}</h2>
-        <p className="text-xl font-bold text-orange-500">Score: {score}</p>
-      </div>
-      <p className={`p-4 rounded-lg text-center text-lg font-medium mb-2 ${
-        feedbackMessage.includes('Correct') ? colors.feedback.correct :
-        feedbackMessage.includes('Not quite') ? colors.feedback.incorrect :
-        colors.feedback.default
-      }`}>
-        {feedbackMessage}
-      </p>
-      {learnMoreText && (
-        <p className="p-4 bg-yellow-100 text-yellow-800 rounded-lg text-center text-lg mb-2">
-          {learnMoreText}
+    <>
+      <BackgroundMusic 
+        musicFile="/audio/Sneaky Business (Biz Baz Studio) - Comedy Background Music (HD).mp3" 
+        volume={0.15} 
+      />
+      <div
+        className="p-10 rounded-3xl shadow-xl text-center max-w-6xl w-full mx-auto"
+        style={{ background: colors.cardBg, color: colors.text }}
+      >
+        <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: colors.text }}>Resource Ranger Challenge</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+          <h2 className="text-xl font-semibold" style={{ color: colors.text }}>{currentLevelData.title}</h2>
+          <p className="text-xl font-bold text-orange-500">Score: {score}</p>
+        </div>
+        <p className={`p-4 rounded-lg text-center text-lg font-medium mb-2 ${
+          feedbackMessage.includes('Correct') ? colors.feedback.correct :
+          feedbackMessage.includes('Not quite') ? colors.feedback.incorrect :
+          colors.feedback.default
+        }`}>
+          {feedbackMessage}
         </p>
-      )}
-      {showCorrectCelebration && <CelebrationAnimation />}
-      {showLevelCelebration && <GameCompleteCelebration />}
-      {showGrandCelebration && <GrandCelebration />}
-      {/* Modal for level cleared or game complete */}
-      {showCelebration && !gameComplete && (
-        <div
-          className="fixed inset-0 flex items-center justify-center z-50"
-          style={{
-            background: theme === 'dark' ? 'rgba(35,36,74,0.8)' : 'rgba(255,255,255,0.8)',
-            transition: 'background 0.3s'
-          }}
-        >
+        {learnMoreText && (
+          <p className="p-4 bg-yellow-100 text-yellow-800 rounded-lg text-center text-lg mb-2">
+            {learnMoreText}
+          </p>
+        )}
+        {showCorrectCelebration && <CelebrationAnimation />}
+        {showLevelCelebration && <GameCompleteCelebration />}
+        {showGrandCelebration && <GrandCelebration />}
+        {/* Modal for level cleared or game complete */}
+        {showCelebration && !gameComplete && (
           <div
-            className="rounded-xl text-center max-w-xl mx-4 p-8 shadow-2xl"
+            className="fixed inset-0 flex items-center justify-center z-50"
             style={{
-              background: colors.cardBg,
-              color: colors.text,
-              boxShadow: theme === 'dark' ? '0 4px 32px 0 rgba(0,0,0,0.7)' : '0 4px 32px 0 rgba(0,0,0,0.15)',
-              border: theme === 'dark' ? '1.5px solid #35366a' : '1.5px solid #e5e5e5',
-              transition: 'background 0.3s, color 0.3s'
+              background: theme === 'dark' ? 'rgba(35,36,74,0.8)' : 'rgba(255,255,255,0.8)',
+              transition: 'background 0.3s'
             }}
           >
-            <h2
-              className="text-2xl font-bold mb-4"
-              style={{ color: theme === 'dark' ? '#E8F9FF' : '#1A1B41', textShadow: theme === 'dark' ? '0 2px 8px #18192f' : 'none' }}
+            <div
+              className="rounded-xl text-center max-w-xl mx-4 p-8 shadow-2xl"
+              style={{
+                background: colors.cardBg,
+                color: colors.text,
+                boxShadow: theme === 'dark' ? '0 4px 32px 0 rgba(0,0,0,0.7)' : '0 4px 32px 0 rgba(0,0,0,0.15)',
+                border: theme === 'dark' ? '1.5px solid #35366a' : '1.5px solid #e5e5e5',
+                transition: 'background 0.3s, color 0.3s'
+              }}
             >
-              Level Cleared!
-            </h2>
-            {currentLevelIndex < gameLevels.length - 1 ? (
+              <h2
+                className="text-2xl font-bold mb-4"
+                style={{ color: theme === 'dark' ? '#E8F9FF' : '#1A1B41', textShadow: theme === 'dark' ? '0 2px 8px #18192f' : 'none' }}
+              >
+                Level Cleared!
+              </h2>
+              {currentLevelIndex < gameLevels.length - 1 ? (
+                <button
+                  onClick={handleNextLevel}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-colors"
+                  style={{ boxShadow: theme === 'dark' ? '0 2px 8px #18192f' : undefined }}
+                >
+                  Next Challenge &rarr;
+                </button>
+              ) : (
+                <p className="text-xl font-semibold text-green-600">You're a Resource Pro!</p>
+              )}
+            </div>
+          </div>
+        )}
+        {/* Modal for game complete */}
+        {gameComplete && (
+          <div
+            className="fixed inset-0 flex items-center justify-center z-[110]"
+            style={{
+              background: theme === 'dark' ? 'rgba(35,36,74,0.97)' : 'rgba(255,255,255,0.97)',
+              transition: 'background 0.3s'
+            }}
+          >
+            <div
+              className="rounded-xl text-center max-w-md mx-4 p-10 shadow-2xl"
+              style={{
+                background: colors.cardBg,
+                color: colors.text,
+                boxShadow: theme === 'dark' ? '0 4px 32px 0 rgba(0,0,0,0.7)' : '0 4px 32px 0 rgba(0,0,0,0.15)',
+                border: theme === 'dark' ? '1.5px solid #35366a' : '1.5px solid #e5e5e5',
+                transition: 'background 0.3s, color 0.3s'
+              }}
+            >
+              <h2
+                className="text-3xl font-extrabold mb-4 text-yellow-400"
+                style={{ textShadow: theme === 'dark' ? '0 2px 8px #18192f' : 'none' }}
+              >
+                Congratulations!
+              </h2>
+              <p className="text-2xl font-bold mb-2">You are a Resource Master!</p>
+              <p className="text-xl mb-6">Total Score: <span className="font-extrabold text-orange-500">{score}</span></p>
               <button
-                onClick={handleNextLevel}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-colors"
+                onClick={handlePlayAgain}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-xl transition-colors shadow-lg"
                 style={{ boxShadow: theme === 'dark' ? '0 2px 8px #18192f' : undefined }}
               >
-                Next Challenge &rarr;
+                Play Again
               </button>
-            ) : (
-              <p className="text-xl font-semibold text-green-600">You're a Resource Pro!</p>
-            )}
-          </div>
-        </div>
-      )}
-      {/* Modal for game complete */}
-      {gameComplete && (
-        <div
-          className="fixed inset-0 flex items-center justify-center z-[110]"
-          style={{
-            background: theme === 'dark' ? 'rgba(35,36,74,0.97)' : 'rgba(255,255,255,0.97)',
-            transition: 'background 0.3s'
-          }}
-        >
-          <div
-            className="rounded-xl text-center max-w-md mx-4 p-10 shadow-2xl"
-            style={{
-              background: colors.cardBg,
-              color: colors.text,
-              boxShadow: theme === 'dark' ? '0 4px 32px 0 rgba(0,0,0,0.7)' : '0 4px 32px 0 rgba(0,0,0,0.15)',
-              border: theme === 'dark' ? '1.5px solid #35366a' : '1.5px solid #e5e5e5',
-              transition: 'background 0.3s, color 0.3s'
-            }}
-          >
-            <h2
-              className="text-3xl font-extrabold mb-4 text-yellow-400"
-              style={{ textShadow: theme === 'dark' ? '0 2px 8px #18192f' : 'none' }}
-            >
-              Congratulations!
-            </h2>
-            <p className="text-2xl font-bold mb-2">You are a Resource Master!</p>
-            <p className="text-xl mb-6">Total Score: <span className="font-extrabold text-orange-500">{score}</span></p>
-            <button
-              onClick={handlePlayAgain}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-xl transition-colors shadow-lg"
-              style={{ boxShadow: theme === 'dark' ? '0 2px 8px #18192f' : undefined }}
-            >
-              Play Again
-            </button>
-          </div>
-        </div>
-      )}
-      {/* Only show game content if no celebration/modals are active */}
-      {!showCelebration && !gameComplete && (
-        <div className="mt-6 space-y-6">
-          <div className="p-6 rounded-lg shadow-md" style={{ background: colors.cardBg }}>
-            <h3 className="text-xl font-semibold mb-4" style={{ color: colors.text }}>Sort These Items:</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 justify-items-center">
-              {itemsToDrag.map(item => (
-                <div key={item.id} className="flex flex-col items-center gap-2">
-                  <div
-                    draggable
-                    onDragStart={e => {
-                      e.dataTransfer.setData('text/plain', JSON.stringify(item));
-                      playSound('click');
-                    }}
-                    className="w-20 h-20 rounded-full flex items-center justify-center shadow text-lg font-bold cursor-move border-2 border-orange-400 hover:border-blue-400 transition-all select-none overflow-hidden"
-                    style={{ backgroundColor: '#FFA500' }}
-                  >
-                    {item.image ? (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-16 h-16 object-contain"
-                        draggable={false}
-                      />
-                    ) : (
-                      item.name[0]
-                    )}
-                  </div>
-                  <span className={`mt-1 text-base font-medium text-center`} style={{ color: theme === 'dark' ? '#fff' : '#1A1B41' }}>{item.name}</span>
-                </div>
-              ))}
-              {itemsToDrag.length === 0 && !showCelebration && currentItems.length > 0 && 
-                <p className="text-center text-gray-600 italic">
-                  All items for this level are sorted! Ready for the next?
-                </p>
-              }
             </div>
           </div>
-          {categories.length === 3 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <SortingBin
-                key={categories[0].key}
-                category={categories[0]}
-                onDropItem={handleDropItem}
-                droppedItemsHere={correctlyPlacedItems[categories[0].key] || []}
-              />
-              <SortingBin
-                key={categories[1].key}
-                category={categories[1]}
-                onDropItem={handleDropItem}
-                droppedItemsHere={correctlyPlacedItems[categories[1].key] || []}
-              />
-              <div className="col-span-2 flex justify-center">
-                <div className="w-full sm:w-1/2">
-                  <SortingBin
-                    key={categories[2].key}
-                    category={categories[2]}
-                    onDropItem={handleDropItem}
-                    droppedItemsHere={correctlyPlacedItems[categories[2].key] || []}
-                  />
-                </div>
+        )}
+        {/* Only show game content if no celebration/modals are active */}
+        {!showCelebration && !gameComplete && (
+          <div className="mt-6 space-y-6">
+            <div className="p-6 rounded-lg shadow-md" style={{ background: colors.cardBg }}>
+              <h3 className="text-xl font-semibold mb-4" style={{ color: colors.text }}>Sort These Items:</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 justify-items-center">
+                {itemsToDrag.map(item => (
+                  <div key={item.id} className="flex flex-col items-center gap-2">
+                    <div
+                      draggable
+                      onDragStart={e => {
+                        e.dataTransfer.setData('text/plain', JSON.stringify(item));
+                        playSound('click');
+                      }}
+                      className="w-20 h-20 rounded-full flex items-center justify-center shadow text-lg font-bold cursor-move border-2 border-orange-400 hover:border-blue-400 transition-all select-none overflow-hidden"
+                      style={{ backgroundColor: '#FFA500' }}
+                    >
+                      {item.image ? (
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-16 h-16 object-contain"
+                          draggable={false}
+                        />
+                      ) : (
+                        item.name[0]
+                      )}
+                    </div>
+                    <span className={`mt-1 text-base font-medium text-center`} style={{ color: theme === 'dark' ? '#fff' : '#1A1B41' }}>{item.name}</span>
+                  </div>
+                ))}
+                {itemsToDrag.length === 0 && !showCelebration && currentItems.length > 0 && 
+                  <p className="text-center text-gray-600 italic">
+                    All items for this level are sorted! Ready for the next?
+                  </p>
+                }
               </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {categories.map(category => (
+            {categories.length === 3 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <SortingBin
-                  key={category.key}
-                  category={category}
+                  key={categories[0].key}
+                  category={categories[0]}
                   onDropItem={handleDropItem}
-                  droppedItemsHere={correctlyPlacedItems[category.key] || []}
+                  droppedItemsHere={correctlyPlacedItems[categories[0].key] || []}
                 />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      {!showCelebration && itemsToDrag.length === 0 && currentItems.length > 0 && currentLevelIndex < gameLevels.length - 1 && (
-        <div className="flex justify-center mt-6">
-          <button
-            onClick={handleNextLevel}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-colors"
-          >
-            Proceed to Next Challenge &rarr;
-          </button>
-        </div>
-      )}
-    </div>
+                <SortingBin
+                  key={categories[1].key}
+                  category={categories[1]}
+                  onDropItem={handleDropItem}
+                  droppedItemsHere={correctlyPlacedItems[categories[1].key] || []}
+                />
+                <div className="col-span-2 flex justify-center">
+                  <div className="w-full sm:w-1/2">
+                    <SortingBin
+                      key={categories[2].key}
+                      category={categories[2]}
+                      onDropItem={handleDropItem}
+                      droppedItemsHere={correctlyPlacedItems[categories[2].key] || []}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {categories.map(category => (
+                  <SortingBin
+                    key={category.key}
+                    category={category}
+                    onDropItem={handleDropItem}
+                    droppedItemsHere={correctlyPlacedItems[category.key] || []}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        {!showCelebration && itemsToDrag.length === 0 && currentItems.length > 0 && currentLevelIndex < gameLevels.length - 1 && (
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={handleNextLevel}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-colors"
+            >
+              Proceed to Next Challenge &rarr;
+            </button>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 

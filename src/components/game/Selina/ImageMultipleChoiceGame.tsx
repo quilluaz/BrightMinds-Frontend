@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../../context/ThemeContext';
 import { playSound, SoundType, CelebrationAnimation, GameCompleteCelebration, animationStyles } from './GameConfigurations';
-import GameLandingPage from '../GameLandingPage';
+import BackgroundMusic from '../BackgroundMusic';
 
 // Color Palette
 const COLORS = {
@@ -266,105 +266,148 @@ const ImageMultipleChoiceGame: React.FC = () => {
 
   if (!hasGameStarted) {
     return (
-      <GameLandingPage
-        title="Identify the Correct Image!"
-        subtitle="Subukan ang iyong kaalaman sa Araling Panlipunan at Tagalog sa masayang paraan!"
-        description="Choose the correct picture for each question."
-        instruction="Look at each question carefully and select the image that best matches the description."
-        onStart={handleStartGame}
-        gameIcon="/images/multiple-choice/game-icon.svg"
-      />
+      <>
+        <BackgroundMusic 
+          musicFile="/audio/multiple-choice.mp3" 
+          volume={0.15} 
+        />
+        <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
+          <div className={`p-10 rounded-3xl shadow-xl text-center max-w-xl w-full transition-colors duration-200`} style={{ backgroundColor: colors.cardBackground }}>
+            <h1 className="text-5xl sm:text-6xl font-bold mb-4" style={{ color: colors.primaryText }}>
+              Welcome to
+            </h1>
+            <h2 className="text-4xl sm:text-5xl font-bold mb-8" style={{ color: colors.secondaryAccent }}>
+              Identify the Correct Image!
+            </h2>
+            <p className="text-xl sm:text-xl mb-3 opacity-80" style={{ color: colors.primaryText }}>
+              Subukan ang iyong kaalaman sa Araling Panlipunan at Tagalog sa masayang paraan!
+            </p>
+            <p className="text-xl sm:text-2xl mb-12 opacity-80" style={{ color: colors.primaryText }}>
+              Choose the correct picture for each question.
+            </p>
+            <button
+              onClick={handleStartGame}
+              className="hover:bg-[#db8e00] text-white font-bold py-4 px-12 rounded-full text-2xl sm:text-3xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
+              style={{ backgroundColor: colors.secondaryAccent }}
+            >
+              Start
+            </button>
+          </div>
+        </div>
+      </>
     );
   }
 
   if (showScore) {
     return (
-      <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
-        {showGameCompleteCelebration && <GameCompleteCelebration />}
-        <div className={`p-10 rounded-3xl shadow-xl text-center max-w-md w-full transition-colors duration-200`} style={{ backgroundColor: colors.cardBackground }}>
-          <h2 className="text-5xl font-bold mb-6" style={{ color: colors.primaryAccent }}>The Game has Finished</h2>
-          <p className="text-3xl mb-10" style={{ color: colors.primaryText }}>
-            Your Score: <span className="font-bold text-4xl" style={{ color: colors.secondaryAccent }}>{score}</span> / {questionsData.length}
-          </p>
-          <button
-            onClick={restartGame}
-            className="hover:bg-[#5f6b9a] text-white font-bold py-4 px-10 rounded-full text-2xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
-            style={{ backgroundColor: colors.interactiveElements }}
-          >
-            Play Again
-          </button>
+      <>
+        <BackgroundMusic 
+          musicFile="/audio/multiple-choice.mp3" 
+          volume={0.15} 
+        />
+        <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
+          {showGameCompleteCelebration && <GameCompleteCelebration />}
+          <div className={`p-10 rounded-3xl shadow-xl text-center max-w-md w-full transition-colors duration-200`} style={{ backgroundColor: colors.cardBackground }}>
+            <h2 className="text-5xl font-bold mb-6" style={{ color: colors.primaryAccent }}>The Game has Finished</h2>
+            <p className="text-3xl mb-10" style={{ color: colors.primaryText }}>
+              Your Score: <span className="font-bold text-4xl" style={{ color: colors.secondaryAccent }}>{score}</span> / {questionsData.length}
+            </p>
+            <button
+              onClick={restartGame}
+              className="hover:bg-[#5f6b9a] text-white font-bold py-4 px-10 rounded-full text-2xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
+              style={{ backgroundColor: colors.interactiveElements }}
+            >
+              Play Again
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (!currentQuestion) {
-    return <div className={`bg-pattern min-h-screen flex items-center justify-center transition-colors duration-200`} style={{ color: colors.primaryText }}>Nagloloading ang laro...</div>;
+    return (
+      <>
+        <BackgroundMusic 
+          musicFile="/audio/multiple-choice.mp3" 
+          volume={0.15} 
+        />
+        <div className={`bg-pattern min-h-screen flex items-center justify-center transition-colors duration-200`} style={{ color: colors.primaryText }}>
+          Nagloloading ang laro...
+        </div>
+      </>
+    );
   }
 
   return (
-    <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
-      {showCelebration && <CelebrationAnimation />}
-      <div className={`p-6 sm:p-10 rounded-3xl shadow-xl w-full max-w-3xl transition-colors duration-200`} style={{ backgroundColor: colors.cardBackground }}>
-        <div className="mb-8 text-center">
-          <p className="text-xl sm:text-2xl font-semibold mb-2" style={{ color: colors.interactiveElements }}>
-            Tanong {currentQuestionIndex + 1} ng {questionsData.length}
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold" style={{ color: colors.primaryText }}>{currentQuestion.questionText}</h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8">
-          {currentQuestion.choices.map(choice => (
-            <button
-              key={choice.id}
-              onClick={() => handleAnswerSelection(choice.id)}
-              disabled={showFeedback}
-              className={`relative border-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-150 ease-in-out transform hover:scale-105 focus:outline-none group p-6 pt-14 sm:p-8 sm:pt-16
-                ${selectedAnswer === choice.id && showFeedback && isAnswerCorrect ? 'border-[#DBD053] ring-4 ring-[#DBD053]' : 'border-transparent'}
-                ${selectedAnswer === choice.id && showFeedback && !isAnswerCorrect ? 'border-red-500 ring-4 ring-red-500' : selectedAnswer !== choice.id ? 'border-transparent' : ''}
-                ${!selectedAnswer && !showFeedback ? 'focus:border-[#7A89C2]' : ''}
-                ${showFeedback ? 'cursor-not-allowed' : 'cursor-pointer'}
-              `}
-              style={{ backgroundColor: colors.cardBackground, borderColor: colors.borderColor }}
-            >
-              <div className="absolute top-3 left-3 text-white text-lg font-bold w-10 h-10 rounded-full flex items-center justify-center shadow-md" style={{ backgroundColor: colors.secondaryAccent }}>
-                {choice.id}
-              </div>
-              <div className={`w-full h-48 sm:h-60 flex items-center justify-center rounded-xl mb-3 group-hover:${colors.hoverBg}`}>
-                {isImagePath(choice.imagePlaceholderText) ? (
-                  <img
-                    src={choice.imagePlaceholderText}
-                    alt={`Choice ${choice.id}`}
-                    className="w-full h-full object-cover rounded-xl"
-                    onError={(e) => {
-                      e.currentTarget.src = '/path/to/fallback-image.jpg';
-                      console.error(`Failed to load image: ${choice.imagePlaceholderText}`);
-                    }}
-                  />
-                ) : (
-                  <span className={`text-lg px-2 text-center w-full h-full flex items-center justify-center rounded-xl`} style={{ color: colors.primaryText, backgroundColor: colors.neutralBackground }}>
-                    {choice.imagePlaceholderText}
-                  </span>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {showFeedback && (
-          <div className={`mt-6 p-5 rounded-xl text-2xl font-semibold shadow-md text-center transition-colors duration-200
-            ${isAnswerCorrect ? 'text-[#1A1B41]' : 'text-white'}`}
-            style={{ backgroundColor: isAnswerCorrect ? colors.primaryAccent : 'rgb(239, 68, 68)' }}
-          >
-            {isAnswerCorrect ? 'Magaling! Tamang sagot!' : 'Oops! Subukan muli sa susunod.'}
+    <>
+      <BackgroundMusic 
+        musicFile="/audio/multiple-choice.mp3" 
+        volume={0.15} 
+      />
+      <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
+        {showCelebration && <CelebrationAnimation />}
+        <div className={`p-6 sm:p-10 rounded-3xl shadow-xl w-full max-w-3xl transition-colors duration-200`} style={{ backgroundColor: colors.cardBackground }}>
+          <div className="mb-8 text-center">
+            <p className="text-xl sm:text-2xl font-semibold mb-2" style={{ color: colors.interactiveElements }}>
+              Tanong {currentQuestionIndex + 1} ng {questionsData.length}
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-bold" style={{ color: colors.primaryText }}>{currentQuestion.questionText}</h2>
           </div>
-        )}
-        
-        <div className="mt-10 text-center">
-          <p className="text-3xl font-bold" style={{ color: colors.secondaryAccent }}>Score: {score}</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8">
+            {currentQuestion.choices.map(choice => (
+              <button
+                key={choice.id}
+                onClick={() => handleAnswerSelection(choice.id)}
+                disabled={showFeedback}
+                className={`relative border-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-150 ease-in-out transform hover:scale-105 focus:outline-none group p-6 pt-14 sm:p-8 sm:pt-16
+                  ${selectedAnswer === choice.id && showFeedback && isAnswerCorrect ? 'border-[#DBD053] ring-4 ring-[#DBD053]' : 'border-transparent'}
+                  ${selectedAnswer === choice.id && showFeedback && !isAnswerCorrect ? 'border-red-500 ring-4 ring-red-500' : selectedAnswer !== choice.id ? 'border-transparent' : ''}
+                  ${!selectedAnswer && !showFeedback ? 'focus:border-[#7A89C2]' : ''}
+                  ${showFeedback ? 'cursor-not-allowed' : 'cursor-pointer'}
+                `}
+                style={{ backgroundColor: colors.cardBackground, borderColor: colors.borderColor }}
+              >
+                <div className="absolute top-3 left-3 text-white text-lg font-bold w-10 h-10 rounded-full flex items-center justify-center shadow-md" style={{ backgroundColor: colors.secondaryAccent }}>
+                  {choice.id}
+                </div>
+                <div className={`w-full h-48 sm:h-60 flex items-center justify-center rounded-xl mb-3 group-hover:${colors.hoverBg}`}>
+                  {isImagePath(choice.imagePlaceholderText) ? (
+                    <img
+                      src={choice.imagePlaceholderText}
+                      alt={`Choice ${choice.id}`}
+                      className="w-full h-full object-cover rounded-xl"
+                      onError={(e) => {
+                        e.currentTarget.src = '/path/to/fallback-image.jpg';
+                        console.error(`Failed to load image: ${choice.imagePlaceholderText}`);
+                      }}
+                    />
+                  ) : (
+                    <span className={`text-lg px-2 text-center w-full h-full flex items-center justify-center rounded-xl`} style={{ color: colors.primaryText, backgroundColor: colors.neutralBackground }}>
+                      {choice.imagePlaceholderText}
+                    </span>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {showFeedback && (
+            <div className={`mt-6 p-5 rounded-xl text-2xl font-semibold shadow-md text-center transition-colors duration-200
+              ${isAnswerCorrect ? 'text-[#1A1B41]' : 'text-white'}`}
+              style={{ backgroundColor: isAnswerCorrect ? colors.primaryAccent : 'rgb(239, 68, 68)' }}
+            >
+              {isAnswerCorrect ? 'Magaling! Tamang sagot!' : 'Oops! Subukan muli sa susunod.'}
+            </div>
+          )}
+          
+          <div className="mt-10 text-center">
+            <p className="text-3xl font-bold" style={{ color: colors.secondaryAccent }}>Score: {score}</p>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

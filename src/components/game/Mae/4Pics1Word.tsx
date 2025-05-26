@@ -6,6 +6,7 @@ import { CelebrationAnimation, GameCompleteCelebration, animationStyles } from '
 import HintModal from './HintModal';
 import GameLandingPage from '../GameLandingPage';
 import { playSound, WordCelebration, WordGameCompleteCelebration, wordAnimationStyles } from './GameSoundEffects';
+import BackgroundMusic from '../BackgroundMusic';
 
 interface GameQuestion {
   images: string[];
@@ -498,14 +499,19 @@ const FourPicsOneWord: React.FC = () => {
 
   if (!hasGameStarted) {
     return (
-      <GameLandingPage
-        title="4 Pics 1 Word"
-        subtitle="Test your vocabulary and observation skills!"
-        description="Match the pictures to form a word that connects them all."
-        instruction="Look at the 4 pictures and type the word that connects them all together."
-        onStart={handleStartGame}
-        /**gameIcon="/images/4pics1word/game-icon.svg"*/
-      />
+      <>
+        <BackgroundMusic 
+          musicFile="/audio/4pics.mp3" 
+          volume={0.15} 
+        />
+        <GameLandingPage
+          title="4 Pics 1 Word"
+          subtitle="Test your vocabulary and observation skills!"
+          description="Match the pictures to form a word that connects them all."
+          instruction="Look at the 4 pictures and type the word that connects them all together."
+          onStart={handleStartGame}
+        />
+      </>
     );
   }
 
@@ -514,162 +520,174 @@ const FourPicsOneWord: React.FC = () => {
     const hasPassed = score >= PASSING_SCORE;
 
     return (
-      <div
-        className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`}
-        style={{ color: colors.primaryText }}
-      >
-        {showGameCompleteCelebration && <WordGameCompleteCelebration />}
+      <>
+        <BackgroundMusic 
+          musicFile="/audio/4pics.mp3" 
+          volume={0.15} 
+        />
         <div
-          className={`p-10 rounded-3xl shadow-xl text-center max-w-md w-full transition-colors duration-200`}
-          style={{ backgroundColor: colors.cardBackground }}
+          className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`}
+          style={{ color: colors.primaryText }}
         >
-          <h2 className="text-5xl font-bold mb-6" style={{ color: colors.primaryAccent }}>
-            {hasPassed ? 'Congratulations!' : 'Better Luck Next Time'}
-          </h2>
-          <p className="text-3xl mb-10" style={{ color: colors.primaryText }}>
-            Your Score: <span className="font-bold text-4xl" style={{ color: colors.secondaryAccent }}>{formatScore(score)}</span> / 50
-          </p>
-          <button
-            onClick={resetGame}
-            className="hover:bg-[#5f6b9a] text-white font-bold py-2 px-4 rounded-full text-lg transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#DBD053] shadow-lg"
-            style={{ backgroundColor: colors.interactiveElements }}
+          {showGameCompleteCelebration && <WordGameCompleteCelebration />}
+          <div
+            className={`p-10 rounded-3xl shadow-xl text-center max-w-md w-full transition-colors duration-200`}
+            style={{ backgroundColor: colors.cardBackground }}
           >
-            {hasPassed ? 'Play Again' : 'Try Again'}
-          </button>
+            <h2 className="text-5xl font-bold mb-6" style={{ color: colors.primaryAccent }}>
+              {hasPassed ? 'Congratulations!' : 'Better Luck Next Time'}
+            </h2>
+            <p className="text-3xl mb-10" style={{ color: colors.primaryText }}>
+              Your Score: <span className="font-bold text-4xl" style={{ color: colors.secondaryAccent }}>{formatScore(score)}</span> / 50
+            </p>
+            <button
+              onClick={resetGame}
+              className="hover:bg-[#5f6b9a] text-white font-bold py-2 px-4 rounded-full text-lg transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#DBD053] shadow-lg"
+              style={{ backgroundColor: colors.interactiveElements }}
+            >
+              {hasPassed ? 'Play Again' : 'Try Again'}
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
-      {showCelebration && <WordCelebration />}
-      <div className={`p-6 sm:p-10 rounded-3xl shadow-xl w-full max-w-3xl transition-colors duration-200 relative`} style={{ backgroundColor: colors.cardBackground }}>
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: 16,
-            left: 16,
-            cursor: 'pointer',
-            zIndex: 10,
-            '&:hover': {
-              opacity: 0.8,
-            },
-          }}
-          onClick={() => setShowHintModal(true)}
-        >
-          <img src="/images/4pics1word/bulb.svg" alt="Hint" aria-label="Open hint modal" style={{ width: '85px', height: '85px' }} />
-        </Box>
+    <>
+      <BackgroundMusic 
+        musicFile="/audio/4pics.mp3" 
+        volume={0.15} 
+      />
+      <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
+        {showCelebration && <WordCelebration />}
+        <div className={`p-6 sm:p-10 rounded-3xl shadow-xl w-full max-w-3xl transition-colors duration-200 relative`} style={{ backgroundColor: colors.cardBackground }}>
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 16,
+              left: 16,
+              cursor: 'pointer',
+              zIndex: 10,
+              '&:hover': {
+                opacity: 0.8,
+              },
+            }}
+            onClick={() => setShowHintModal(true)}
+          >
+            <img src="/images/4pics1word/bulb.svg" alt="Hint" aria-label="Open hint modal" style={{ width: '85px', height: '85px' }} />
+          </Box>
 
-        <div className="mb-8 text-center">
-          <p className="text-xl sm:text-2xl font-semibold mb-2" style={{ color: colors.interactiveElements }}>
-            Question {currentQuestion + 1} of {questions.length}
-          </p>
-          <Typography variant="h3" gutterBottom style={{ color: colors.primaryText }}>
-            4 Pics 1 Word
-          </Typography>
-          <Typography variant="h5" gutterBottom style={{ color: colors.secondaryAccent }}>
-            Score: {formatScore(score)}
-          </Typography>
-        </div>
-
-        <Box display="flex" flexWrap="wrap" justifyContent="center" sx={{ columnGap: 0, rowGap: 2 }} mb={4}>
-          {questions[currentQuestion].images.map((image, index) => (
-            <ImageContainer key={index} sx={{ flexBasis: 'calc(40% - 8px)', maxWidth: 'calc(40% - 8px)' }}>
-              {image.includes('/') && image.endsWith('.svg') ? (
-                <img src={image} alt={`Image ${index + 1}`} />
-              ) : (
-                <Typography variant="h6" style={{ color: colors.primaryText }}>
-                  {image.toUpperCase()}
-                </Typography>
-              )}
-            </ImageContainer>
-          ))}
-        </Box>
-
-        <Box textAlign="center" mb={4}>
-          {letterInputs.length > 0 && (
-            <Box display="flex" justifyContent="center" alignItems="center" mb={3}>
-              {letterInputs.map((letter, index) => (
-                <LetterInput
-                  key={index}
-                  value={revealedLetters.includes(index) ? questions[currentQuestion].answer[index] : letter}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => handleLetterChange(index, e.target.value)}
-                  onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => handleKeyDown(index, e)}
-                  onClick={() => handleInputClick(index)}
-                  inputRef={(el) => (inputRefs.current[index] = el)}
-                  inputProps={{
-                    maxLength: 1,
-                    style: {
-                      textAlign: 'center',
-                      padding: '0 8px',
-                      fontSize: '2rem',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      backgroundColor: 'transparent',
-                      boxSizing: 'border-box',
-                    },
-                  }}
-                  disabled={isShaking || (isAnswerSubmitted && isAnswerCorrect) || revealedLetters.includes(index)}
-                  isCorrect={
-                    isAnswerSubmitted &&
-                    !isShaking &&
-                    letterInputs.every((letter, i) => revealedLetters.includes(i) || letter !== '') &&
-                    isAnswerCorrect
-                  }
-                  isWrong={
-                    isAnswerSubmitted &&
-                    !isAnswerCorrect &&
-                    letterInputs.every((letter, i) => revealedLetters.includes(i) || letter !== '')
-                  }
-                  isShaking={isShaking}
-                  isRevealed={revealedLetters.includes(index)}
-                  placeholder=""
-                  variant="outlined"
-                  sx={{
-                    display: 'flex',
-                    visibility: 'visible',
-                    minWidth: '50px',
-                    minHeight: '55px',
-                  }}
-                />
-              ))}
-            </Box>
-          )}
-        </Box>
-
-        <Box textAlign="center" mb={4}>
-          <Typography variant="body1" gutterBottom style={{ color: colors.primaryText }}>
-            {questions[currentQuestion].englishTranslation}
-          </Typography>
-          <Typography variant="body2" gutterBottom style={{ color: colors.interactiveElements, fontStyle: 'italic' }}>
-            {questions[currentQuestion].clue}
-          </Typography>
-          {showFunFact && isAnswerCorrect && (
-            <Typography
-              variant="body1"
-              style={{
-                color: colors.secondaryAccent,
-                marginTop: '1rem',
-                animation: 'fadeIn 0.5s ease-in',
-              }}
-            >
-              {questions[currentQuestion].funFact}
+          <div className="mb-8 text-center">
+            <p className="text-xl sm:text-2xl font-semibold mb-2" style={{ color: colors.interactiveElements }}>
+              Question {currentQuestion + 1} of {questions.length}
+            </p>
+            <Typography variant="h3" gutterBottom style={{ color: colors.primaryText }}>
+              4 Pics 1 Word
             </Typography>
-          )}
-        </Box>
+            <Typography variant="h5" gutterBottom style={{ color: colors.secondaryAccent }}>
+              Score: {formatScore(score)}
+            </Typography>
+          </div>
 
-        <HintModal
-          open={showHintModal}
-          onClose={() => setShowHintModal(false)}
-          onAccept={() => {
-            revealRandomLetter();
-            setShowHintModal(false);
-          }}
-          attempts={attempts}
-        />
+          <Box display="flex" flexWrap="wrap" justifyContent="center" sx={{ columnGap: 0, rowGap: 2 }} mb={4}>
+            {questions[currentQuestion].images.map((image, index) => (
+              <ImageContainer key={index} sx={{ flexBasis: 'calc(40% - 8px)', maxWidth: 'calc(40% - 8px)' }}>
+                {image.includes('/') && image.endsWith('.svg') ? (
+                  <img src={image} alt={`Image ${index + 1}`} />
+                ) : (
+                  <Typography variant="h6" style={{ color: colors.primaryText }}>
+                    {image.toUpperCase()}
+                  </Typography>
+                )}
+              </ImageContainer>
+            ))}
+          </Box>
+
+          <Box textAlign="center" mb={4}>
+            {letterInputs.length > 0 && (
+              <Box display="flex" justifyContent="center" alignItems="center" mb={3}>
+                {letterInputs.map((letter, index) => (
+                  <LetterInput
+                    key={index}
+                    value={revealedLetters.includes(index) ? questions[currentQuestion].answer[index] : letter}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => handleLetterChange(index, e.target.value)}
+                    onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => handleKeyDown(index, e)}
+                    onClick={() => handleInputClick(index)}
+                    inputRef={(el) => (inputRefs.current[index] = el)}
+                    inputProps={{
+                      maxLength: 1,
+                      style: {
+                        textAlign: 'center',
+                        padding: '0 8px',
+                        fontSize: '2rem',
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase',
+                        backgroundColor: 'transparent',
+                        boxSizing: 'border-box',
+                      },
+                    }}
+                    disabled={isShaking || (isAnswerSubmitted && isAnswerCorrect) || revealedLetters.includes(index)}
+                    isCorrect={
+                      isAnswerSubmitted &&
+                      !isShaking &&
+                      letterInputs.every((letter, i) => revealedLetters.includes(i) || letter !== '') &&
+                      isAnswerCorrect
+                    }
+                    isWrong={
+                      isAnswerSubmitted &&
+                      !isAnswerCorrect &&
+                      letterInputs.every((letter, i) => revealedLetters.includes(i) || letter !== '')
+                    }
+                    isShaking={isShaking}
+                    isRevealed={revealedLetters.includes(index)}
+                    placeholder=""
+                    variant="outlined"
+                    sx={{
+                      display: 'flex',
+                      visibility: 'visible',
+                      minWidth: '50px',
+                      minHeight: '55px',
+                    }}
+                  />
+                ))}
+              </Box>
+            )}
+          </Box>
+
+          <Box textAlign="center" mb={4}>
+            <Typography variant="body1" gutterBottom style={{ color: colors.primaryText }}>
+              {questions[currentQuestion].englishTranslation}
+            </Typography>
+            <Typography variant="body2" gutterBottom style={{ color: colors.interactiveElements, fontStyle: 'italic' }}>
+              {questions[currentQuestion].clue}
+            </Typography>
+            {showFunFact && isAnswerCorrect && (
+              <Typography
+                variant="body1"
+                style={{
+                  color: colors.secondaryAccent,
+                  marginTop: '1rem',
+                  animation: 'fadeIn 0.5s ease-in',
+                }}
+              >
+                {questions[currentQuestion].funFact}
+              </Typography>
+            )}
+          </Box>
+
+          <HintModal
+            open={showHintModal}
+            onClose={() => setShowHintModal(false)}
+            onAccept={() => {
+              revealRandomLetter();
+              setShowHintModal(false);
+            }}
+            attempts={attempts}
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

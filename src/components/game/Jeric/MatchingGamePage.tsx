@@ -5,6 +5,8 @@ import { MatchingPair, MatchingCard as MatchingCardType } from '../../../types';
 import shuffleArray from '../../../utils/shuffleArray';
 import { playSound, CelebrationAnimation, GameCompleteCelebration, animationStyles } from './GameConfigurations';
 import { useTheme } from '../../../context/ThemeContext';
+import GameLandingPage from '../GameLandingPage';
+import BackgroundMusic from '../BackgroundMusic';
 
 // Color palette for container and text (THIS WAS MISSING)
 const COLORS = {
@@ -198,29 +200,20 @@ const MatchingGamePage: React.FC = () => {
 
     if (!hasGameStarted) {
         return (
-            <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`} style={{ color: colors.text }}>
-                <div className={`p-10 rounded-3xl shadow-xl text-center max-w-xl w-full transition-colors duration-200`} style={{ backgroundColor: colors.cardBg }}>
-                    <h1 className="text-5xl sm:text-6xl font-bold mb-4" style={{ color: colors.text }}>
-                        Welcome to
-                    </h1>
-                    <h2 className="text-4xl sm:text-5xl font-bold mb-8" style={{ color: colors.secondaryAccent }}>
-                        Likas na Yaman Matching Game!
-                    </h2>
-                    <p className="text-xl sm:text-xl mb-3 opacity-80" style={{ color: colors.text }}>
-                        Test your knowledge about natural resources!
-                    </p>
-                    <p className="text-xl sm:text-2xl mb-12 opacity-80" style={{ color: colors.text }}>
-                        Match the words with their corresponding pictures!
-                    </p>
-                    <button
-                        onClick={handleStartGame}
-                        className="hover:bg-[#db8e00] text-white font-bold py-4 px-12 rounded-full text-2xl sm:text-3xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
-                        style={{ backgroundColor: colors.secondaryAccent }}
-                    >
-                        Start
-                    </button>
-                </div>
-            </div>
+            <>
+                <BackgroundMusic 
+                    musicFile="/audio/matching-game.mp3" 
+                    volume={0.15} 
+                />
+                <GameLandingPage
+                    title="Matching Game"
+                    subtitle="Test your memory and matching skills!"
+                    description="Match the cards to find pairs and complete the game."
+                    instruction="Click on cards to flip them and find matching pairs."
+                    onStart={handleStartGame}
+                    gameIcon="/images/matching-game/game-icon.svg"
+                />
+            </>
         );
     }
 
@@ -274,20 +267,26 @@ const MatchingGamePage: React.FC = () => {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            {showCelebration && <CelebrationAnimation />}
-            <h1 className="text-3xl font-bold text-center mb-2" style={{ color: colors.text }}>
-                Level {currentLevelData.level}: {currentLevelData.title}
-            </h1>
-            <p className="text-xl text-center mb-6" style={{ color: colors.text, opacity: 0.8 }}>
-                Match the pairs!
-            </p>
-            <MatchingGameBoard
-                cards={cards}
-                handleCardClick={handleCardClick}
-                isBoardDisabled={isBoardDisabled}
+        <>
+            <BackgroundMusic 
+                musicFile="/audio/matching-game.mp3" 
+                volume={0.15} 
             />
-        </div>
+            <div className="container mx-auto px-4 py-8">
+                {showCelebration && <CelebrationAnimation />}
+                <h1 className="text-3xl font-bold text-center mb-2" style={{ color: colors.text }}>
+                    Level {currentLevelData.level}: {currentLevelData.title}
+                </h1>
+                <p className="text-xl text-center mb-6" style={{ color: colors.text, opacity: 0.8 }}>
+                    Match the pairs!
+                </p>
+                <MatchingGameBoard
+                    cards={cards}
+                    handleCardClick={handleCardClick}
+                    isBoardDisabled={isBoardDisabled}
+                />
+            </div>
+        </>
     );
 };  
 

@@ -39,6 +39,7 @@ import GameplayPage from "./pages/student/GameplayPage";
 import ImageMultipleChoiceGame from "./components/game/Selina/ImageMultipleChoiceGame";
 import MatchingGamePage from "./components/game/Jeric/MatchingGamePage";
 import LikasYamanGame from "./components/game/Zeke/LikasYamanGame";
+import FourPicsOneWord from "./components/game/Mae/4Pics1Word";
 
 // --- ProtectedRoute Component ---
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -125,6 +126,10 @@ function App() {
                 <Route
                   path="/likas-yaman"
                   element={<LikasYamanGame />}
+                />
+                <Route
+                  path="/4pics1word"
+                  element={<FourPicsOneWord />}
                 />
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
 

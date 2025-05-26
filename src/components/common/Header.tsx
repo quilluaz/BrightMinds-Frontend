@@ -1,5 +1,5 @@
 import React from "react";
-import { Menu, X, Moon, Sun } from "lucide-react";
+import { Menu, X, Moon, Sun, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext"; 
 import { useTheme } from "../../context/ThemeContext"; 
@@ -13,6 +13,7 @@ const Header: React.FC = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [isGamesMenuOpen, setIsGamesMenuOpen] = React.useState(false);
   const navigate = useNavigate();
 
   const getGreeting = (): string => {
@@ -79,6 +80,51 @@ const Header: React.FC = () => {
               </Link>
             </>
           )}
+
+          {/* Games Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsGamesMenuOpen(!isGamesMenuOpen)}
+              className="flex items-center text-sm lg:text-base text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark transition-colors"
+            >
+              Games
+              <ChevronDown size={16} className="ml-1" />
+            </button>
+            {isGamesMenuOpen && (
+              <div className="absolute top-full left-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-primary-card-dark ring-1 ring-black ring-opacity-5">
+                <div className="py-1">
+                  <Link
+                    to="/4pics1word"
+                    className="block px-4 py-2 text-sm text-primary-text dark:text-primary-text-dark hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => setIsGamesMenuOpen(false)}
+                  >
+                    4 Pics 1 Word
+                  </Link>
+                  <Link
+                    to="/image-quiz"
+                    className="block px-4 py-2 text-sm text-primary-text dark:text-primary-text-dark hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => setIsGamesMenuOpen(false)}
+                  >
+                    Image Quiz
+                  </Link>
+                  <Link
+                    to="/matching-game-test"
+                    className="block px-4 py-2 text-sm text-primary-text dark:text-primary-text-dark hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => setIsGamesMenuOpen(false)}
+                  >
+                    Matching Game
+                  </Link>
+                  <Link
+                    to="/likas-yaman"
+                    className="block px-4 py-2 text-sm text-primary-text dark:text-primary-text-dark hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => setIsGamesMenuOpen(false)}
+                  >
+                    Likas Yaman
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
 
           {!isAuthenticated && (
             <>

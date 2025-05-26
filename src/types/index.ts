@@ -157,6 +157,7 @@ export interface AssignedGameDTO {
   assignedAt: string;
   dueDate: string;
   status?: 'PENDING' | 'COMPLETED' | 'OVERDUE';
+  game?: GameDTO;
 }
 
 export interface GameDTO {
@@ -165,6 +166,7 @@ export interface GameDTO {
   description?: string;
   subject?: string;
   questions?: GameQuestion[];
+  gameMode?: "BALLOON" | "TREASURE_HUNT" | "MATCHING" | "IMAGE_MULTIPLE_CHOICE" | "SORTING" | "FOUR_PICS_ONE_WORD";
 }
 
 export interface StudentGameAttemptDTO {

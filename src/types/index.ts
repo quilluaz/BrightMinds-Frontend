@@ -201,5 +201,6 @@ export interface MatchingCard {
 export interface MatchingPair {
   id: number;
   word: string;
+  english: string;
   imageUrl: string;
 }

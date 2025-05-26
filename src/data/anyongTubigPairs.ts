@@ -3,12 +3,12 @@ import { MatchingPair } from '../types'; // This path ('../types') assumes your 
 
 // Change 'export default' at the bottom to 'export const' here
 export const anyongTubigPairs: MatchingPair[] = [
-    { id: 1, word: 'Ilog', imageUrl: '/images/matching-card/ilog.jpg' },
-    { id: 2, word: 'Lawa', imageUrl: '/images/matching-card/lawa.jpg' },
-    { id: 3, word: 'Dagat', imageUrl: '/images/matching-card/dagat.jpg' },
-    { id: 4, word: 'Talon', imageUrl: '/images/matching-card/talon.jpg' },
-    { id: 5, word: 'Look', imageUrl: '/images/matching-card/look.jpg' },
-    { id: 6, word: 'Bukal', imageUrl: '/images/matching-card/bukal.jpg' },
+    { id: 1, word: 'Ilog', english: 'River',  imageUrl: '/images/matching-card/ilog.jpg' },
+    { id: 2, word: 'Lawa', english: 'Lake', imageUrl: '/images/matching-card/lawa.jpg' },
+    { id: 3, word: 'Dagat', english: 'Sea', imageUrl: '/images/matching-card/dagat.jpg' },
+    { id: 4, word: 'Talon', english: 'Waterfall', imageUrl: '/images/matching-card/talon.jpg' },
+    { id: 5, word: 'Look', english: 'Bay', imageUrl: '/images/matching-card/look.jpg' },
+    { id: 6, word: 'Bukal', english: 'Spring', imageUrl: '/images/matching-card/bukal.jpg' },
     
 ];
 

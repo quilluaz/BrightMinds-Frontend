@@ -1,9 +1,12 @@
+export type UserRole = "STUDENT" | "TEACHER";
+
 export interface User {
   id: number;
   email: string;
   firstName: string;
   lastName: string;
   name: string;
+  role?: UserRole;
 }
 
 export interface BackendUserResponse {
@@ -24,7 +27,7 @@ export interface RegisterRequestData {
   lastName: string;
   email: string;
   password: string;
-  role: "STUDENT" | "TEACHER";
+  role: UserRole;
   teacherCode?: string;
 }
 
@@ -42,8 +45,6 @@ export interface AuthContextType {
   login: (data: LoginRequestData) => Promise<User | null>;
   logout: () => void;
 }
-
-export type UserRole = "STUDENT" | "TEACHER";
 
 export interface Classroom {
   id: number;

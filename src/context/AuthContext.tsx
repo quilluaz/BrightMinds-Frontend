@@ -13,10 +13,10 @@ import {
   BackendLoginResponse,
   AuthContextType,
   BackendUserResponse,
+  UserRole,
 } from "../types";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 const API_BASE_URL = "http://localhost:8080/api/auth";
 
 const getTokenFromLocalStorage = (): string | null =>
@@ -26,11 +26,18 @@ const getUserFromLocalStorage = (): User | null => {
   const userJson = localStorage.getItem("authUser");
   if (!userJson) return null;
   try {
-    const parsedBaseUser = JSON.parse(userJson) as Omit<User, 'name'>;
-    if (parsedBaseUser?.id && parsedBaseUser.email && parsedBaseUser.firstName && parsedBaseUser.lastName) {
+    const parsedUser = JSON.parse(userJson) as Omit<User, "name"> & {
+      role?: UserRole;
+    };
+    if (
+      parsedUser?.id &&
+      parsedUser.email &&
+      parsedUser.firstName &&
+      parsedUser.lastName
+    ) {
       return {
-        ...parsedBaseUser,
-        name: `${parsedBaseUser.firstName} ${parsedBaseUser.lastName}`.trim(),
+        ...parsedUser,
+        name: `${parsedUser.firstName} ${parsedUser.lastName}`.trim(),
       };
     }
     localStorage.removeItem("authUser");
@@ -60,11 +67,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   useEffect(() => {
-    if (token) {
-      localStorage.setItem("authToken", token);
-    } else {
-      localStorage.removeItem("authToken");
-    }
+    if (token) localStorage.setItem("authToken", token);
+    else localStorage.removeItem("authToken");
+
     if (currentUser) {
       const { name, ...userToStore } = currentUser;
       localStorage.setItem("authUser", JSON.stringify(userToStore));
@@ -79,56 +84,67 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       email: backendUser.email,
       firstName: backendUser.firstName,
       lastName: backendUser.lastName,
-      name: `${backendUser.firstName || ""} ${backendUser.lastName || ""}`.trim(),
+      name: `${backendUser.firstName || ""} ${
+        backendUser.lastName || ""
+      }`.trim(),
     };
   };
 
-  const register = useCallback(async (registerData: RegisterRequestData): Promise<void> => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(registerData),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Registration failed: ${response.statusText}`);
+  const register = useCallback(
+    async (registerData: RegisterRequestData): Promise<void> => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(registerData),
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.message || `Registration failed: ${response.statusText}`
+          );
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
-  const login = useCallback(async (loginData: LoginRequestData): Promise<User | null> => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(loginData),
-      });
+  const login = useCallback(
+    async (loginData: LoginRequestData): Promise<User | null> => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(loginData),
+        });
+        const responseBody = await response.json();
+        if (!response.ok) {
+          throw new Error(
+            responseBody.message ||
+              responseBody.error ||
+              `Login failed: ${response.statusText}`
+          );
+        }
+        const backendLoginResp = responseBody as BackendLoginResponse;
+        const user = handleAuthResponse(backendLoginResp.user);
 
-      const responseBody = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseBody.message || responseBody.error || `Login failed: ${response.statusText}`);
+        setToken(backendLoginResp.accessToken);
+        setCurrentUser(user);
+        return user;
+      } catch (error) {
+        setToken(null);
+        setCurrentUser(null);
+        throw error;
+      } finally {
+        setIsLoading(false);
       }
-      
-      const backendLoginResp = responseBody as BackendLoginResponse;
-      const user = handleAuthResponse(backendLoginResp.user);
-
-      setToken(backendLoginResp.accessToken);
-      setCurrentUser(user);
-      return user;
-    } catch (error) {
-      setToken(null);
-      setCurrentUser(null);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   const logout = useCallback(() => {
     setToken(null);
@@ -145,8 +161,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         register,
         login,
         logout,
-      }}
-    >
+      }}>
       {children}
     </AuthContext.Provider>
   );

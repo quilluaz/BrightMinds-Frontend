@@ -27,7 +27,6 @@ import AboutUsPage from "./pages/common/AboutUsPage";
 import PrivacyPolicyPage from "./pages/common/PrivacyPolicyPage";
 
 // Teacher Specific Pages
-import TeacherDashboardPage from "./pages/teacher/TeacherDashboardPage";
 import TeacherClassroomsPage from "./pages/teacher/TeacherClassroomsPage";
 import TeacherClassroomViewPage from "./pages/teacher/TeacherClassroomViewPage";
 
@@ -92,7 +91,8 @@ const AuthenticatedRedirect = ({ children }: { children: JSX.Element }) => {
     if (currentUser.role === "STUDENT") {
       return <Navigate to="/student/dashboard" replace />;
     } else if (currentUser.role === "TEACHER") {
-      return <Navigate to="/teacher/dashboard" replace />;
+      // UPDATED: Navigate directly to classrooms page
+      return <Navigate to="/teacher/classrooms" replace />;
     }
     console.warn("AuthenticatedRedirect: currentUser.role not determinable for specific dashboard, redirecting to landing.");
     return <Navigate to="/" replace />;
@@ -148,10 +148,6 @@ function App() {
                   element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
                 />
 
-                <Route
-                  path="/teacher/dashboard"
-                  element={<ProtectedRoute><RoleRoute allowedRole="TEACHER"><TeacherDashboardPage /></RoleRoute></ProtectedRoute>}
-                />
                 <Route
                   path="/student/dashboard"
                   element={<ProtectedRoute><RoleRoute allowedRole="STUDENT"><StudentDashboardPage /></RoleRoute></ProtectedRoute>}

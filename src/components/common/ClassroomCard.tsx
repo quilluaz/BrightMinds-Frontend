@@ -15,7 +15,7 @@ const ClassroomCard: React.FC<ClassroomCardProps> = ({ classroom, role }) => {
 
   const classroomId = isTeacherClassroom(classroom) ? classroom.id : classroom.classroomId;
   const classroomName = isTeacherClassroom(classroom) ? classroom.name : classroom.classroomName;
-  const iconUrl = classroom.iconUrl || '📚'; // Default emoji icon
+  const iconUrl = classroom.iconUrl || '📚';
   const description = isTeacherClassroom(classroom) ? classroom.description : undefined;
   const studentCount = isTeacherClassroom(classroom) ? classroom.studentCount : undefined;
   const teacherName = isTeacherClassroom(classroom) ? classroom.teacherName : classroom.teacherName;
@@ -28,39 +28,40 @@ const ClassroomCard: React.FC<ClassroomCardProps> = ({ classroom, role }) => {
   };
 
   const cardColors = [
-    { bg: "bg-primary-interactive/10 dark:bg-primary-interactive-dark/20", text: "text-primary-interactive dark:text-primary-interactive-dark", border: "hover:border-primary-interactive dark:hover:border-primary-interactive-dark" },
-    { bg: "bg-primary-energetic/10 dark:bg-primary-energetic-dark/20", text: "text-primary-energetic dark:text-primary-energetic-dark", border: "hover:border-primary-energetic dark:hover:border-primary-energetic-dark" },
-    { bg: "bg-primary-accent/10 dark:bg-primary-accent-dark/20", text: "text-primary-accent dark:text-primary-accent-dark", border: "hover:border-primary-accent dark:hover:border-primary-accent-dark" },
-    { bg: "bg-blue-400/10 dark:bg-blue-500/20", text: "text-blue-500 dark:text-blue-400", border: "hover:border-blue-500 dark:hover:border-blue-400" },
-    { bg: "bg-green-400/10 dark:bg-green-500/20", text: "text-green-500 dark:text-green-400", border: "hover:border-green-500 dark:hover:border-green-400" },
+    { bg: "bg-primary-interactive/10 dark:bg-primary-interactive-dark/20", text: "text-primary-interactive dark:text-primary-interactive-dark", border: "hover:border-primary-interactive dark:hover:border-primary-interactive-dark", badgeColor: "bg-primary-interactive text-white" },
+    { bg: "bg-primary-energetic/10 dark:bg-primary-energetic-dark/20", text: "text-primary-energetic dark:text-primary-energetic-dark", border: "hover:border-primary-energetic dark:hover:border-primary-energetic-dark", badgeColor: "bg-primary-energetic text-white" },
+    { bg: "bg-primary-accent/10 dark:bg-primary-accent-dark/20", text: "text-primary-accent dark:text-primary-accent-dark", border: "hover:border-primary-accent dark:hover:border-primary-accent-dark", badgeColor: "bg-primary-accent text-primary-text" },
+    { bg: "bg-blue-400/10 dark:bg-blue-500/20", text: "text-blue-500 dark:text-blue-400", border: "hover:border-blue-500 dark:hover:border-blue-400", badgeColor: "bg-blue-500 text-white" },
+    { bg: "bg-green-400/10 dark:bg-green-500/20", text: "text-green-500 dark:text-green-400", border: "hover:border-green-500 dark:hover:border-green-400", badgeColor: "bg-green-500 text-white" },
   ];
   const colorTheme = cardColors[classroomName.length % cardColors.length];
+
 
   return (
     <Link to={getClassroomPath()} className="block h-full group focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-primary-background-dark focus:ring-primary-interactive rounded-2xl">
       <div
-        className={`bg-white dark:bg-primary-card-dark rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 ease-in-out h-full flex flex-col overflow-hidden border-2 border-transparent ${colorTheme.border} group-hover:scale-[1.04] active:scale-[0.97]`}
+        className={`bg-white dark:bg-primary-card-dark rounded-2xl shadow-lg group-hover:shadow-2xl transition-all duration-300 ease-in-out h-full flex flex-col overflow-hidden border-2 border-transparent ${colorTheme.border} group-hover:scale-[1.04] active:scale-[0.97]`}
       >
         <div className={`flex items-center justify-center h-32 ${colorTheme.bg} rounded-t-xl relative overflow-hidden p-4`}>
           <div className={`text-6xl opacity-80 group-hover:scale-110 group-hover:animate-subtle-float transition-transform duration-300 ease-out ${colorTheme.text}`}>
             {iconUrl}
           </div>
           {role === 'student' && activityCount > 0 && (
-            <div className="absolute top-3 right-3 bg-primary-energetic text-white text-xs font-bold px-2.5 py-1.5 rounded-full shadow-lg flex items-center group-hover:animate-pulse-slow">
-              <AlertTriangle size={14} className="mr-1.5" />
+            <div className={`absolute top-3 right-3 ${colorTheme.badgeColor} text-xs font-bold px-2.5 py-1.5 rounded-full shadow-lg flex items-center animate-pulse-slow group-hover:animate-none`}> {/* Stop pulsing on hover */}
+              <AlertTriangle size={14} className="mr-1.5"/>
               {activityCount} {activityCount === 1 ? 'Task' : 'Tasks'}!
             </div>
           )}
-          {role === 'teacher' && isTeacherClassroom(classroom) && activityCount > 0 && (
-            <div className="absolute top-3 right-3 bg-blue-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-full shadow-lg flex items-center">
-              <CheckCircle size={14} className="mr-1.5" />
-              {activityCount} {activityCount === 1 ? 'Activity' : 'Activities'}
+           {role === 'teacher' && isTeacherClassroom(classroom) && activityCount > 0 && (
+             <div className="absolute top-3 right-3 bg-blue-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-full shadow-lg flex items-center">
+                <CheckCircle size={14} className="mr-1.5"/>
+                {activityCount} {activityCount === 1 ? 'Activity' : 'Activities'}
             </div>
-          )}
+           )}
         </div>
 
         <div className="p-5 flex flex-col flex-grow">
-          <h3 className={`font-bold text-xl mb-1.5 ${colorTheme.text.replace('text-opacity-80', '')} group-hover:underline transition-colors`}>
+          <h3 className={`font-bold text-xl mb-1.5 ${colorTheme.text.replace('dark:text-opacity-80', 'dark:text-white')} group-hover:underline transition-colors`}> {/* Ensure full opacity for title */}
             {classroomName}
           </h3>
 

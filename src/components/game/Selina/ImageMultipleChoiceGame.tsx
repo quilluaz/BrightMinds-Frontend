@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../../context/ThemeContext';
 import { playSound, SoundType, CelebrationAnimation, GameCompleteCelebration, animationStyles } from './GameConfigurations';
+import GameLandingPage from '../GameLandingPage';
 
 // Color Palette
 const COLORS = {
@@ -265,29 +266,14 @@ const ImageMultipleChoiceGame: React.FC = () => {
 
   if (!hasGameStarted) {
     return (
-      <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
-        <div className={`p-10 rounded-3xl shadow-xl text-center max-w-xl w-full transition-colors duration-200`} style={{ backgroundColor: colors.cardBackground }}>
-          <h1 className="text-5xl sm:text-6xl font-bold mb-4" style={{ color: colors.primaryText }}>
-            Welcome to
-          </h1>
-          <h2 className="text-4xl sm:text-5xl font-bold mb-8" style={{ color: colors.secondaryAccent }}>
-            Identify the Correct Image!
-          </h2>
-          <p className="text-xl sm:text-xl mb-3 opacity-80" style={{ color: colors.primaryText }}>
-            Subukan ang iyong kaalaman sa Araling Panlipunan at Tagalog sa masayang paraan!
-          </p>
-          <p className="text-xl sm:text-2xl mb-12 opacity-80" style={{ color: colors.primaryText }}>
-            Choose the correct picture for each question.
-          </p>
-          <button
-            onClick={handleStartGame}
-            className="hover:bg-[#db8e00] text-white font-bold py-4 px-12 rounded-full text-2xl sm:text-3xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
-            style={{ backgroundColor: colors.secondaryAccent }}
-          >
-            Start
-          </button>
-        </div>
-      </div>
+      <GameLandingPage
+        title="Identify the Correct Image!"
+        subtitle="Subukan ang iyong kaalaman sa Araling Panlipunan at Tagalog sa masayang paraan!"
+        description="Choose the correct picture for each question."
+        instruction="Look at each question carefully and select the image that best matches the description."
+        onStart={handleStartGame}
+        gameIcon="/images/multiple-choice/game-icon.svg"
+      />
     );
   }
 

@@ -1,88 +1,130 @@
 import React, { useState, ChangeEvent, useRef, KeyboardEvent, useEffect } from 'react';
 import { useTheme } from '../../../context/ThemeContext';
-import { Box, Grid, TextField, Button, Typography, Paper, Container, Theme } from '@mui/material';
+import { Box, TextField, Button, Typography, Theme } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
+import { CelebrationAnimation, GameCompleteCelebration, animationStyles } from '../Selina/GameConfigurations';
+import HintModal from './HintModal';
+import GameLandingPage from '../GameLandingPage';
+import { playSound, WordCelebration, WordGameCompleteCelebration, wordAnimationStyles } from './GameSoundEffects';
 
 interface GameQuestion {
   images: string[];
   answer: string;
   clue: string;
+  englishTranslation: string;
+  funFact: string;
 }
 
 const questions: GameQuestion[] = [
   {
-    images: ['farmer', 'fisherman', 'teacher', 'factory'],
+    images: ['/images/4pics1word/farmer.svg', '/images/4pics1word/fisherman.svg', '/images/4pics1word/teacher.svg', '/images/4pics1word/factory.svg'],
     answer: 'HANAPBUHAY',
-    clue: 'Paraan ng pagkita ng pera o pagkain para sa pamilya.'
+    clue: 'Mga trabaho para kumita ng pera para sa pamilya.',
+    englishTranslation: 'Jobs to earn money for the family.',
+    funFact: 'Some people work as farmers or teachers to help their families!'
   },
   {
-    images: ['store', 'school', 'health', 'church'],
+    images: ['/images/4pics1word/store.svg', '/images/4pics1word/school.svg', '/images/4pics1word/health.svg', '/images/4pics1word/church.svg'],
     answer: 'PAMAYANAN',
-    clue: 'Lugar kung saan magkakasama ang mga tao na may tungkulin.'
+    clue: 'Lugar kung saan nakatira at nagtutulungan ang mga tao.',
+    englishTranslation: 'A place where people live and help each other.',
+    funFact: 'In a community, neighbors share food and fun together!'
   },
   {
-    images: ['planting', 'cleaning', 'recycling', 'forest'],
+    images: ['/images/4pics1word/planting.svg',
+    '/images/4pics1word/recycling.svg',
+    '/images/4pics1word/cleaning.svg',
+    '/images/4pics1word/forest.svg'],
     answer: 'KAPALIGIRAN',
-    clue: 'Kailangan itong alagaan dahil ito ang ating tahanan.'
+    clue: 'Ang ating mundo na kailangan nating ingatan.',
+    englishTranslation: 'Our world that we need to take care of.',
+    funFact: 'Planting trees helps keep our environment clean and green!'
   },
   {
-    images: ['jeepney', 'skyscrapers', 'market', 'street'],
+    images: ['/images/4pics1word/jeepney.svg', '/images/4pics1word/skyscrapers.svg', '/images/4pics1word/market.svg', '/images/4pics1word/street.svg'],
     answer: 'LUNGSOD',
-    clue: 'Mataong lugar na may maraming gusali at sasakyan.'
+    clue: 'Lugar na maraming tao, bahay, at sasakyan.',
+    englishTranslation: 'A place with many people, houses, and cars.',
+    funFact: 'Cities have tall buildings and busy streets with jeepneys!'
   },
   {
-    images: ['rice', 'coconut', 'house', 'mountain'],
+    images: ['/images/4pics1word/rice.svg', '/images/4pics1word/coconut.svg', '/images/4pics1word/house.svg', '/images/4pics1word/mountain.svg'],
     answer: 'LALAWIGAN',
-    clue: 'Lugar sa kanayunan na tahimik at may malawak na taniman.'
+    clue: 'Tahimik na lugar na may bukirin at bundok.',
+    englishTranslation: 'A quiet place with farms and mountains.',
+    funFact: 'Provinces have big fields where rice and coconuts grow!'
   },
-  {
-    images: ['fiesta', 'dancing', 'band', 'food'],
+  {   
+    images: ['/images/4pics1word/fiesta.svg', '/images/4pics1word/dancing (2).svg', '/images/4pics1word/dancing.svg', '/images/4pics1word/food.svg'],
     answer: 'KULTURA',
-    clue: 'Pagpapakita ng tradisyon, gawi, at paniniwala ng isang grupo.'
+    clue: 'Mga tradisyon at gawain ng mga tao.',
+    englishTranslation: 'Traditions and activities of people.',
+    funFact: 'Our culture includes fun dances and yummy food at fiestas!'
   },
   {
-    images: ['praying', 'ceremony', 'helping', 'speaking'],
+    images: ['/images/4pics1word/praying.svg', '/images/4pics1word/ceremony.svg', '/images/4pics1word/helping.svg', '/images/4pics1word/speaking.svg'],
     answer: 'PAGGALANG',
-    clue: 'Mahalaga ito sa pakikitungo sa iba.'
+    clue: 'Pagpapakita ng kabutihan sa iba.',
+    englishTranslation: 'Showing kindness to others.',
+    funFact: 'Saying "po" and "opo" shows respect to elders!'
   },
   {
-    images: ['hall', 'tanod', 'meeting', 'signs'],
+    images: ['/images/4pics1word/hall.svg', '/images/4pics1word/tanod.svg', '/images/4pics1word/meeting.svg', '/images/4pics1word/signs.svg'],
     answer: 'BARANGAY',
-    clue: 'Pinakamaliit na yunit ng pamahalaan.'
+    clue: 'Maliit na grupo ng mga bahay sa isang lugar.',
+    englishTranslation: 'A small group of houses in a place.',
+    funFact: 'A barangay has leaders who keep everyone safe!'
   },
   {
-    images: ['market', 'fish', 'vendors', 'vegetables'],
+    images: ['/images/4pics1word/market.svg', '/images/4pics1word/fish.svg', '/images/4pics1word/vendors.svg', '/images/4pics1word/vegetables.svg'],
     answer: 'KALAKALAN',
-    clue: 'Palitan ng produkto o serbisyo.'
+    clue: 'Pagbili at pagbenta ng mga bagay.',
+    englishTranslation: 'Buying and selling things.',
+    funFact: 'In markets, people trade fish and vegetables!'
   },
   {
-    images: ['raising', 'blackboard', 'books', 'writing'],
+    images: ['/images/4pics1word/raising.svg', '/images/4pics1word/blackboard.svg', '/images/4pics1word/books.svg', '/images/4pics1word/writing.svg'],
     answer: 'EDUKASYON',
-    clue: 'Mahalaga ito upang matuto at makamit ang pangarap.'
+    clue: 'Pag-aaral para maging mas matalino.',
+    englishTranslation: 'Learning to become smarter.',
+    funFact: 'Going to school helps you learn to read and write!'
   }
 ];
 
-const ImagePlaceholder = styled(Paper)(({ theme }: { theme: Theme }) => ({
-  width: '100%',
-  height: '200px',
+// Color Palette
+const COLORS = {
+  light: {
+    primaryBackground: '#E8F9FF',
+    primaryText: '#1A1B41',
+    interactiveElements: '#7A89C2',
+    primaryAccent: '#DBD053',
+    secondaryAccent: '#FFA500',
+    neutralBackground: '#FFFFFF',
+    cardBackground: '#FFFFFF',
+    borderColor: 'transparent',
+    hoverBg: 'bg-slate-200',
+  },
+  dark: {
+    primaryBackground: '#1A1B41',
+    primaryText: '#E8F9FF',
+    interactiveElements: '#9BA8E5',
+    primaryAccent: '#DBD053',
+    secondaryAccent: '#FFA500',
+    neutralBackground: '#2A2B51',
+    cardBackground: '#2A2B51',
+    borderColor: '#3A3B61',
+    hoverBg: 'bg-slate-700',
+  },
+};
+
+const GameContainer = styled(Box)(({ theme }: { theme: Theme }) => ({
+  padding: theme.spacing(4),
+  backgroundColor: theme.palette.mode === 'dark' ? '#1A1B41' : '#E8F9F0',
+  minHeight: '100vh',
   display: 'flex',
+  flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  backgroundColor: theme.palette.mode === 'dark' ? '#424242' : '#e0e0e0',
-  color: theme.palette.mode === 'dark' ? '#fff' : '#666',
-  fontSize: '1.2rem',
-  fontWeight: 'bold',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'scale(1.02)',
-    boxShadow: theme.shadows[4],
-  },
-}));
-
-const GameContainer = styled(Container)(({ theme }: { theme: Theme }) => ({
-  padding: theme.spacing(4),
-  backgroundColor: theme.palette.mode === 'dark' ? '#121212' : '#f5f5f5',
-  minHeight: '100vh',
 }));
 
 const shakeAnimation = keyframes`
@@ -93,11 +135,11 @@ const shakeAnimation = keyframes`
 
 const popAnimation = keyframes`
   0% { transform: scale(1); }
-  50% { transform: scale(1.1); } /* Scale up a bit */
-  100% { transform: scale(1); } /* Return to normal size */
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 `;
 
-const LetterInput = styled(TextField)<{ isCorrect?: boolean; isWrong?: boolean; isShaking?: boolean }>(({ theme, isCorrect, isWrong, isShaking }) => ({
+const LetterInput = styled(TextField)<{ isCorrect?: boolean; isWrong?: boolean; isShaking?: boolean; isRevealed?: boolean }>(({ theme, isCorrect, isWrong, isShaking, isRevealed }) => ({
   width: '50px',
   margin: '0 4px',
   animation: isShaking ? `${shakeAnimation} 0.5s ease-in-out` : (isCorrect ? `${popAnimation} 0.6s ease-in-out` : 'none'),
@@ -114,29 +156,37 @@ const LetterInput = styled(TextField)<{ isCorrect?: boolean; isWrong?: boolean; 
       ? theme.palette.success.light
       : isWrong 
         ? theme.palette.error.main
-        : theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[200],
+        : isRevealed && !isCorrect
+          ? theme.palette.success.light
+          : theme.palette.mode === 'dark' ? '#2A2B51' : '#FFFFFF',
     transition: 'background-color 0.3s ease, transform 0.3s ease',
     '& fieldset': {
       borderColor: isCorrect 
         ? theme.palette.success.main
         : isWrong 
           ? theme.palette.error.dark
-          : theme.palette.mode === 'dark' ? theme.palette.grey[600] : theme.palette.grey[400],
-      borderWidth: isCorrect || isWrong ? '2px' : '1px',
+          : isRevealed && !isCorrect
+            ? theme.palette.success.main
+            : theme.palette.mode === 'dark' ? '#3A3B61' : '#E0E0E0',
+      borderWidth: isCorrect || isWrong || (isRevealed && !isCorrect) ? '2px' : '1px',
     },
     '&:hover fieldset': {
       borderColor: isCorrect 
         ? theme.palette.success.main
         : isWrong 
           ? theme.palette.error.dark
-          : theme.palette.primary.main,
+          : isRevealed && !isCorrect
+            ? theme.palette.success.main
+            : theme.palette.primary.main,
     },
     '&.Mui-focused fieldset': {
       borderColor: isCorrect 
         ? theme.palette.success.main
         : isWrong 
           ? theme.palette.error.dark
-          : theme.palette.primary.main,
+          : isRevealed && !isCorrect
+            ? theme.palette.success.main
+            : theme.palette.primary.main,
     },
   },
   '& .MuiOutlinedInput-input': {
@@ -144,7 +194,9 @@ const LetterInput = styled(TextField)<{ isCorrect?: boolean; isWrong?: boolean; 
       ? theme.palette.success.dark
       : isWrong 
         ? theme.palette.error.contrastText
-        : theme.palette.mode === 'dark' ? theme.palette.grey[100] : theme.palette.grey[900],
+        : isRevealed && !isCorrect
+          ? theme.palette.success.dark
+          : theme.palette.mode === 'dark' ? '#E8F9FF' : '#1A1B41',
     padding: '0 8px',
     textAlign: 'center',
     backgroundColor: 'transparent',
@@ -152,20 +204,38 @@ const LetterInput = styled(TextField)<{ isCorrect?: boolean; isWrong?: boolean; 
       opacity: 0.5,
     },
   },
-  '& .MuiInputBase-input': {
-    textAlign: 'center',
-    backgroundColor: 'transparent',
-  },
 }));
 
 const ClueText = styled(Typography)(({ theme }: { theme: Theme }) => ({
-  color: theme.palette.mode === 'dark' ? '#90caf9' : '#1976d2',
+  color: theme.palette.mode === 'dark' ? '#9BA8E5' : '#7A89C2',
   marginBottom: theme.spacing(2),
   fontSize: '1.2rem',
+  fontWeight: 'medium',
+}));
+
+const ImageContainer = styled(Box)(({ theme }: { theme: Theme }) => ({
+  width: '100%',
+  height: '200px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'all 0.3s ease',
+  '& img': {
+    maxWidth: '100%',
+    maxHeight: '100%',
+    objectFit: 'contain',
+    borderRadius: '12px',
+    border: '4px solid #9BA8E5',
+    transition: 'transform 0.3s ease',
+    '&:hover': {
+      transform: 'scale(1.02)',
+    },
+  },
 }));
 
 const FourPicsOneWord: React.FC = () => {
   const { theme } = useTheme();
+  const colors = COLORS[theme];
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [letterInputs, setLetterInputs] = useState<string[]>([]);
   const [score, setScore] = useState(0);
@@ -173,121 +243,246 @@ const FourPicsOneWord: React.FC = () => {
   const [gameOver, setGameOver] = useState(false);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
+  const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
+  const [hasGameStarted, setHasGameStarted] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showGameCompleteCelebration, setShowGameCompleteCelebration] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [showHintModal, setShowHintModal] = useState(false);
+  const [revealedLetters, setRevealedLetters] = useState<number[]>([]);
+  const [hasShownHintModalForQuestion, setHasShownHintModalForQuestion] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const isInitialMount = useRef(true);
-  const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
+  const [showFunFact, setShowFunFact] = useState(false);
 
-  // Initialize letter inputs when question changes or component mounts
-  useEffect(() => {
-    const answerLength = questions[currentQuestion].answer.length;
-    setLetterInputs(Array(answerLength).fill(''));
-    inputRefs.current = Array(answerLength).fill(null);
-    // Ensure inputs are enabled initially and reset states
-    setIsAnswerCorrect(false);
-    setIsShaking(false);
-    setIsAnswerSubmitted(false);
-    // Set isInitialMount to true whenever the question changes, so the check doesn't run on the first render of the new question
-    isInitialMount.current = true; 
-  }, [currentQuestion]);
+  // Helper function to format score
+  const formatScore = (score: number): string => {
+    return Number.isInteger(score) ? score.toString() : score.toFixed(1);
+  };
 
-  // Check answer whenever letterInputs changes, but only if all are filled and not during shake
-  useEffect(() => {
-    // Prevent checking on initial mount
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
+  const handleStartGame = () => {
+    playSound('click');
+    setHasGameStarted(true);
+  };
 
-    const userAnswer = letterInputs.join('');
-    const correctAnswer = questions[currentQuestion].answer;
+  const revealRandomLetter = () => {
+    const answer = questions[currentQuestion].answer;
+    const availableIndices = answer
+      .split('')
+      .map((_, index) => index)
+      .filter((index) => !revealedLetters.includes(index));
 
-    // Only check if all inputs are filled and we are not currently shaking and haven't submitted an answer yet for this attempt
-    if (letterInputs.every(letter => letter !== '') && !isShaking && !isAnswerSubmitted) {
-      const isCorrect = userAnswer === correctAnswer;
-      
-      setIsAnswerSubmitted(true);
-      setIsAnswerCorrect(isCorrect);
+    if (availableIndices.length > 0) {
+      const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+      const newRevealedLetters = [...revealedLetters, randomIndex];
+      setRevealedLetters(newRevealedLetters);
 
-      if (isCorrect) {
-        setScore(prev => prev + 1);
-        // Wait for a short duration before moving to next question
+      // Update the letter inputs with the revealed letter
+      const newInputs = [...letterInputs];
+      newInputs[randomIndex] = answer[randomIndex];
+      setLetterInputs(newInputs);
+
+      // Deduct points
+      setScore((prev) => Math.max(0, prev - 0.2));
+
+      // Focus the next empty input after the revealed letter
+      const nextEmptyIndex = newInputs.findIndex((letter, idx) => idx > randomIndex && letter === '');
+      if (nextEmptyIndex !== -1) {
         setTimeout(() => {
-          if (currentQuestion < questions.length - 1) {
-            setCurrentQuestion(prev => prev + 1);
-            setShowClue(false);
-          } else {
-            setGameOver(true);
-          }
-        }, 1000);
-      } else {
-        setShowClue(true);
-        setIsShaking(true);
-        // Clear the answer after the shake animation
-        setTimeout(() => {
-          setLetterInputs(Array(letterInputs.length).fill(''));
-          setIsAnswerSubmitted(false); // Allow typing again after wrong answer
-          setIsAnswerCorrect(false); // Reset correctness state
-          setIsShaking(false);
-          // Focus the first input after clearing
-          if (inputRefs.current[0]) {
-             inputRefs.current[0].focus();
-          }
-        }, 700); // Increased delay slightly for animation
+          inputRefs.current[nextEmptyIndex]?.focus();
+        }, 0);
       }
-    } 
-    // No else case needed here to avoid prematurely marking wrong on empty inputs
-  }, [letterInputs, currentQuestion, isShaking, isAnswerSubmitted]); // Added isAnswerSubmitted to dependencies
+    }
+  };
 
   const handleLetterChange = (index: number, value: string) => {
-    // Allow changes only if not currently shaking or the answer has been submitted as correct
-    if (isShaking || (isAnswerSubmitted && isAnswerCorrect)) return; 
-    
-    // Only allow input if all previous tiles are filled
-    const previousTilesFilled = letterInputs.slice(0, index).every(letter => letter !== '');
-    if (!previousTilesFilled) return;
-    
-    const newValue = value.slice(-1).toUpperCase(); // Take only the last character and make it uppercase
+    if (isShaking || (isAnswerSubmitted && isAnswerCorrect) || revealedLetters.includes(index)) return;
+
+    playSound('click');
+    const newValue = value.slice(-1).toUpperCase();
     const newInputs = [...letterInputs];
     newInputs[index] = newValue;
     setLetterInputs(newInputs);
 
-    // Only auto-focus next input if a letter was entered and it's not the last one
-    if (newValue && index < inputRefs.current.length - 1) {
-      inputRefs.current[index + 1]?.focus();
+    // Find the next non-revealed letter position
+    if (newValue) {
+      let nextIndex = index + 1;
+      while (nextIndex < inputRefs.current.length && revealedLetters.includes(nextIndex)) {
+        nextIndex++;
+      }
+
+      if (nextIndex < inputRefs.current.length) {
+        setTimeout(() => {
+          inputRefs.current[nextIndex]?.focus();
+        }, 0);
+      }
     }
   };
 
   const handleKeyDown = (index: number, event: KeyboardEvent<HTMLInputElement>) => {
-    if (isShaking || (isAnswerSubmitted && isAnswerCorrect)) return; // Prevent changes during shake or after correct submission
-    
+    if (isShaking || (isAnswerSubmitted && isAnswerCorrect) || revealedLetters.includes(index)) return;
+
     if (event.key === 'Backspace') {
+      const newInputs = [...letterInputs];
       if (!letterInputs[index] && index > 0) {
-        // If current input is empty and backspace is pressed, focus previous input
-        inputRefs.current[index - 1]?.focus();
+        // Find the previous non-revealed letter position
+        let prevIndex = index - 1;
+        while (prevIndex >= 0 && revealedLetters.includes(prevIndex)) {
+          prevIndex--;
+        }
+
+        if (prevIndex >= 0) {
+          newInputs[prevIndex] = '';
+          setLetterInputs(newInputs);
+          setTimeout(() => {
+            inputRefs.current[prevIndex]?.focus();
+          }, 0);
+        }
+      } else {
+        newInputs[index] = '';
+        setLetterInputs(newInputs);
       }
-    } else if (event.key === 'ArrowLeft' && index > 0) {
-      // Move to previous input on left arrow
-      inputRefs.current[index - 1]?.focus();
-    } else if (event.key === 'ArrowRight' && index < inputRefs.current.length - 1) {
-      // Only allow moving right if current tile is filled
-      if (letterInputs[index] !== '') {
-        inputRefs.current[index + 1]?.focus();
+    } else if (event.key === 'ArrowLeft') {
+      // Find the previous non-revealed letter position
+      let prevIndex = index - 1;
+      while (prevIndex >= 0 && revealedLetters.includes(prevIndex)) {
+        prevIndex--;
+      }
+
+      if (prevIndex >= 0) {
+        setTimeout(() => {
+          inputRefs.current[prevIndex]?.focus();
+        }, 0);
+      }
+    } else if (event.key === 'ArrowRight') {
+      // Find the next non-revealed letter position
+      let nextIndex = index + 1;
+      while (nextIndex < inputRefs.current.length && revealedLetters.includes(nextIndex)) {
+        nextIndex++;
+      }
+
+      if (nextIndex < inputRefs.current.length) {
+        setTimeout(() => {
+          inputRefs.current[nextIndex]?.focus();
+        }, 0);
       }
     }
   };
 
   const handleInputClick = (index: number) => {
-    // Find the first empty input before this index
-    const firstEmptyIndex = letterInputs.findIndex((letter, i) => i <= index && letter === '');
-    
-    // If there's an empty input before this index, focus that instead
+    if (isShaking || (isAnswerSubmitted && isAnswerCorrect)) return;
+
+    // Find the first empty non-revealed position
+    const firstEmptyIndex = letterInputs.findIndex((letter, i) => i <= index && letter === '' && !revealedLetters.includes(i));
+
     if (firstEmptyIndex !== -1) {
-      inputRefs.current[firstEmptyIndex]?.focus();
+      setTimeout(() => {
+        inputRefs.current[firstEmptyIndex]?.focus();
+      }, 0);
     } else {
-      // Otherwise, allow focusing the clicked input
-      inputRefs.current[index]?.focus();
+      // If no empty position found, find the next non-revealed position
+      let nextIndex = index;
+      while (nextIndex < inputRefs.current.length && revealedLetters.includes(nextIndex)) {
+        nextIndex++;
+      }
+
+      if (nextIndex < inputRefs.current.length) {
+        setTimeout(() => {
+          inputRefs.current[nextIndex]?.focus();
+        }, 0);
+      }
     }
   };
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Create a complete answer by combining user input and revealed letters
+    const completeAnswer = letterInputs
+      .map((letter, index) => (revealedLetters.includes(index) ? questions[currentQuestion].answer[index] : letter))
+      .join('');
+
+    const correctAnswer = questions[currentQuestion].answer;
+
+    // Check if all non-revealed positions are filled
+    const allPositionsFilled = letterInputs.every((letter, index) => revealedLetters.includes(index) || letter !== '');
+
+    if (allPositionsFilled && !isShaking && !isAnswerSubmitted) {
+      const isCorrect = completeAnswer === correctAnswer;
+
+      setIsAnswerSubmitted(true);
+      setIsAnswerCorrect(isCorrect);
+
+      if (isCorrect) {
+        playSound('correct');
+        setScore((prev) => prev + 5);
+        setShowFunFact(true);
+        setTimeout(() => {
+          if (currentQuestion < questions.length - 1) {
+            setCurrentQuestion((prev) => prev + 1);
+            setShowClue(false);
+            setShowFunFact(false);
+          } else {
+            playSound('gameComplete');
+            setGameOver(true);
+          }
+        }, 3000);
+      } else {
+        playSound('incorrect');
+        const newAttempts = attempts + 1;
+        setAttempts(newAttempts);
+
+        // Add logic to show modal after 3 incorrect attempts, only once per question
+        if (newAttempts >= 3 && !hasShownHintModalForQuestion) {
+          setShowHintModal(true);
+          setHasShownHintModalForQuestion(true);
+        }
+
+        setShowClue(true);
+        setIsShaking(true);
+        setTimeout(() => {
+          // Preserve revealed letters when resetting
+          setLetterInputs(
+            Array(letterInputs.length)
+              .fill('')
+              .map((_, idx) => (revealedLetters.includes(idx) ? correctAnswer[idx] : '')),
+          );
+          setIsAnswerSubmitted(false);
+          setIsAnswerCorrect(false);
+          setIsShaking(false);
+
+          // Focus on the first non-revealed position
+          const firstNonRevealedIndex = letterInputs.findIndex((_, idx) => !revealedLetters.includes(idx));
+          if (firstNonRevealedIndex !== -1) {
+            inputRefs.current[firstNonRevealedIndex]?.focus();
+          }
+        }, 700);
+      }
+    }
+  }, [letterInputs, currentQuestion, isShaking, isAnswerSubmitted, attempts, revealedLetters, hasShownHintModalForQuestion]);
+
+  useEffect(() => {
+    const answerLength = questions[currentQuestion].answer.length;
+    setLetterInputs(Array(answerLength).fill(''));
+    inputRefs.current = Array(answerLength).fill(null);
+    setIsAnswerCorrect(false);
+    setIsShaking(false);
+    setIsAnswerSubmitted(false);
+    setAttempts(0);
+    setRevealedLetters([]);
+    setShowFunFact(false);
+    setHasShownHintModalForQuestion(false);
+    isInitialMount.current = true;
+
+    setTimeout(() => {
+      if (inputRefs.current[0]) {
+        inputRefs.current[0].focus();
+      }
+    }, 0);
+  }, [currentQuestion]);
 
   const resetGame = () => {
     setCurrentQuestion(0);
@@ -297,111 +492,197 @@ const FourPicsOneWord: React.FC = () => {
     setIsAnswerCorrect(false);
     setIsShaking(false);
     setIsAnswerSubmitted(false);
+    setAttempts(0);
+    setRevealedLetters([]);
   };
 
-  if (gameOver) {
+  if (!hasGameStarted) {
     return (
-      <GameContainer>
-        <Box textAlign="center" py={4}>
-          <Typography variant="h3" gutterBottom>
-            Game Over!
-          </Typography>
-          <Typography variant="h4" gutterBottom>
-            Your Score: {score}/{questions.length}
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
+      <GameLandingPage
+        title="4 Pics 1 Word"
+        subtitle="Test your vocabulary and observation skills!"
+        description="Match the pictures to form a word that connects them all."
+        instruction="Look at the 4 pictures and type the word that connects them all together."
+        onStart={handleStartGame}
+        /**gameIcon="/images/4pics1word/game-icon.svg"*/
+      />
+    );
+  }
+
+  if (gameOver) {
+    const PASSING_SCORE = 30;
+    const hasPassed = score >= PASSING_SCORE;
+
+    return (
+      <div
+        className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`}
+        style={{ color: colors.primaryText }}
+      >
+        {showGameCompleteCelebration && <WordGameCompleteCelebration />}
+        <div
+          className={`p-10 rounded-3xl shadow-xl text-center max-w-md w-full transition-colors duration-200`}
+          style={{ backgroundColor: colors.cardBackground }}
+        >
+          <h2 className="text-5xl font-bold mb-6" style={{ color: colors.primaryAccent }}>
+            {hasPassed ? 'Congratulations!' : 'Better Luck Next Time'}
+          </h2>
+          <p className="text-3xl mb-10" style={{ color: colors.primaryText }}>
+            Your Score: <span className="font-bold text-4xl" style={{ color: colors.secondaryAccent }}>{formatScore(score)}</span> / 50
+          </p>
+          <button
             onClick={resetGame}
-            sx={{ mt: 2 }}
+            className="hover:bg-[#5f6b9a] text-white font-bold py-2 px-4 rounded-full text-lg transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#DBD053] shadow-lg"
+            style={{ backgroundColor: colors.interactiveElements }}
           >
-            Play Again
-          </Button>
-        </Box>
-      </GameContainer>
+            {hasPassed ? 'Play Again' : 'Try Again'}
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <GameContainer>
-      <Box textAlign="center" mb={4}>
-        <Typography variant="h3" gutterBottom>
-          4 Pics 1 Word
-        </Typography>
-        <Typography variant="h5" gutterBottom>
-          Score: {score}
-        </Typography>
-      </Box>
-
-      <Grid container spacing={2} mb={4}>
-        {questions[currentQuestion].images.map((image, index) => (
-          <Grid item xs={12} sm={6} key={index} component="div">
-            <ImagePlaceholder>
-              {image.toUpperCase()}
-            </ImagePlaceholder>
-          </Grid>
-        ))}
-      </Grid>
-
-      <Box textAlign="center" mb={4}>
-        {letterInputs.length > 0 && (
-          <Box display="flex" justifyContent="center" alignItems="center" mb={3}>
-            {letterInputs.map((letter, index) => (
-              <LetterInput
-                key={index}
-                value={letter}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => handleLetterChange(index, e.target.value)}
-                onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => handleKeyDown(index, e)}
-                onClick={() => handleInputClick(index)}
-                inputRef={(el) => (inputRefs.current[index] = el)}
-                inputProps={{
-                  maxLength: 1,
-                  style: { 
-                    textAlign: 'center',
-                    padding: '0 8px',
-                    fontSize: '2rem',
-                    fontWeight: 'bold',
-                    textTransform: 'uppercase',
-                    backgroundColor: 'transparent',
-                    boxSizing: 'border-box',
-                  }
-                }}
-                disabled={isShaking || (isAnswerSubmitted && isAnswerCorrect)}
-                isCorrect={isAnswerSubmitted && !isShaking && letterInputs.every(letter => letter !== '') && isAnswerCorrect}
-                isWrong={isAnswerSubmitted && !isAnswerCorrect && letterInputs.every(letter => letter !== '')}
-                isShaking={isShaking}
-                placeholder=""
-                variant="outlined"
-                sx={{
-                  display: 'flex', 
-                  visibility: 'visible',
-                  minWidth: '50px',
-                  minHeight: '55px',
-                }}
-              />
-            ))}
-          </Box>
-        )}
-        <Button
-          variant="outlined"
-          color="secondary"
-          size="large"
-          onClick={() => setShowClue(!showClue)}
+    <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
+      {showCelebration && <WordCelebration />}
+      <div className={`p-6 sm:p-10 rounded-3xl shadow-xl w-full max-w-3xl transition-colors duration-200 relative`} style={{ backgroundColor: colors.cardBackground }}>
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 16,
+            left: 16,
+            cursor: 'pointer',
+            zIndex: 10,
+            '&:hover': {
+              opacity: 0.8,
+            },
+          }}
+          onClick={() => setShowHintModal(true)}
         >
-          {showClue ? 'Hide Clue' : 'Show Clue'}
-        </Button>
-      </Box>
-
-      {showClue && (
-        <Box textAlign="center">
-          <ClueText>
-            Clue: {questions[currentQuestion].clue}
-          </ClueText>
+          <img src="/images/4pics1word/bulb.svg" alt="Hint" aria-label="Open hint modal" style={{ width: '85px', height: '85px' }} />
         </Box>
-      )}
-    </GameContainer>
+
+        <div className="mb-8 text-center">
+          <p className="text-xl sm:text-2xl font-semibold mb-2" style={{ color: colors.interactiveElements }}>
+            Question {currentQuestion + 1} of {questions.length}
+          </p>
+          <Typography variant="h3" gutterBottom style={{ color: colors.primaryText }}>
+            4 Pics 1 Word
+          </Typography>
+          <Typography variant="h5" gutterBottom style={{ color: colors.secondaryAccent }}>
+            Score: {formatScore(score)}
+          </Typography>
+        </div>
+
+        <Box display="flex" flexWrap="wrap" justifyContent="center" sx={{ columnGap: 0, rowGap: 2 }} mb={4}>
+          {questions[currentQuestion].images.map((image, index) => (
+            <ImageContainer key={index} sx={{ flexBasis: 'calc(40% - 8px)', maxWidth: 'calc(40% - 8px)' }}>
+              {image.includes('/') && image.endsWith('.svg') ? (
+                <img src={image} alt={`Image ${index + 1}`} />
+              ) : (
+                <Typography variant="h6" style={{ color: colors.primaryText }}>
+                  {image.toUpperCase()}
+                </Typography>
+              )}
+            </ImageContainer>
+          ))}
+        </Box>
+
+        <Box textAlign="center" mb={4}>
+          {letterInputs.length > 0 && (
+            <Box display="flex" justifyContent="center" alignItems="center" mb={3}>
+              {letterInputs.map((letter, index) => (
+                <LetterInput
+                  key={index}
+                  value={revealedLetters.includes(index) ? questions[currentQuestion].answer[index] : letter}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => handleLetterChange(index, e.target.value)}
+                  onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => handleKeyDown(index, e)}
+                  onClick={() => handleInputClick(index)}
+                  inputRef={(el) => (inputRefs.current[index] = el)}
+                  inputProps={{
+                    maxLength: 1,
+                    style: {
+                      textAlign: 'center',
+                      padding: '0 8px',
+                      fontSize: '2rem',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      backgroundColor: 'transparent',
+                      boxSizing: 'border-box',
+                    },
+                  }}
+                  disabled={isShaking || (isAnswerSubmitted && isAnswerCorrect) || revealedLetters.includes(index)}
+                  isCorrect={
+                    isAnswerSubmitted &&
+                    !isShaking &&
+                    letterInputs.every((letter, i) => revealedLetters.includes(i) || letter !== '') &&
+                    isAnswerCorrect
+                  }
+                  isWrong={
+                    isAnswerSubmitted &&
+                    !isAnswerCorrect &&
+                    letterInputs.every((letter, i) => revealedLetters.includes(i) || letter !== '')
+                  }
+                  isShaking={isShaking}
+                  isRevealed={revealedLetters.includes(index)}
+                  placeholder=""
+                  variant="outlined"
+                  sx={{
+                    display: 'flex',
+                    visibility: 'visible',
+                    minWidth: '50px',
+                    minHeight: '55px',
+                  }}
+                />
+              ))}
+            </Box>
+          )}
+        </Box>
+
+        <Box textAlign="center" mb={4}>
+          <Typography variant="body1" gutterBottom style={{ color: colors.primaryText }}>
+            {questions[currentQuestion].englishTranslation}
+          </Typography>
+          <Typography variant="body2" gutterBottom style={{ color: colors.interactiveElements, fontStyle: 'italic' }}>
+            {questions[currentQuestion].clue}
+          </Typography>
+          {showFunFact && isAnswerCorrect && (
+            <Typography
+              variant="body1"
+              style={{
+                color: colors.secondaryAccent,
+                marginTop: '1rem',
+                animation: 'fadeIn 0.5s ease-in',
+              }}
+            >
+              {questions[currentQuestion].funFact}
+            </Typography>
+          )}
+        </Box>
+
+        <HintModal
+          open={showHintModal}
+          onClose={() => setShowHintModal(false)}
+          onAccept={() => {
+            revealRandomLetter();
+            setShowHintModal(false);
+          }}
+          attempts={attempts}
+        />
+      </div>
+    </div>
   );
 };
+
+// Append styles to document
+const styleSheet = document.createElement('style');
+styleSheet.innerText = `
+  ${animationStyles}
+  ${wordAnimationStyles}
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+`;
+document.head.appendChild(styleSheet);
 
 export default FourPicsOneWord;

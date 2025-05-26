@@ -7,6 +7,7 @@ import SortingBin from './SortingBin';
 import './Game.css';
 import { useTheme } from '../../../context/ThemeContext';
 import { CelebrationAnimation, GameCompleteCelebration, animationStyles } from '../Selina/GameConfigurations';
+import GameLandingPage from '../GameLandingPage';
 
 // Color palette for container and text
 const COLORS = {
@@ -260,29 +261,14 @@ const LikasYamanGame: React.FC = () => {
 
   if (!hasGameStarted) {
     return (
-      <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`} style={{ color: colors.text }}>
-        <div className={`p-10 rounded-3xl shadow-xl text-center max-w-xl w-full transition-colors duration-200`} style={{ backgroundColor: colors.cardBg }}>
-          <h1 className="text-5xl sm:text-6xl font-bold mb-4" style={{ color: colors.text }}>
-            Welcome to
-          </h1>
-          <h2 className="text-4xl sm:text-5xl font-bold mb-8" style={{ color: colors.secondaryAccent }}>
-            Resource Ranger Challenge!
-          </h2>
-          <p className="text-xl sm:text-xl mb-3 opacity-80" style={{ color: colors.text }}>
-            Test your knowledge about natural resources and their proper management!
-          </p>
-          <p className="text-xl sm:text-2xl mb-12 opacity-80" style={{ color: colors.text }}>
-            Sort the items into their correct categories and become a Resource Master!
-          </p>
-          <button
-            onClick={handleStartGame}
-            className="hover:bg-[#db8e00] text-white font-bold py-4 px-12 rounded-full text-2xl sm:text-3xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
-            style={{ backgroundColor: colors.secondaryAccent }}
-          >
-            Start
-          </button>
-        </div>
-      </div>
+      <GameLandingPage
+        title="Resource Ranger Challenge"
+        subtitle="Test your knowledge about natural resources and their proper management!"
+        description="Sort the items into their correct categories and become a Resource Master!"
+        instruction="Drag and drop items into their correct categories to learn about natural resources."
+        onStart={handleStartGame}
+        gameIcon="/images/likas-yaman/game-icon.svg"
+      />
     );
   }
 

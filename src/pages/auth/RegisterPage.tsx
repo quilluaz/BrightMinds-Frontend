@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"; // Added useEffect
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, User, AlertCircle, KeyRound } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
@@ -6,42 +6,32 @@ import logoForLightTheme from "../../assets/logos/LogoIconDark.svg";
 import logoForDarkTheme from "../../assets/logos/LogoIconLight.svg";
 import { useAuth } from "../../context/AuthContext";
 import Button from "../../components/common/Button";
-import { UserRole } from "../../types"; // Assuming UserRole is 'student' | 'teacher'
+import { UserRole, RegisterRequestData } from "../../types";
 
 const RegisterPage: React.FC = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRole>("student"); // 'student' or 'teacher'
+  const [role, setRole] = useState<UserRole>("STUDENT");
   const [teacherCode, setTeacherCode] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Make sure useAuth hook is correctly imported and provides the updated register function
-  const { register, isLoading, isAuthenticated, user } = useAuth();
+  const { register, isLoading, isAuthenticated } = useAuth();
   const { theme } = useTheme();
   const currentLogo = theme === "light" ? logoForLightTheme : logoForDarkTheme;
   const navigate = useNavigate();
 
-  // Effect to redirect if already logged in
   useEffect(() => {
-    if (isAuthenticated && user) {
-      // Navigate to role-specific dashboard or general dashboard
-      if (user.role === "TEACHER") {
-        navigate("/teacher/classrooms", { replace: true });
-      } else if (user.role === "STUDENT") {
-        navigate("/student/classrooms", { replace: true });
-      } else {
-        navigate("/dashboard", { replace: true });
-      }
+    if (isAuthenticated) {
+      navigate("/dashboard", { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Frontend Validations
     if (!firstName.trim()) {
       setError("First name is required.");
       return;
@@ -54,35 +44,24 @@ const RegisterPage: React.FC = () => {
       setError("Password must be at least 6 characters long.");
       return;
     }
-    // Ensure teacher code is provided if role is teacher
-    if (role === "teacher" && !teacherCode.trim()) {
+    if (role === "TEACHER" && !teacherCode.trim()) {
       setError("Teacher code is required for teacher registration.");
       return;
     }
 
-    // Convert role to uppercase for the backend
-    const backendRole = role.toUpperCase() as "STUDENT" | "TEACHER";
+    const registrationData: RegisterRequestData = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email,
+      password,
+      role,
+      teacherCode: role === "TEACHER" ? teacherCode.trim() : undefined,
+    };
 
     try {
-      // Call the register function from AuthContext, now including teacherCode
-      await register(
-        firstName.trim(),
-        lastName.trim(),
-        email,
-        password,
-        backendRole, // Role should be "STUDENT" or "TEACHER" (uppercase)
-        // Pass teacherCode only if the role is 'teacher'
-        // The register function in AuthContext handles if it's undefined for students
-        backendRole === "TEACHER" ? teacherCode.trim() : undefined
-      );
-
-      // After successful registration, navigate to login page
-      // Or show a message asking them to check their email if verification is needed
-      console.log("Registration successful from RegisterPage, navigating to login.");
-      navigate("/login?registrationSuccess=true"); // Or a more specific success page/message
-
+      await register(registrationData);
+      navigate("/login?registrationSuccess=true");
     } catch (err) {
-      console.error("RegisterPage handleSubmit error:", err);
       setError(
         err instanceof Error
           ? err.message
@@ -91,9 +70,8 @@ const RegisterPage: React.FC = () => {
     }
   };
   
-  // If user is already authenticated, show redirecting message or null
-  if (isAuthenticated && user) {
-      return <div className="flex justify-center items-center min-h-screen">Redirecting...</div>;
+  if (isAuthenticated) {
+    return <div className="flex justify-center items-center min-h-screen">Redirecting...</div>;
   }
 
   return (
@@ -233,7 +211,7 @@ const RegisterPage: React.FC = () => {
                   className={`
                     flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-all
                     ${
-                      role === "student"
+                      role === "STUDENT"
                         ? "border-primary-interactive bg-primary-interactive bg-opacity-10 font-medium"
                         : "border-gray-300 hover:border-primary-interactive hover:bg-primary-interactive hover:bg-opacity-5"
                     }
@@ -242,11 +220,11 @@ const RegisterPage: React.FC = () => {
                     type="radio"
                     className="sr-only"
                     name="role"
-                    value="student"
-                    checked={role === "student"}
+                    value="STUDENT"
+                    checked={role === "STUDENT"}
                     onChange={() => {
-                      setRole("student");
-                      setTeacherCode(""); // Clear teacher code when switching to student
+                      setRole("STUDENT");
+                      setTeacherCode("");
                     }}
                     disabled={isLoading}
                   />
@@ -256,7 +234,7 @@ const RegisterPage: React.FC = () => {
                   className={`
                     flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-all
                     ${
-                      role === "teacher"
+                      role === "TEACHER"
                         ? "border-primary-interactive bg-primary-interactive bg-opacity-10 font-medium"
                         : "border-gray-300 hover:border-primary-interactive hover:bg-primary-interactive hover:bg-opacity-5"
                     }
@@ -265,9 +243,9 @@ const RegisterPage: React.FC = () => {
                     type="radio"
                     className="sr-only"
                     name="role"
-                    value="teacher"
-                    checked={role === "teacher"}
-                    onChange={() => setRole("teacher")}
+                    value="TEACHER"
+                    checked={role === "TEACHER"}
+                    onChange={() => setRole("TEACHER")}
                     disabled={isLoading}
                   />
                   <span>Teacher</span>
@@ -275,7 +253,7 @@ const RegisterPage: React.FC = () => {
               </div>
             </div>
 
-            {role === "teacher" && (
+            {role === "TEACHER" && (
               <div className="mb-6">
                 <label
                   htmlFor="teacherCode"
@@ -293,7 +271,7 @@ const RegisterPage: React.FC = () => {
                     onChange={(e) => setTeacherCode(e.target.value)}
                     className="input-field pl-10"
                     placeholder="Enter teacher enrollment code"
-                    required={role === "teacher"}
+                    required={role === "TEACHER"}
                     disabled={isLoading}
                   />
                 </div>
@@ -307,7 +285,7 @@ const RegisterPage: React.FC = () => {
               type="submit"
               variant="primary"
               fullWidth
-              isLoading={isLoading && !error} // Show loading only if not also showing an error
+              isLoading={isLoading && !error}
               disabled={isLoading}>
               Create Account
             </Button>

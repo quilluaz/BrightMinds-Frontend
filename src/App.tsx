@@ -59,15 +59,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// --- RoleRoute Component ---
+// --- RoleRoute Component (Adjusted) ---
 const RoleRoute = ({
   children,
   allowedRole,
 }: {
   children: React.ReactNode;
-  allowedRole: "TEACHER" | "STUDENT";
+  allowedRole: "TEACHER" | "STUDENT"; 
 }) => {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { currentUser, isLoading, isAuthenticated } = useAuth();
 
   if (isLoading) {
     return (
@@ -77,13 +77,10 @@ const RoleRoute = ({
     );
   }
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated || !currentUser) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role !== allowedRole) {
-    return <Navigate to="/dashboard" replace />;
-  }
 
   return <>{children}</>;
 };
@@ -109,13 +106,11 @@ function App() {
         <ClassroomProvider>
           <Router>
             <Routes>
-              {/* Auth Routes: Login and Register */}
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
               </Route>
 
-              {/* Main App Routes with AppLayout */}
               <Route element={<AppLayout />}>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/about" element={<AboutUsPage />} />
@@ -127,15 +122,12 @@ function App() {
                   path="/matching-game-test"
                   element={<MatchingGamePage />}
                 />
-                 {<Route
+                <Route
                   path="/likas-yaman"
                   element={<LikasYamanGame />}
                 />
-                 }
-                
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
-                {/* Authenticated Routes */}
                 <Route
                   path="/dashboard"
                   element={
@@ -153,7 +145,6 @@ function App() {
                   }
                 />
 
-                {/* Teacher Specific Routes */}
                 <Route
                   path="/teacher/classrooms"
                   element={
@@ -175,7 +166,6 @@ function App() {
                   }
                 />
 
-                {/* Student Specific Routes */}
                 <Route
                   path="/student/classrooms"
                   element={
@@ -207,7 +197,6 @@ function App() {
                   }
                 />
 
-                {/* Fallback for any undefined routes */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

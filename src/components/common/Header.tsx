@@ -1,16 +1,16 @@
 import React from "react";
 import { Menu, X, Moon, Sun } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext";
+import { useAuth } from "../../context/AuthContext"; 
+import { useTheme } from "../../context/ThemeContext"; 
 import logoForLightThemeDesktop from "../../assets/logos/LogoIconSideDark.svg";
 import logoForDarkThemeDesktop from "../../assets/logos/LogoIconSideLight.svg";
 import logoForLightThemeMobile from "../../assets/logos/LogoIconDark.svg";
 import logoForDarkThemeMobile from "../../assets/logos/LogoIconLight.svg";
-import UserMenu from "./UserMenu";
+import UserMenu from "./UserMenu"; 
 
 const Header: React.FC = () => {
-  const { user: currentUser, isAuthenticated, logout } = useAuth();
+  const { currentUser, isAuthenticated, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const navigate = useNavigate();
@@ -36,12 +36,7 @@ const Header: React.FC = () => {
     if (!isAuthenticated || !currentUser) {
       return "/";
     }
-    if (currentUser.role === "TEACHER") {
-      return "/teacher/classrooms";
-    } else if (currentUser.role === "STUDENT") {
-      return "/student/classrooms";
-    }
-    return "/dashboard";
+    return "/dashboard"; 
   };
   const logoLinkPath = getLogoLinkPath();
 
@@ -51,11 +46,9 @@ const Header: React.FC = () => {
     setIsMenuOpen(false);
   };
 
-
   return (
     <header className="bg-white dark:bg-primary-card-dark shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between md:justify-between relative md:static">
-        {/* Mobile Logo - Centered */}
         <div className="absolute inset-0 flex items-center justify-center md:hidden pointer-events-none">
           <Link to={logoLinkPath} className="inline-flex pointer-events-auto">
             <img
@@ -66,7 +59,6 @@ const Header: React.FC = () => {
           </Link>
         </div>
 
-        {/* Desktop Logo */}
         <Link to={logoLinkPath} className="hidden md:flex flex-shrink-0 items-center">
           <img
             src={desktopLogo}
@@ -77,7 +69,6 @@ const Header: React.FC = () => {
 
         <div className="flex-1 md:hidden"></div>
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
           {isAuthenticated && currentUser && (
             <>
@@ -86,20 +77,6 @@ const Header: React.FC = () => {
                 className="text-sm lg:text-base text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark transition-colors">
                 Dashboard
               </Link>
-              {currentUser.role === "TEACHER" && (
-                <Link
-                  to="/teacher/classrooms"
-                  className="text-sm lg:text-base text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark transition-colors">
-                  My Classrooms
-                </Link>
-              )}
-              {currentUser.role === "STUDENT" && (
-                <Link
-                  to="/student/classrooms"
-                  className="text-sm lg:text-base text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark transition-colors">
-                  My Classrooms
-                </Link>
-              )}
             </>
           )}
 
@@ -142,7 +119,6 @@ const Header: React.FC = () => {
           </button>
         </nav>
 
-        {/* Mobile Menu Button & Theme Toggle */}
         <div className="md:hidden flex items-center space-x-2">
           <button
             onClick={toggleTheme}
@@ -163,7 +139,6 @@ const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation Menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-white dark:bg-primary-card-dark shadow-lg py-4 px-4 sm:px-6 lg:px-8 animate-fade-in border-t border-gray-100 dark:border-gray-700">
           <nav className="flex flex-col space-y-3">
@@ -175,22 +150,6 @@ const Header: React.FC = () => {
                   onClick={() => setIsMenuOpen(false)}>
                   Dashboard
                 </Link>
-                {currentUser.role === "TEACHER" && (
-                  <Link
-                    to="/teacher/classrooms"
-                    className="block text-center px-3 py-2 rounded-md text-base font-medium text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark hover:bg-gray-50 dark:hover:bg-slate-700"
-                    onClick={() => setIsMenuOpen(false)}>
-                    My Classrooms
-                  </Link>
-                )}
-                {currentUser.role === "STUDENT" && (
-                  <Link
-                    to="/student/classrooms"
-                    className="block text-center px-3 py-2 rounded-md text-base font-medium text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark hover:bg-gray-50 dark:hover:bg-slate-700"
-                    onClick={() => setIsMenuOpen(false)}>
-                    My Classrooms
-                  </Link>
-                )}
                 <div className="pt-3 mt-2 border-t border-gray-200 dark:border-gray-700">
                   <span className="block px-3 text-sm text-center font-medium mb-2 text-primary-text dark:text-primary-text-dark">
                     {getGreeting()}, {currentUser.firstName}!

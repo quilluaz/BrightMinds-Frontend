@@ -6,75 +6,50 @@ import Button from "../../components/common/Button";
 import { useTheme } from "../../context/ThemeContext";
 import logoForLightTheme from "../../assets/logos/LogoIconDark.svg";
 import logoForDarkTheme from "../../assets/logos/LogoIconLight.svg";
+import { LoginRequestData } from "../../types";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const { login, isLoading, isAuthenticated, user } = useAuth();
+  const { login, isLoading, isAuthenticated } = useAuth();
   const { theme } = useTheme();
   const currentLogo = theme === "light" ? logoForLightTheme : logoForDarkTheme;
   const navigate = useNavigate();
 
-  console.log("LoginPage rendered. isAuthenticated:", isAuthenticated, "User:", user, "isLoading:", isLoading);
-
-  // Effect to redirect if already authenticated
   useEffect(() => {
-    console.log("LoginPage useEffect triggered. isAuthenticated:", isAuthenticated, "User:", user);
-    if (isAuthenticated && user) {
-      console.log("LoginPage useEffect: Navigating due to existing auth. Role:", user.role);
-      if (user.role === "TEACHER") {
-        navigate("/teacher/classrooms", { replace: true });
-      } else if (user.role === "STUDENT") {
-        navigate("/student/classrooms", { replace: true });
-      } else {
-        navigate("/dashboard", { replace: true });
-      }
+    if (isAuthenticated) {
+      navigate("/dashboard", { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    console.log("LoginPage handleSubmit: Attempting login...");
+
+    const loginData: LoginRequestData = { email, password };
 
     try {
-      const loggedInUser = await login(email, password);
-      console.log("LoginPage handleSubmit: Login call completed. LoggedInUser:", loggedInUser);
+      const loggedInUser = await login(loginData);
 
       if (loggedInUser) {
-        console.log("LoginPage handleSubmit: Navigating after successful login. Role:", loggedInUser.role);
-        // The navigation here will happen, but the component might re-render due to context state change.
-        // The useEffect above might also try to navigate. This is usually fine.
-        if (loggedInUser.role === "TEACHER") {
-          navigate("/teacher/classrooms", { replace: true });
-        } else if (loggedInUser.role === "STUDENT") {
-          navigate("/student/classrooms", { replace: true });
-        } else {
-          navigate("/dashboard", { replace: true });
-        }
+        navigate("/dashboard", { replace: true });
       } else {
-        console.log("LoginPage handleSubmit: Login call returned no user.");
-        setError("Login failed. Please try again.");
+        setError("Login failed. Please check your credentials.");
       }
     } catch (err) {
-      console.error("LoginPage handleSubmit: Login error caught.", err);
       setError(
         err instanceof Error ? err.message : "An error occurred during login"
       );
     }
   };
 
-  if (isAuthenticated && user && !isLoading) { // Check isLoading to prevent rendering this if auth check is pending
-      console.log("LoginPage: Rendering redirecting message because user is authenticated.");
-      return <div className="flex justify-center items-center min-h-screen">Redirecting...</div>;
+  if (isAuthenticated && !isLoading) { 
+    return <div className="flex justify-center items-center min-h-screen">Redirecting...</div>;
   }
 
   return (
-    // ... rest of your JSX ...
-    // Make sure this part is actually rendered when you expect it.
-    // If "Redirecting..." is shown, then the issue might be in the navigation logic itself or the target routes.
-     <div className="min-h-screen bg-pattern flex items-center justify-center p-4">
+    <div className="min-h-screen bg-pattern flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="card border border-gray-100 animate-fade-in">
           <div className="text-center mb-6">
@@ -145,14 +120,14 @@ const LoginPage: React.FC = () => {
               type="submit"
               variant="primary"
               fullWidth
-              isLoading={isLoading && !error}
+              isLoading={isLoading && !error} 
               disabled={isLoading}>
               Log In
             </Button>
 
             <div className="mt-4 text-center">
               <Link
-                to="/forgot-password"
+                to="/forgot-password" // Assuming you have a route for this
                 className="text-sm text-primary-interactive hover:underline">
                 Forgot your password?
               </Link>

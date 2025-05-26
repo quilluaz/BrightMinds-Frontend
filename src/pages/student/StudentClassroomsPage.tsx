@@ -1,53 +1,44 @@
-import React, { useState } from 'react';
-import { PlusCircle } from 'lucide-react';
+import React from 'react';
+import { BookOpenText } from 'lucide-react'; // Changed Icon
 import { useClassroom } from '../../context/ClassroomContext';
 import ClassroomCard from '../../components/common/ClassroomCard';
-import Button from '../../components/common/Button';
-import JoinClassroomModal from '../../components/student/JoinClassroomModal';
+import JoinClassroomCard from '../../components/student/JoinClassroomCard';
 
 const StudentClassroomsPage: React.FC = () => {
-  const { studentClassrooms } = useClassroom();
-  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const { studentClassrooms, fetchStudentClassrooms } = useClassroom();
+
+  const handleClassroomJoined = () => {
+    if (fetchStudentClassrooms) {
+        fetchStudentClassrooms();
+    }
+  };
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
-        <div>
+      <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div className="md:col-span-2">
           <h1 className="text-3xl font-bold text-primary-text dark:text-primary-text-dark">My Classrooms</h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-1">Learn fun subjects with your classmates</p>
+          <p className="text-gray-600 dark:text-gray-300 mt-1">
+            Explore your classes and learn fun new things!
+          </p>
         </div>
         
-        <Button 
-          variant="primary"
-          size="lg" 
-          className="mt-4 md:mt-0"
-          icon={<PlusCircle size={18} />}
-          onClick={() => setIsJoinModalOpen(true)}
-        >
-          Join New Classroom
-        </Button>
+        <div className="md:col-span-1 md:mt-0 mt-4"> {/* Ensure it doesn't overlap on mobile */}
+          <JoinClassroomCard onClassroomJoined={handleClassroomJoined} className="max-w-md ml-auto"/> {/* Added max-w-md and ml-auto for alignment */}
+        </div>
       </div>
       
       {studentClassrooms.length === 0 ? (
-        // Displayed when no classrooms are joined
-        <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm p-8 text-center border dark:border-gray-700">
+        <div className="bg-white dark:bg-primary-card-dark rounded-2xl shadow-lg p-8 text-center border-2 border-dashed border-primary-interactive dark:border-primary-interactive-dark mt-8">
           <div className="max-w-md mx-auto">
-            <h2 className="text-xl font-semibold mb-2 text-primary-text dark:text-primary-text-dark">No Classrooms Yet</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Join your first classroom to start your learning journey.
+            <BookOpenText size={56} className="text-primary-interactive dark:text-primary-interactive-dark mx-auto mb-5 opacity-70" />
+            <h2 className="text-2xl font-bold mb-3 text-primary-text dark:text-primary-text-dark">It's a bit empty here!</h2>
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              Use the form above to join a classroom with a code from your teacher. Let the adventure begin! ✨
             </p>
-            <Button 
-              variant="primary" 
-              size="lg"
-              icon={<PlusCircle size={18} />}
-              onClick={() => setIsJoinModalOpen(true)}
-            >
-              Join Your First Classroom
-            </Button>
           </div>
         </div>
       ) : (
-        // Grid for displaying classroom cards
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {studentClassrooms.map((classroom) => (
             <ClassroomCard 
@@ -58,11 +49,6 @@ const StudentClassroomsPage: React.FC = () => {
           ))}
         </div>
       )}
-      
-      <JoinClassroomModal 
-        isOpen={isJoinModalOpen} 
-        onClose={() => setIsJoinModalOpen(false)} 
-      />
     </div>
   );
 };

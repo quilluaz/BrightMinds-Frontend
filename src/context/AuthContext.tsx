@@ -27,23 +27,31 @@ const getUserFromLocalStorage = (): User | null => {
   if (!userJson) return null;
   try {
     const parsedUser = JSON.parse(userJson) as Omit<User, "name"> & {
-      role?: UserRole;
+      firstName: string;
+      lastName: string;
+      role: UserRole;
+      avatarUrl?: string;
     };
     if (
       parsedUser?.id &&
       parsedUser.email &&
       parsedUser.firstName &&
-      parsedUser.lastName
+      parsedUser.lastName &&
+      parsedUser.role
     ) {
       return {
-        ...parsedUser,
+        id: parsedUser.id,
+        email: parsedUser.email,
+        firstName: parsedUser.firstName,
+        lastName: parsedUser.lastName,
         name: `${parsedUser.firstName} ${parsedUser.lastName}`.trim(),
+        role: parsedUser.role,
+        avatarUrl: parsedUser.avatarUrl,
       };
     }
     localStorage.removeItem("authUser");
     return null;
   } catch (error) {
-    console.error("Failed to parse user from localStorage:", error);
     localStorage.removeItem("authUser");
     return null;
   }
@@ -52,23 +60,20 @@ const getUserFromLocalStorage = (): User | null => {
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(getUserFromLocalStorage);
+  const [token, setToken] = useState<string | null>(getTokenFromLocalStorage);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = getTokenFromLocalStorage();
-    const storedUser = getUserFromLocalStorage();
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setCurrentUser(storedUser);
-    }
     setIsLoading(false);
   }, []);
 
   useEffect(() => {
-    if (token) localStorage.setItem("authToken", token);
-    else localStorage.removeItem("authToken");
+    if (token) {
+      localStorage.setItem("authToken", token);
+    } else {
+      localStorage.removeItem("authToken");
+    }
 
     if (currentUser) {
       const { name, ...userToStore } = currentUser;
@@ -78,7 +83,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [token, currentUser]);
 
-  const handleAuthResponse = (backendUser: BackendUserResponse): User => {
+  const handleAuthResponse = useCallback((backendUser: BackendUserResponse): User => {
+    if (!backendUser.role) {
+      throw new Error("User role not provided by backend.");
+    }
     return {
       id: backendUser.id,
       email: backendUser.email,
@@ -87,8 +95,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       name: `${backendUser.firstName || ""} ${
         backendUser.lastName || ""
       }`.trim(),
+      role: backendUser.role,
     };
-  };
+  }, []);
 
   const register = useCallback(
     async (registerData: RegisterRequestData): Promise<void> => {
@@ -130,6 +139,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           );
         }
         const backendLoginResp = responseBody as BackendLoginResponse;
+        
+        if (!backendLoginResp.user || !backendLoginResp.user.role) {
+            throw new Error("Incomplete user data received from server.");
+        }
+
         const user = handleAuthResponse(backendLoginResp.user);
 
         setToken(backendLoginResp.accessToken);
@@ -143,7 +157,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         setIsLoading(false);
       }
     },
-    []
+    [handleAuthResponse]
   );
 
   const logout = useCallback(() => {
@@ -161,7 +175,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         register,
         login,
         logout,
-      }}>
+        setCurrentUser, 
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -6,7 +6,8 @@ export interface User {
   firstName: string;
   lastName: string;
   name: string;
-  role?: UserRole;
+  role: UserRole;
+  avatarUrl?: string;
 }
 
 export interface BackendUserResponse {
@@ -14,6 +15,7 @@ export interface BackendUserResponse {
   email: string;
   firstName: string;
   lastName: string;
+  role: UserRole;
   password?: string;
 }
 
@@ -44,73 +46,133 @@ export interface AuthContextType {
   register: (data: RegisterRequestData) => Promise<void>;
   login: (data: LoginRequestData) => Promise<User | null>;
   logout: () => void;
+  setCurrentUser?: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
 export interface Classroom {
-  id: number;
+  id: string;
   name: string;
   description?: string;
-  teacherId: number;
-  joinCode?: string;
+  teacherId: string;
+  teacherName: string;
+  code: string;
+  iconUrl?: string;
+  studentCount: number;
+  activityCount: number;
 }
 
 export interface StudentClassroom {
-  classroomId: number;
+  classroomId: string;
   classroomName: string;
   teacherName: string;
   iconUrl?: string;
 }
 
 export interface QuestionOption {
-  id: number;
+  id: string;
   text: string;
   isCorrect: boolean;
 }
 export interface GameQuestion {
-  id: number;
+  id: string;
   text: string;
   imageUrl?: string;
   options: QuestionOption[];
 }
 
 export interface Game {
-  id: number;
+  id: string;
   title: string;
   description?: string;
   subject?: string;
   questions: GameQuestion[];
-  gameMode: "BALLOON" | "TREASURE_HUNT" | "MATCHING" | "IMAGE_MULTIPLE_CHOICE" | "SORTING";
+  gameMode?: "BALLOON" | "TREASURE_HUNT" | "MATCHING" | "IMAGE_MULTIPLE_CHOICE" | "SORTING";
+  status?: 'not_started' | 'in_progress' | 'completed';
+  score?: number;
 }
 
-export interface StudentPerformanceDto {
-    studentId: number;
+export interface StudentPerformance {
+    studentId: string;
     studentName: string;
-    classroomId: number;
-    assignmentId: number;
+    gameId: string;
     score: number;
     completedAt: string;
 }
 
-export interface AssignmentDto {
-    id: number;
-    classroomId: number;
-    quizId: number;
+export interface AssignedGame {
+    id: string;
+    classroomId: string;
+    gameId: string;
     assignedAt: string;
     dueDate: string;
+    game?: Game;
+    classroom?: Classroom;
 }
 
-export interface Assignment extends AssignmentDto {
-  classroom?: Classroom;
-  quiz?: Game;
-}
 
-export interface ClassroomDto {
-    id: number;
+export interface ClassroomDTO {
+    id: string;
     name: string;
     description?: string;
-    teacherId: number;
-    studentIds?: number[];
-    joinCode?: string;
+    teacherId: string;
+    teacherName?: string;
+    studentCount?: number;
+    activityCount?: number;
+    uniqueCode?: string;
+    iconUrl?: string;
+}
+
+export interface LeaderboardEntry {
+  studentId: string;
+  studentName: string;
+  score: number;
+  rank: number;
+  avatarUrl?: string;
+}
+
+export interface CreateClassroomRequestDTO {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateClassroomRequestDTO {
+  name?: string;
+  description?: string;
+}
+
+export interface EnrollStudentRequestDTO {
+  joinCode: string;
+}
+
+export interface AssignGameRequestDTO {
+  gameId: string;
+  dueDate: string;
+}
+
+export interface AssignedGameDTO {
+  id: string;
+  classroomId: string;
+  gameId: string;
+  gameTitle?: string;
+  assignedAt: string;
+  dueDate: string;
+  status?: 'PENDING' | 'COMPLETED' | 'OVERDUE';
+}
+
+export interface GameDTO {
+  id: string;
+  title: string;
+  description?: string;
+  subject?: string;
+  questions?: GameQuestion[];
+}
+
+export interface StudentGameAttemptDTO {
+  id: string;
+  studentId: string;
+  assignedGameId: string;
+  score: number;
+  completedAt: string;
 }
 
 export interface MatchSortPair {
@@ -134,4 +196,10 @@ export interface MatchingCard {
   imageUrl?: string;
   isFaceUp: boolean;
   isMatched: boolean;
+}
+
+export interface MatchingPair {
+  id: number;
+  word: string;
+  imageUrl: string;
 }

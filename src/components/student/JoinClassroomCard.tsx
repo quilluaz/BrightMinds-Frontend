@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
-import { KeyRound, AlertCircle, CheckCircle, ArrowRight } from 'lucide-react';
-import Button from '../common/Button';
-import { useClassroom } from '../../context/ClassroomContext';
+import React, { useState } from "react";
+import { KeyRound, AlertCircle, CheckCircle, ArrowRight } from "lucide-react";
+import Button from "../common/Button";
+import { useClassroom } from "../../context/ClassroomContext";
 
 interface JoinClassroomCardProps {
   onClassroomJoined?: () => void;
   className?: string; // Allow passing additional Tailwind classes
 }
 
-const JoinClassroomCard: React.FC<JoinClassroomCardProps> = ({ onClassroomJoined, className = '' }) => {
+const JoinClassroomCard: React.FC<JoinClassroomCardProps> = ({
+  onClassroomJoined,
+  className = "",
+}) => {
   const { joinClassroom } = useClassroom();
-  const [joinCode, setJoinCode] = useState('');
+  const [joinCode, setJoinCode] = useState("");
   const [isJoining, setIsJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joinSuccess, setJoinSuccess] = useState(false);
@@ -27,7 +30,7 @@ const JoinClassroomCard: React.FC<JoinClassroomCardProps> = ({ onClassroomJoined
     try {
       await joinClassroom(joinCode.trim().toUpperCase());
       setJoinSuccess(true);
-      setJoinCode('');
+      setJoinCode("");
       if (onClassroomJoined) {
         onClassroomJoined();
       }
@@ -35,7 +38,9 @@ const JoinClassroomCard: React.FC<JoinClassroomCardProps> = ({ onClassroomJoined
         setJoinSuccess(false);
       }, 3000);
     } catch (err) {
-      setJoinError(err instanceof Error ? err.message : 'An error occurred while joining.');
+      setJoinError(
+        err instanceof Error ? err.message : "An error occurred while joining."
+      );
     } finally {
       setIsJoining(false);
     }
@@ -44,7 +49,8 @@ const JoinClassroomCard: React.FC<JoinClassroomCardProps> = ({ onClassroomJoined
   return (
     // Removed card class, border directly for more control via props if needed
     // Added max-w-sm for a smaller default width, can be overridden by parent grid
-    <div className={`bg-primary-background dark:bg-primary-card-dark p-4 md:p-5 rounded-xl shadow-md ${className}`}>
+    <div
+      className={`bg-primary-background dark:bg-primary-card-dark p-4 md:p-5 rounded-xl shadow-md ${className}`}>
       <h3 className="text-md md:text-lg font-semibold mb-3 text-primary-text dark:text-primary-text-dark">
         Got a Classroom Code?
       </h3>
@@ -66,7 +72,10 @@ const JoinClassroomCard: React.FC<JoinClassroomCardProps> = ({ onClassroomJoined
             Classroom Code
           </label>
           <div className="relative flex items-center">
-            <KeyRound size={18} className="absolute left-3 text-gray-400 dark:text-gray-500 pointer-events-none" />
+            <KeyRound
+              size={18}
+              className="absolute left-3 text-gray-400 dark:text-gray-500 pointer-events-none"
+            />
             <input
               id="joinCode"
               type="text"
@@ -74,7 +83,7 @@ const JoinClassroomCard: React.FC<JoinClassroomCardProps> = ({ onClassroomJoined
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               className="input-field font-mono pl-10 pr-2 py-2 text-sm w-full !rounded-lg"
               placeholder="ABCXYZ"
-              maxLength={6}
+              maxLength={8}
               autoComplete="off"
               required
               disabled={isJoining}
@@ -86,9 +95,8 @@ const JoinClassroomCard: React.FC<JoinClassroomCardProps> = ({ onClassroomJoined
               className="ml-2 !px-3 !py-2 !rounded-lg" // More compact button
               isLoading={isJoining}
               disabled={!joinCode.trim() || isJoining}
-              icon={<ArrowRight size={16}/>}
-            >
-            Join
+              icon={<ArrowRight size={16} />}>
+              Join
             </Button>
           </div>
         </div>

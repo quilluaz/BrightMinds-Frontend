@@ -1,47 +1,99 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { BookOpen, ChevronRight, Gamepad2, Sparkles, Users, LayoutGrid, Zap, Brain, Puzzle, Bell, ActivitySquare } from 'lucide-react';
+import { BookOpen, Gamepad2, Sparkles, Users, LayoutGrid, Zap, Brain, Puzzle, Bell, ActivitySquare } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { useAuth } from '../../context/AuthContext';
 import { useClassroom } from '../../context/ClassroomContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ClassroomCard from '../../components/common/ClassroomCard';
 import JoinClassroomCard from '../../components/student/JoinClassroomCard';
-import { Game } from '../../types';
+import { AssignedGameDTO, StudentClassroom } from '../../types';
+
+interface LatestActivityDisplay {
+  id: string;
+  title: string;
+  description?: string;
+  classroomIdForLink: string;
+  classroomName?: string;
+}
 
 const StudentDashboardPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const { studentClassrooms, fetchStudentClassrooms, getClassroomGames } = useClassroom();
+  const { 
+    studentClassrooms, 
+    fetchStudentClassrooms, 
+    getGamesForClassroom 
+  } = useClassroom();
   const navigate = useNavigate();
-  const [latestActivities, setLatestActivities] = useState<Game[]>([]);
+  const [latestActivities, setLatestActivities] = useState<LatestActivityDisplay[]>([]);
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
 
   useEffect(() => {
     if (!currentUser) {
       navigate('/login');
     } else if (currentUser.role !== 'STUDENT') {
-      navigate('/dashboard');
+      navigate('/dashboard'); 
     }
   }, [currentUser, navigate]);
 
   useEffect(() => {
-    if (currentUser?.role === 'STUDENT' && studentClassrooms.length > 0) {
-      let allAssignedGames: Game[] = [];
-      studentClassrooms.forEach(classroom => {
-        const gamesInClassroom = getClassroomGames(classroom.classroomId);
-        allAssignedGames = [...allAssignedGames, ...gamesInClassroom.map(g => ({...g, classroomIdForLink: classroom.classroomId }))];
-      });
-      const uniqueGames = Array.from(new Map(allAssignedGames.map(item => [item['title'], item])).values());
-      setLatestActivities(uniqueGames.slice(0, 4));
+    if (currentUser?.role === 'STUDENT' && fetchStudentClassrooms) {
+      setIsLoadingDashboard(true);
+      fetchStudentClassrooms().finally(() => setIsLoadingDashboard(false));
+    } else {
+      setIsLoadingDashboard(false);
     }
-  }, [studentClassrooms, currentUser, getClassroomGames]);
+  }, [currentUser, fetchStudentClassrooms]);
 
-  const handleClassroomJoined = () => {
+  useEffect(() => {
+    if (currentUser?.role === 'STUDENT' && studentClassrooms.length > 0 && getGamesForClassroom) {
+      const fetchAllGamesForDashboard = async () => {
+        const gamePromises = studentClassrooms.map(async (classroom) => {
+          const gamesInClass: AssignedGameDTO[] = await getGamesForClassroom(classroom.classroomId);
+          return { 
+            classroomId: classroom.classroomId, 
+            classroomName: classroom.classroomName, 
+            games: gamesInClass 
+          };
+        });
+
+        try {
+          const results = await Promise.all(gamePromises);
+          let combinedActivities: LatestActivityDisplay[] = [];
+          
+          results.forEach(result => {
+            result.games.forEach(assignedGame => {
+              combinedActivities.push({
+                id: assignedGame.gameId || assignedGame.id, 
+                title: assignedGame.gameTitle || 'Untitled Game',
+                description: `New activity in ${result.classroomName}`,
+                classroomIdForLink: result.classroomId,
+                classroomName: result.classroomName,
+              });
+            });
+          });
+          
+          const uniqueGames = Array.from(new Map(combinedActivities.map(item => [item.id + item.classroomIdForLink, item])).values());
+          setLatestActivities(uniqueGames.sort(() => 0.5 - Math.random()).slice(0, 4));
+        } catch (error) {
+          console.error("Error fetching games for dashboard activities:", error);
+          setLatestActivities([]);
+        }
+      };
+      
+      fetchAllGamesForDashboard();
+    } else {
+      setLatestActivities([]);
+    }
+  }, [studentClassrooms, currentUser, getGamesForClassroom]);
+
+  const handleClassroomJoined = useCallback(() => {
     if (fetchStudentClassrooms) {
       fetchStudentClassrooms();
     }
-  };
+  }, [fetchStudentClassrooms]);
 
-  if (!currentUser || currentUser.role !== 'STUDENT') {
+  if (!currentUser || currentUser.role !== 'STUDENT' || isLoadingDashboard) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <LoadingSpinner size="lg" />
@@ -49,7 +101,7 @@ const StudentDashboardPage: React.FC = () => {
     );
   }
 
-  const firstName = currentUser.name.split(' ')[0];
+  const firstName = currentUser.firstName || currentUser.name.split(' ')[0];
 
   const practiceGameLinks = [
     { to: "/4pics1word", label: "4 Pics 1 Word", icon: <Puzzle size={28} />, color: "from-yellow-400 via-amber-500 to-orange-500", hoverColor: "hover:from-yellow-500 hover:to-orange-600", shadow: "shadow-yellow-500/30 hover:shadow-yellow-600/50" },
@@ -76,59 +128,56 @@ const StudentDashboardPage: React.FC = () => {
       <div className="animate-slide-up animation-delay-200">
         <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark flex items-center">
-            {/* Apply the new animation to the Bell icon */}
             <Bell size={28} className="mr-3 text-primary-energetic dark:text-primary-energetic-dark animate-bell-ring" />
             New Classroom Activities
             </h2>
         </div>
         {latestActivities.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {latestActivities.map((activity, index) => (
-              <Link
-                // @ts-ignore
+            {latestActivities.map((activity) => (
+                <Link
                 to={`/student/classrooms/${activity.classroomIdForLink}/games/${activity.id}`}
-                key={`${activity.id}-${index}`}
+                key={`${activity.classroomIdForLink}-${activity.id}`}
                 className="group block"
-              >
+                >
                 <div className="bg-white dark:bg-primary-card-dark p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 border-2 border-transparent hover:border-primary-energetic dark:hover:border-primary-energetic-dark">
-                  <div className="flex items-center mb-2">
+                    <div className="flex items-center mb-2">
                     <div className="p-2 bg-primary-energetic/20 dark:bg-primary-energetic-dark/30 rounded-full mr-3">
                         <ActivitySquare size={20} className="text-primary-energetic dark:text-primary-energetic-dark" />
                     </div>
                     <h3 className="font-semibold text-primary-text dark:text-primary-text-dark group-hover:text-primary-energetic dark:group-hover:text-primary-energetic-dark">
                         {activity.title}
                     </h3>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
                     {activity.description || "Time to learn something new!"}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {/* @ts-ignore */}
-                    From: {studentClassrooms.find(c => c.classroomId === activity.classroomIdForLink)?.classroomName || "Your Classroom"}
-                  </p>
-                   <div className="mt-3 text-right">
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      From: {activity.classroomName || "Your Classroom"}
+                    </p>
+                    <div className="mt-3 text-right">
                         <span className="text-sm font-medium text-primary-energetic dark:text-primary-energetic-dark group-hover:underline">
                             Start Now &rarr;
                         </span>
-                    </div>
+                        </div>
                 </div>
-              </Link>
+                </Link>
             ))}
             </div>
         ) : (
             <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow p-6 text-center">
                 <Sparkles size={36} className="mx-auto text-primary-accent dark:text-primary-accent-dark opacity-70 mb-3" />
-                <p className="text-gray-600 dark:text-gray-300">No new activities from your teacher right now. Great job staying up to date, or check out the practice games below!</p>
+                <p className="text-gray-600 dark:text-gray-300">No new activities from your teacher right now. Check out the practice games below!</p>
             </div>
         )}
       </div>
 
       <div className="animate-slide-up animation-delay-400">
         <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark flex items-center">
+          <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark flex items-center">
             <Gamepad2 size={30} className="mr-3 text-primary-accent dark:text-primary-accent-dark" />
             Fun Practice Zone!
-            </h2>
+          </h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-6">
           {practiceGameLinks.map(game => (
@@ -136,11 +185,11 @@ const StudentDashboardPage: React.FC = () => {
               to={game.to}
               key={game.to}
               className={`group p-5 md:p-6 rounded-2xl text-white bg-gradient-to-br ${game.color} ${game.hoverColor}
-                         flex flex-col items-center justify-center text-center
-                         transition-all duration-300 ease-in-out
-                         transform hover:-translate-y-2 hover:scale-[1.08] active:scale-95 active:translate-y-0
-                         focus:outline-none focus:ring-4 focus:ring-offset-2 dark:focus:ring-offset-primary-background-dark ${game.shadow} focus:${game.shadow.replace('hover:', '')}
-                         min-h-[160px] md:min-h-[180px] overflow-hidden relative`}
+                               flex flex-col items-center justify-center text-center
+                               transition-all duration-300 ease-in-out
+                               transform hover:-translate-y-2 hover:scale-[1.08] active:scale-95 active:translate-y-0
+                               focus:outline-none focus:ring-4 focus:ring-offset-2 dark:focus:ring-offset-primary-background-dark ${game.shadow} focus:${game.shadow.replace('hover:', '')}
+                               min-h-[160px] md:min-h-[180px] overflow-hidden relative`}
             >
               <div className="mb-3 text-white/90 group-hover:text-white transition-colors duration-300 transform group-hover:scale-125 group-hover:rotate-6 group-active:scale-110 ease-out group-hover:animate-icon-pop">
                 {game.icon}
@@ -187,13 +236,20 @@ const StudentDashboardPage: React.FC = () => {
                     </div>
                 </div>
                 )}
-                {studentClassrooms.length > 0 && studentClassrooms.length <=3 && studentClassrooms.length > 0 && (
+                {studentClassrooms.length > 0 && displayedClassrooms.length < studentClassrooms.length && (
                     <div className="mt-6 text-center md:text-left">
                         <Button variant="primary" onClick={() => navigate("/student/classrooms")} icon={<LayoutGrid size={16}/>}>
                             Manage All Classrooms
                         </Button>
                     </div>
                 )}
+                 {studentClassrooms.length > 0 && displayedClassrooms.length === studentClassrooms.length && studentClassrooms.length <=3 &&(
+                     <div className="mt-6 text-center md:text-left">
+                        <Button variant="primary" onClick={() => navigate("/student/classrooms")} icon={<LayoutGrid size={16}/>}>
+                            Manage All Classrooms
+                        </Button>
+                    </div>
+                 )}
             </div>
             <div className="md:col-span-1 md:mt-10">
                  <JoinClassroomCard onClassroomJoined={handleClassroomJoined} className="w-full" />

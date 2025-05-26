@@ -30,14 +30,10 @@ const MatchingCard: React.FC<MatchingCardProps> = ({ card, handleCardClick, isDi
                     {/* Or just a simple background color/pattern */}
                 </div>
                 <div className="matching-card-face matching-card-front">
-                    {card.type === 'word' ? (
-                        <p className="matching-card-word">{card.content}</p>
-                    ) : (
-                        <div className="matching-card-image-container">
-                            <img src={card.imageUrl} alt={card.content} className="matching-card-image" />
-                            <p className="matching-card-word matching-card-image-label">{card.content}</p>
-                        </div>
-                    )}
+                    <div className="matching-card-image-container">
+                        <img src={card.imageUrl} alt={card.content} className="matching-card-image" />
+                        <p className="matching-card-word matching-card-image-label">{card.content}</p>
+                    </div>
                 </div>
             </div>
         </div>

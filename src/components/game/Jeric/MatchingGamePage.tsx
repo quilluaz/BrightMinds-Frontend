@@ -61,6 +61,7 @@ const MatchingGamePage: React.FC = () => {
                     pairId: pair.id,
                     type: 'word',
                     content: pair.word,
+                    imageUrl: pair.imageUrl,
                     isFaceUp: false,
                     isMatched: false,
                 });

@@ -150,7 +150,7 @@ export interface EnrollStudentRequestDTO {
 export interface AssignGameRequestDTO {
   gameId: string; // This should be the ID of a Game or GameDTO from the library
   dueDate: string;
-  // classroomId is usually part of the URL path
+  maxAttempts?: number;
 }
 
 // This DTO is what you get when listing assigned games.
@@ -164,6 +164,7 @@ export interface AssignedGameDTO {
   dueDate: string;
   status?: 'PENDING' | 'COMPLETED' | 'OVERDUE' | 'not_started' | 'in_progress'; // Added more statuses for consistency
   game?: GameDTO; // The actual game details from the library (GameDTO)
+  maxAttempts?: number;
 }
 
 // Represents a game as stored in the game library (potentially without full question data for previews)
@@ -174,6 +175,7 @@ export interface GameDTO {
   subject?: string;
   questions?: GameQuestion[]; // Optional for previews
   gameMode?: "BALLOON" | "TREASURE_HUNT" | "MATCHING" | "IMAGE_MULTIPLE_CHOICE" | "SORTING" | "FOUR_PICS_ONE_WORD";
+  isPremade?: boolean;
 }
 
 export interface StudentGameAttemptDTO {

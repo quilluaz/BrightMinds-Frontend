@@ -30,6 +30,7 @@ import PrivacyPolicyPage from "./pages/common/PrivacyPolicyPage";
 import TeacherClassroomsPage from "./pages/teacher/TeacherClassroomsPage";
 import TeacherClassroomViewPage from "./pages/teacher/TeacherClassroomViewPage";
 import TeacherGameLibraryPage from "./pages/teacher/TeacherGameLibraryPage";
+import AssignGameToClassroomPage from "./pages/teacher/AssignGameToClassroomPage"; // Import the new page
 
 // Student Specific Pages
 import StudentDashboardPage from "./pages/student/StudentDashboardPage";
@@ -84,7 +85,9 @@ const RoleRoute = ({
     console.warn(
       `RoleRoute: Role mismatch. Expected ${allowedRole}, got ${currentUser.role}. Redirecting to landing.`
     );
-    return <Navigate to="/" replace />;
+    // Redirect to a generic dashboard or landing page based on actual role if desired, or just landing
+    const redirectPath = currentUser.role === "STUDENT" ? "/student/dashboard" : "/teacher/classrooms";
+    return <Navigate to={redirectPath} replace />;
   }
   return <>{children}</>;
 };
@@ -99,15 +102,15 @@ const AuthenticatedRedirect = ({ children }: { children: JSX.Element }) => {
     if (currentUser.role === "STUDENT") {
       return <Navigate to="/student/dashboard" replace />;
     } else if (currentUser.role === "TEACHER") {
-      // UPDATED: Navigate directly to classrooms page
-      return <Navigate to="/teacher/classrooms" replace />;
+      return <Navigate to="/teacher/classrooms" replace />; // Default teacher redirect
     }
+    // Fallback for users with role but not STUDENT or TEACHER (if any such roles exist)
     console.warn(
-      "AuthenticatedRedirect: currentUser.role not determinable for specific dashboard, redirecting to landing."
+      "AuthenticatedRedirect: User role is not STUDENT or TEACHER, redirecting to landing."
     );
     return <Navigate to="/" replace />;
   }
-  return children;
+  return children; // If not authenticated, show the children (e.g., LandingPage)
 };
 
 // --- AppLayout Component ---
@@ -168,43 +171,13 @@ function App() {
                   }
                 />
 
+                {/* Student Routes */}
                 <Route
                   path="/student/dashboard"
                   element={
                     <ProtectedRoute>
                       <RoleRoute allowedRole="STUDENT">
                         <StudentDashboardPage />
-                      </RoleRoute>
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/teacher/classrooms"
-                  element={
-                    <ProtectedRoute>
-                      <RoleRoute allowedRole="TEACHER">
-                        <TeacherClassroomsPage />
-                      </RoleRoute>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/teacher/classrooms/:classroomId"
-                  element={
-                    <ProtectedRoute>
-                      <RoleRoute allowedRole="TEACHER">
-                        <TeacherClassroomViewPage />
-                      </RoleRoute>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/teacher/games/library"
-                  element={
-                    <ProtectedRoute>
-                      <RoleRoute allowedRole="TEACHER">
-                        <TeacherGameLibraryPage />
                       </RoleRoute>
                     </ProtectedRoute>
                   }
@@ -240,6 +213,50 @@ function App() {
                   }
                 />
 
+                {/* Teacher Routes */}
+                <Route
+                  path="/teacher/classrooms"
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRole="TEACHER">
+                        <TeacherClassroomsPage />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/teacher/classrooms/:classroomId"
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRole="TEACHER">
+                        <TeacherClassroomViewPage />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/teacher/games/library"
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRole="TEACHER">
+                        <TeacherGameLibraryPage />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  }
+                />
+                {/* New route for assigning a game to a specific classroom */}
+                <Route
+                  path="/teacher/classrooms/:classroomId/assign-game"
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRole="TEACHER">
+                        <AssignGameToClassroomPage />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Catch-all route */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

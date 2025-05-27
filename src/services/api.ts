@@ -1,6 +1,5 @@
 import axios from "axios";
 
-// Define your main API base URL (excluding specific paths like /auth)
 const API_BASE_URL = "http://localhost:8080/api"; // Adjust if your non-auth API is elsewhere
 
 const api = axios.create({

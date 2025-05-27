@@ -3,12 +3,12 @@ import { GameDTO, StudentGameAttemptDTO } from '../types';
 
 export const gameService = {
   getLibraryGames: async (): Promise<GameDTO[]> => {
-    const response = await api.get('/games/library');
+    const response = await api.get('/games/premade');
     return response.data;
   },
 
   getGameById: async (gameId: string): Promise<GameDTO> => {
-    const response = await api.get(`/games/library/${gameId}`);
+    const response = await api.get(`/games/${gameId}`);
     return response.data;
   },
 
@@ -18,7 +18,7 @@ export const gameService = {
   },
 
   getMyAttempts: async (assignedGameId: string): Promise<StudentGameAttemptDTO[]> => {
-    const response = await api.get(`/game-attempts/my-attempts`, {
+    const response = await api.get(`/game-attempts/my-attempts`, { 
       params: { assignedGameId }
     });
     return response.data;

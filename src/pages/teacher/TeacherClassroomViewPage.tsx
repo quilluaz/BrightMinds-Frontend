@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Plus, Users, BookOpen, BarChart2, Settings, Copy, AlertTriangle, Library, RefreshCw } from 'lucide-react'; // Added RefreshCw
+import { Users, BookOpen, BarChart2, Settings, Copy, AlertTriangle, Library, Trash2 } from 'lucide-react'; // Added Trash2
 import { useClassroom } from '../../context/ClassroomContext';
 import Button from '../../components/common/Button';
 import GameCard from '../../components/common/GameCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import LeaderboardTable from '../../components/common/LeaderboardTable';
-import { ClassroomDTO, AssignedGameDTO, LeaderboardEntry, Game, User as StudentUser } from '../../types'; // Added StudentUser
+import ClassroomSettingsModal from '../../components/teacher/ClassroomSettingsModal'; // Import the new modal
+import { ClassroomDTO, AssignedGameDTO, LeaderboardEntry, Game, User as StudentUser } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 
 const TeacherClassroomViewPage: React.FC = () => {
@@ -15,8 +16,9 @@ const TeacherClassroomViewPage: React.FC = () => {
     teacherClassrooms,
     getAssignedGames,
     getClassroomLeaderboard,
-    getStudentsInClassroom, // Added for student list
-    fetchTeacherClassrooms, // To refresh classroom list if needed
+    getStudentsInClassroom,
+    fetchTeacherClassrooms,
+    // removeStudentFromClassroom // Assuming this function will be added to context
   } = useClassroom();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -25,9 +27,11 @@ const TeacherClassroomViewPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [classroom, setClassroom] = useState<ClassroomDTO | null>(null);
   const [assignedGames, setAssignedGames] = useState<AssignedGameDTO[]>([]);
-  const [students, setStudents] = useState<StudentUser[]>([]); // For student list tab
+  const [students, setStudents] = useState<StudentUser[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [averageScore, setAverageScore] = useState<number | null>(null);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   const fetchClassroomData = useCallback(async (forceRefreshContext = false) => {
     if (!classroomId) {
@@ -37,18 +41,16 @@ const TeacherClassroomViewPage: React.FC = () => {
     setIsLoading(true);
 
     if (forceRefreshContext && fetchTeacherClassrooms) {
-        await fetchTeacherClassrooms(); // Refresh context data
+      await fetchTeacherClassrooms();
     }
 
     try {
-      // Find classroom from potentially updated context
-      const currentClassrooms = teacherClassrooms; // Use the latest from context state
+      const currentClassrooms = teacherClassrooms;
       const foundClassroom = currentClassrooms.find(c => c.id === classroomId);
 
       if (foundClassroom) {
-        setClassroom(foundClassroom); // Set classroom state
+        setClassroom(foundClassroom);
 
-        // Fetch games, students, and leaderboard concurrently
         const [gamesData, studentsData, leaderboardData] = await Promise.all([
           getAssignedGames ? getAssignedGames(classroomId) : Promise.resolve([]),
           getStudentsInClassroom ? getStudentsInClassroom(classroomId) : Promise.resolve([]),
@@ -56,7 +58,7 @@ const TeacherClassroomViewPage: React.FC = () => {
         ]);
 
         setAssignedGames(gamesData);
-        setStudents(studentsData); // Set students state
+        setStudents(studentsData);
         setLeaderboard(leaderboardData);
 
         if (leaderboardData.length > 0) {
@@ -66,13 +68,14 @@ const TeacherClassroomViewPage: React.FC = () => {
           setAverageScore(0);
         }
       } else {
-        console.warn("Classroom not found in context after potential refresh, redirecting.");
+        console.warn("Classroom not found in context, attempting direct fetch or redirecting.");
+        // Optionally, you could try to fetch a single classroom here if context is stale
+        // or just navigate away if it's truly not found/accessible.
         navigate('/teacher/classrooms');
       }
     } catch (error) {
       console.error("Failed to fetch classroom data:", error);
-      // Optionally navigate or show error message
-      // navigate('/teacher/classrooms');
+      navigate('/teacher/classrooms');
     } finally {
       setIsLoading(false);
     }
@@ -81,19 +84,41 @@ const TeacherClassroomViewPage: React.FC = () => {
 
   useEffect(() => {
     fetchClassroomData();
-  }, [fetchClassroomData]); // fetchClassroomData is memoized and includes its dependencies
+  }, [fetchClassroomData]);
 
   const handleCopyCode = () => {
     if (classroom?.uniqueCode) {
       navigator.clipboard.writeText(classroom.uniqueCode)
-        .then(() => alert('Class code copied to clipboard!')) // Simple alert for feedback
+        .then(() => {
+          setCodeCopied(true);
+          setTimeout(() => setCodeCopied(false), 2000);
+        })
         .catch(err => console.error('Failed to copy class code: ', err));
     }
   };
 
-  const handleRefreshData = () => {
-    fetchClassroomData(true); // Pass true to force refresh context
-  }
+  const handleRemoveStudent = async (studentId: string | number) => {
+    if (!classroomId) return;
+    // Confirm before removing
+    if (window.confirm(`Are you sure you want to remove this student? This action cannot be undone.`)) {
+        try {
+            // TODO: Implement removeStudentFromClassroom in ClassroomContext
+            // await removeStudentFromClassroom(classroomId, studentId.toString());
+            alert(`Student ${studentId} removed (simulated). Refreshing student list.`); // Placeholder
+            // Refetch students after removal
+            if (getStudentsInClassroom) {
+                const updatedStudents = await getStudentsInClassroom(classroomId);
+                setStudents(updatedStudents);
+            }
+             // Also refetch classroom data to update studentCount
+            fetchClassroomData(true);
+        } catch (error) {
+            alert(`Failed to remove student: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            console.error("Error removing student:", error);
+        }
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -141,35 +166,40 @@ const TeacherClassroomViewPage: React.FC = () => {
             )}
           </div>
           <div className="flex items-center space-x-2 mt-4 sm:mt-0">
+            {classroom.uniqueCode && (
+              <div className="bg-primary-background dark:bg-slate-700 p-2.5 rounded-lg flex items-center shadow-sm border border-gray-200 dark:border-gray-600">
+                <p className="text-xs text-gray-600 dark:text-gray-300 mr-1.5">Code:</p>
+                <span className="font-mono text-sm font-semibold text-primary-text dark:text-primary-text-dark mr-2">{classroom.uniqueCode}</span>
+                <Button
+                  variant="text"
+                  size="sm"
+                  onClick={handleCopyCode}
+                  icon={codeCopied ? <Check size={14} className="text-green-500"/> : <Copy size={14} />}
+                  className="!p-1.5"
+                  aria-label="Copy class code"
+                >
+                  {codeCopied ? '' : ''}
+                </Button>
+              </div>
+            )}
             <Button
-                variant="outline"
-                size="md"
-                onClick={handleRefreshData}
-                icon={<RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />}
-                disabled={isLoading}
-                aria-label="Refresh classroom data"
+              variant="primary"
+              size="md"
+              icon={<Library size={18} />}
+              onClick={() => navigate(`/teacher/classrooms/${classroomId}/assign-game`)}
             >
-                {isLoading ? "Refreshing..." : "Refresh"}
+              Assign Game
             </Button>
             <Button
               variant="outline"
               size="md"
               icon={<Settings size={18} />}
-              onClick={() => navigate(`/teacher/classrooms/${classroomId}/settings`)}
+              onClick={() => setIsSettingsModalOpen(true)}
             >
               Settings
             </Button>
           </div>
         </div>
-        {classroom.uniqueCode && (
-          <div className="mt-5 bg-primary-background dark:bg-primary-background-dark p-3 rounded-lg inline-flex items-center shadow">
-            <p className="text-sm text-gray-700 dark:text-gray-300 mr-2">Class Code:</p>
-            <span className="font-mono text-md font-semibold text-primary-text dark:text-primary-text-dark mr-3">{classroom.uniqueCode}</span>
-            <Button variant="text" size="sm" onClick={handleCopyCode} icon={<Copy size={16} />} aria-label="Copy class code">
-              Copy
-            </Button>
-          </div>
-        )}
       </header>
 
       <div className="mb-8 border-b border-gray-200 dark:border-gray-700">
@@ -217,24 +247,7 @@ const TeacherClassroomViewPage: React.FC = () => {
                 <p className="text-4xl font-bold text-primary-text dark:text-primary-text-dark">{averageScore !== null ? `${averageScore}%` : 'N/A'}</p>
               </div>
             </div>
-
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold text-primary-text dark:text-primary-text-dark mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <Button variant="primary" icon={<Library size={18}/>} onClick={() => navigate(`/teacher/classrooms/${classroomId}/assign-game`)}>Assign New Game</Button>
-                <Button variant="outline" icon={<Users size={18}/>} onClick={() => setActiveTab('students')}>Manage Students</Button>
-                <Button variant="outline" icon={<BarChart2 size={18}/>} onClick={() => setActiveTab('leaderboard')}>View Leaderboard</Button>
-              </div>
-            </div>
-            {/* Placeholder for Recent Activity, you'd fetch this data */}
-            <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow p-6 border dark:border-gray-700">
-              <h3 className="text-xl font-semibold text-primary-text dark:text-primary-text-dark mb-4">Recent Activity (Placeholder)</h3>
-              <ul className="space-y-3">
-                <li className="text-sm text-gray-700 dark:text-gray-300">Juan Dela Cruz completed "Pangngalan Quiz" with 85%.</li>
-                <li className="text-sm text-gray-700 dark:text-gray-300">Maria Santos joined the classroom.</li>
-                <li className="text-sm text-gray-700 dark:text-gray-300">New activity "Pandiwa Practice" assigned.</li>
-              </ul>
-            </div>
+            {/* Further streamlining: Removed quick actions and recent activity */}
           </div>
         )}
 
@@ -242,20 +255,14 @@ const TeacherClassroomViewPage: React.FC = () => {
           <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark">Learning Activities ({activityCount})</h2>
-              <Button
-                variant="primary"
-                icon={<Library size={18} />}
-                 onClick={() => navigate(`/teacher/classrooms/${classroomId}/assign-game`)} // Or direct to game library with classroom context
-              >
-                Assign Game
-              </Button>
+              {/* Assign Game button is now in the header for all tabs */}
             </div>
             {assignedGames.length === 0 ? (
               <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm p-8 text-center border-2 border-dashed dark:border-gray-700">
                 <AlertTriangle size={40} className="mx-auto mb-4 text-yellow-500" />
                 <h3 className="text-xl font-semibold mb-2 text-primary-text dark:text-primary-text-dark">No Activities Assigned Yet</h3>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">
-                  Assign games and learning activities to engage your students.
+                  Assign games and learning activities to engage your students from the "Assign Game" button above.
                 </p>
               </div>
             ) : (
@@ -265,7 +272,7 @@ const TeacherClassroomViewPage: React.FC = () => {
                     key={assignedGame.id}
                     game={mapAssignedGameToGameCardProp(assignedGame)}
                     classroomId={classroomId!}
-                    showPerformance // Teachers might want to see performance indicators or links
+                    showPerformance
                   />
                 ))}
               </div>
@@ -277,21 +284,14 @@ const TeacherClassroomViewPage: React.FC = () => {
           <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark">Enrolled Students ({studentCount})</h2>
-              {/* Enroll student button might open a modal or navigate to a separate page */}
-              <Button
-                variant="primary"
-                icon={<Plus size={18} />}
-                 onClick={() => alert('Functionality to enroll new student (e.g., manually or view invite link) - TBD')}
-              >
-                Enroll New Student
-              </Button>
+              {/* The "Enroll New Student" button is removed. Student management is now inline. */}
             </div>
             {students.length === 0 ? (
               <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm p-8 text-center border-2 border-dashed dark:border-gray-700">
                 <Users size={40} className="mx-auto mb-4 text-gray-400" />
                 <h3 className="text-xl font-semibold mb-2 text-primary-text dark:text-primary-text-dark">No Students Enrolled</h3>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">
-                  Share the classroom code <code className="font-mono bg-gray-100 dark:bg-gray-700 p-1 rounded">{classroom.uniqueCode}</code> with your students to let them join.
+                  Share the classroom code <code className="font-mono bg-gray-100 dark:bg-slate-700 p-1 rounded">{classroom.uniqueCode}</code> with your students to let them join.
                 </p>
               </div>
             ) : (
@@ -301,7 +301,6 @@ const TeacherClassroomViewPage: React.FC = () => {
                     <tr className="bg-gray-50 dark:bg-slate-800">
                       <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Name</th>
                       <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Email</th>
-                      {/* Add more relevant columns like 'Activities Completed', 'Avg. Score' if available */}
                       <th className="py-3 px-4 text-right text-sm font-semibold text-gray-600 dark:text-gray-300">Actions</th>
                     </tr>
                   </thead>
@@ -315,11 +314,19 @@ const TeacherClassroomViewPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap text-primary-text dark:text-primary-text-dark">{student.email}</td>
-                        {/* Example placeholder data for activities/score */}
-                        {/* <td className="py-3 px-4 text-center whitespace-nowrap text-primary-text dark:text-primary-text-dark">N/A</td> */}
-                        {/* <td className="py-3 px-4 text-center whitespace-nowrap text-primary-text dark:text-primary-text-dark font-medium">N/A</td> */}
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <Button variant="text" size="sm" onClick={() => navigate(`/teacher/classrooms/${classroomId}/students/${student.id}`)}>View Progress</Button>
+                          <Button variant="text" size="sm" onClick={() => navigate(`/teacher/classrooms/${classroomId}/students/${student.id}`)} className="mr-2">
+                            View Progress
+                          </Button>
+                          <Button
+                            variant="text"
+                            size="sm"
+                            onClick={() => handleRemoveStudent(student.id)}
+                            className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-700/20"
+                            icon={<Trash2 size={14}/>}
+                          >
+                            Remove
+                          </Button>
                         </td>
                       </tr>
                     ))}
@@ -343,12 +350,19 @@ const TeacherClassroomViewPage: React.FC = () => {
             ) : (
                 <LeaderboardTable
                   entries={leaderboard}
-                  // Teachers might not need to be highlighted, or highlight a specific student if selected
                 />
             )}
           </div>
         )}
       </div>
+
+      {classroom && (
+        <ClassroomSettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          classroom={classroom}
+        />
+      )}
     </div>
   );
 };

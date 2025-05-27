@@ -12,10 +12,11 @@ import {
   Classroom,
   StudentClassroom,
   CreateClassroomRequestDTO,
+  UpdateClassroomRequestDTO, // Import this type
   AssignedGameDTO,
   LeaderboardEntry,
   BackendUserResponse,
-} from "../types";
+} from "../types"; // Make sure UpdateClassroomRequestDTO is in your types
 
 interface BackendTeacherClassroomResponse {
   id: number;
@@ -72,6 +73,17 @@ interface ClassroomContextType {
     isPremade: boolean
   ) => Promise<AssignedGameDTO | null>;
   getClassroomLeaderboard: (classroomId: string) => Promise<LeaderboardEntry[]>;
+  // --- Add the new methods here ---
+  updateClassroom: (
+    classroomId: string,
+    data: UpdateClassroomRequestDTO
+  ) => Promise<Classroom | null>;
+  deleteClassroom: (classroomId: string) => Promise<void>;
+  removeStudentFromClassroom: (
+    classroomId: string,
+    studentId: string
+  ) => Promise<void>;
+  // --- End of new methods ---
 }
 
 const ClassroomContext = createContext<ClassroomContextType | undefined>(
@@ -100,7 +112,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         teacherName: `${dto.teacher.firstName} ${dto.teacher.lastName}`.trim(),
         code: dto.joinCode,
         studentCount: dto.students ? dto.students.length : 0,
-        activityCount: 0,
+        activityCount: 0, // This would ideally be calculated based on assigned games
         iconUrl: dto.iconUrl,
       };
     },
@@ -157,6 +169,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
           classroomName: bc.name,
           teacherName: `${bc.teacher.firstName} ${bc.teacher.lastName}`.trim(),
           iconUrl: bc.iconUrl,
+          activityCount: 0, // Placeholder, ideally fetched or calculated
         })
       );
       setStudentClassrooms(classroomsForStudent);
@@ -193,7 +206,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         const payload = {
           name: data.name,
           description: data.description,
-          teacherId: currentUser.id,
+          teacherId: currentUser.id, // Assuming backend uses this
         };
         const response = await fetch(`${CLASSROOM_API_BASE_URL}`, {
           method: "POST",
@@ -218,7 +231,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         return newClassroom;
       } catch (error) {
         console.error("Error creating classroom:", error);
-        throw error;
+        throw error; // Rethrow to be caught by the calling component
       } finally {
         setIsLoading(false);
       }
@@ -235,7 +248,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
       }
       setIsLoading(true);
       try {
-        const payload = { studentId: currentUser.id, joinCode: code };
+        const payload = { studentId: currentUser.id, joinCode: code }; // Adjust payload as per backend
         const response = await fetch(`${CLASSROOM_API_BASE_URL}/enroll`, {
           method: "POST",
           headers: {
@@ -284,6 +297,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
   const getAssignedGames = useCallback(
     async (classroomId: string): Promise<AssignedGameDTO[]> => {
       if (!token) throw new Error("Authentication required.");
+      setIsLoading(true);
       try {
         const response = await fetch(
           `${CLASSROOM_API_BASE_URL}/${classroomId}/games`,
@@ -301,25 +315,31 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         const backendGames: BackendAssignedGameResponse[] =
           await response.json();
 
-        const assignedGamesFrontend: AssignedGameDTO[] = backendGames.map(
+        return backendGames.map(
           (bg) => ({
             id: bg.id.toString(),
             classroomId: bg.classroom.id.toString(),
             gameId: bg.game.activityId.toString(),
             gameTitle: bg.game.activityName,
-            assignedAt: new Date().toISOString(),
+            // You might want to fetch full GameDTO here if needed by GameCard, or extend AssignedGameDTO
+            game: { // Embedding a minimal GameDTO structure
+                id: bg.game.activityId.toString(),
+                title: bg.game.activityName,
+                description: bg.game.description,
+                subject: bg.game.subject,
+                questions: [], // Placeholder, fetch if needed
+                // gameMode: undefined // Determine how to get this if needed
+            },
+            assignedAt: new Date().toISOString(), // Placeholder, backend should provide this
             dueDate: bg.deadline,
-            // The 'game' object for full details isn't part of the standard AssignedGameDTO type,
-            // but if your backend sends it like in BackendAssignedGameResponse, you can include it
-            // by extending AssignedGameDTO or handling it appropriately in the component.
-            // For now, sticking to the defined AssignedGameDTO.
-            // If GameCard needs more, it would fetch game details by gameId or AssignedGameDTO needs 'game?: GameDTO'.
+            status: 'PENDING' // Placeholder, backend should provide this
           })
         );
-        return assignedGamesFrontend;
       } catch (error) {
         console.error("Error fetching games for classroom:", error);
         return [];
+      } finally {
+        setIsLoading(false);
       }
     },
     [token]
@@ -328,6 +348,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
   const getStudentsInClassroom = useCallback(
     async (classroomId: string): Promise<User[]> => {
       if (!token) throw new Error("Authentication required.");
+      setIsLoading(true);
       try {
         const response = await fetch(
           `${CLASSROOM_API_BASE_URL}/${classroomId}/students`,
@@ -343,20 +364,23 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         }
         const studentsData: BackendUserResponse[] = await response.json();
         return studentsData.map((student) => ({
-          id: student.id,
+          id: student.id, // Ensure ID is number if your User type expects number
           email: student.email,
           firstName: student.firstName,
           lastName: student.lastName,
-          name: `${student.firstName} ${student.lastName}`.trim(),
-          role: student.role,
+          // This is the line in question:
+          name: `${student.firstName} ${student.lastName}`.trim(), 
+          role: student.role as UserRole, // Cast if necessary
           avatarUrl:
-            (student as any).avatarImage ||
+            (student as any).avatarImage || 
             (student as any).profilePhoto ||
             `https://api.dicebear.com/7.x/bottts/svg?seed=${student.firstName}${student.lastName}`,
         }));
       } catch (error) {
         console.error("Error fetching students in classroom:", error);
         return [];
+      } finally {
+        setIsLoading(false);
       }
     },
     [token]
@@ -384,6 +408,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
+            // body: JSON.stringify({ gameId, deadline, isPremade }), // Backend might expect body
           }
         );
         if (!response.ok) {
@@ -394,15 +419,16 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         }
         const assignedBackendGame: BackendAssignedGameResponse =
           await response.json();
-        const newAssignedGame: AssignedGameDTO = {
-          id: assignedBackendGame.id.toString(),
-          classroomId: assignedBackendGame.classroom.id.toString(),
-          gameId: assignedBackendGame.game.activityId.toString(),
-          gameTitle: assignedBackendGame.game.activityName,
-          assignedAt: new Date().toISOString(),
-          dueDate: assignedBackendGame.deadline,
+        // TODO: Potentially update the list of assigned games in state or refetch
+        return { // Transform to AssignedGameDTO
+            id: assignedBackendGame.id.toString(),
+            classroomId: assignedBackendGame.classroom.id.toString(),
+            gameId: assignedBackendGame.game.activityId.toString(),
+            gameTitle: assignedBackendGame.game.activityName,
+            assignedAt: new Date().toISOString(), // Placeholder
+            dueDate: assignedBackendGame.deadline,
+             status: 'PENDING' // Placeholder
         };
-        return newAssignedGame;
       } catch (error) {
         console.error("Error assigning game:", error);
         throw error;
@@ -416,15 +442,14 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
   const getClassroomLeaderboard = useCallback(
     async (classroomId: string): Promise<LeaderboardEntry[]> => {
       if (!token) {
-        console.error(
-          "Authentication token not found for getClassroomLeaderboard."
-        );
+        console.error("Auth token not found for getClassroomLeaderboard.");
         return [];
       }
       if (!classroomId) {
-        console.error("Classroom ID is required for fetching leaderboard.");
+        console.error("Classroom ID required for fetching leaderboard.");
         return [];
       }
+      setIsLoading(true);
       try {
         const response = await fetch(
           `${CLASSROOM_API_BASE_URL}/${classroomId}/leaderboard`,
@@ -438,15 +463,13 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         );
         if (!response.ok) {
           const errorBody = await response.text();
-          console.error(
-            `Failed to fetch leaderboard: ${response.status}`,
-            errorBody
+          throw new Error(
+            `Failed to fetch leaderboard: ${response.status} ${errorBody}`
           );
-          throw new Error(`Failed to fetch leaderboard: ${response.status}`);
         }
         const studentsWithScores: BackendLeaderboardEntry[] =
           await response.json();
-        const leaderboardEntries: LeaderboardEntry[] = studentsWithScores
+        return studentsWithScores
           .sort((a, b) => (b.expAmount || 0) - (a.expAmount || 0))
           .map((student, index) => ({
             studentId: student.studentId.toString(),
@@ -457,14 +480,120 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
               student.avatarImage ||
               `https://api.dicebear.com/7.x/bottts/svg?seed=${student.firstName}${student.lastName}`,
           }));
-        return leaderboardEntries;
       } catch (error) {
         console.error("Error fetching classroom leaderboard:", error);
         return [];
+      } finally {
+        setIsLoading(false);
       }
     },
     [token]
   );
+
+  // --- Placeholder Implementations for new functions ---
+  const updateClassroom = useCallback(
+    async (classroomId: string, data: UpdateClassroomRequestDTO): Promise<Classroom | null> => {
+      if (!token || !currentUser || currentUser.role !== 'TEACHER') {
+        throw new Error("Unauthorized or not a teacher.");
+      }
+      console.log(`Simulating update classroom ${classroomId} with data:`, data);
+      setIsLoading(true);
+      // Simulate API Call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      try {
+        // This is where you'd make your actual PUT/PATCH request
+        // const response = await fetch(`${CLASSROOM_API_BASE_URL}/${classroomId}`, {
+        //   method: 'PUT', // or PATCH
+        //   headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        //   body: JSON.stringify(data),
+        // });
+        // if (!response.ok) throw new Error('Failed to update classroom on backend');
+        // const updatedBackendClassroom: BackendTeacherClassroomResponse = await response.json();
+        // const updatedClassroom = transformBackendTeacherClassroomToFrontend(updatedBackendClassroom);
+
+        // For simulation:
+        const updatedClassroom = teacherClassrooms.find(c => c.id === classroomId);
+        if (updatedClassroom) {
+            const newUpdatedClassroom = { ...updatedClassroom, ...data };
+            setTeacherClassrooms(prev => prev.map(c => c.id === classroomId ? newUpdatedClassroom : c));
+            setIsLoading(false);
+            return newUpdatedClassroom;
+        }
+        throw new Error("Classroom not found for update simulation.");
+      } catch (error) {
+        console.error("Simulated error updating classroom:", error);
+        setIsLoading(false);
+        throw error;
+      }
+    },
+    [token, currentUser, teacherClassrooms, transformBackendTeacherClassroomToFrontend]
+  );
+
+  const deleteClassroom = useCallback(
+    async (classroomId: string): Promise<void> => {
+      if (!token || !currentUser || currentUser.role !== 'TEACHER') {
+        throw new Error("Unauthorized or not a teacher.");
+      }
+      console.log(`Simulating delete classroom ${classroomId}`);
+      setIsLoading(true);
+      // Simulate API Call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      try {
+        // This is where you'd make your actual DELETE request
+        // const response = await fetch(`${CLASSROOM_API_BASE_URL}/${classroomId}`, {
+        //   method: 'DELETE',
+        //   headers: { 'Authorization': `Bearer ${token}` },
+        // });
+        // if (!response.ok) throw new Error('Failed to delete classroom on backend');
+        
+        setTeacherClassrooms(prev => prev.filter(c => c.id !== classroomId));
+        if (currentClassroom?.id === classroomId) {
+            setCurrentClassroomState(null);
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Simulated error deleting classroom:", error);
+        setIsLoading(false);
+        throw error;
+      }
+    },
+    [token, currentUser, currentClassroom?.id]
+  );
+
+  const removeStudentFromClassroom = useCallback(
+    async (classroomId: string, studentId: string): Promise<void> => {
+      if (!token || !currentUser || currentUser.role !== 'TEACHER') {
+        throw new Error("Unauthorized or not a teacher.");
+      }
+      console.log(`Simulating remove student ${studentId} from classroom ${classroomId}`);
+      setIsLoading(true);
+      // Simulate API Call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+       try {
+        // This is where you'd make your actual DELETE request (e.g., /api/classrooms/{classroomId}/students/{studentId})
+        // const response = await fetch(`${CLASSROOM_API_BASE_URL}/${classroomId}/students/${studentId}`, {
+        //   method: 'DELETE',
+        //   headers: { 'Authorization': `Bearer ${token}` },
+        // });
+        // if (!response.ok) throw new Error('Failed to remove student on backend');
+        
+        // Optimistically update student count if available or refetch classroom/student list
+         setTeacherClassrooms(prevClassrooms =>
+           prevClassrooms.map(c =>
+             c.id === classroomId ? { ...c, studentCount: Math.max(0, (c.studentCount || 1) - 1) } : c
+           )
+         );
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Simulated error removing student:", error);
+        setIsLoading(false);
+        throw error;
+      }
+    },
+    [token, currentUser]
+  );
+  // --- End of Placeholder Implementations ---
+
 
   return (
     <ClassroomContext.Provider
@@ -482,7 +611,13 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         getStudentsInClassroom,
         assignGameToClassroom,
         getClassroomLeaderboard,
-      }}>
+        // --- Add the new functions to the context value ---
+        updateClassroom,
+        deleteClassroom,
+        removeStudentFromClassroom,
+        // --- End of new functions in value ---
+      }}
+    >
       {children}
     </ClassroomContext.Provider>
   );

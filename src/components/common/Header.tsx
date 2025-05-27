@@ -1,5 +1,5 @@
 import React from "react";
-import { Menu, X, Moon, Sun, ChevronDown, Library, UsersSquare } from "lucide-react"; // Changed Gamepad2 to Library, UsersSquare
+import { Menu, X, Moon, Sun, Library } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -135,13 +135,6 @@ const Header: React.FC = () => {
           {/* "Games" Dropdown for Unauthenticated users ONLY */}
           {!isAuthenticated && (
             <div className="relative">
-              <button
-                onClick={() => isPracticeGamesMenuOpen ? closeAllDesktopMenus() : openPracticeGamesMenu()} // Re-using practice games logic for simplicity
-                className="flex items-center text-sm lg:text-base text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark transition-colors"
-              >
-                Explore Games
-                <ChevronDown size={16} className={`ml-1 transform transition-transform ${isPracticeGamesMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
               {isPracticeGamesMenuOpen && (
                 <div className="absolute top-full left-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-primary-card-dark ring-1 ring-black ring-opacity-5">
                   <div className="py-1">
@@ -164,13 +157,6 @@ const Header: React.FC = () => {
           {/* "Practice Games" Dropdown for STUDENTS */}
           {currentUser?.role === "STUDENT" && (
             <div className="relative">
-              <button
-                onClick={() => isPracticeGamesMenuOpen ? closeAllDesktopMenus() : openPracticeGamesMenu()}
-                className="flex items-center text-sm lg:text-base text-primary-text dark:text-primary-text-dark hover:text-primary-interactive dark:hover:text-primary-interactive-dark transition-colors"
-              >
-                Practice Games
-                <ChevronDown size={16} className={`ml-1 transform transition-transform ${isPracticeGamesMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
               {isPracticeGamesMenuOpen && (
                 <div className="absolute top-full left-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-primary-card-dark ring-1 ring-black ring-opacity-5">
                   <div className="py-1">

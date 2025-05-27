@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Users, BookOpen, BarChart2, Settings, Copy, AlertTriangle, Library, Trash2 } from 'lucide-react'; // Added Trash2
+import { Users, BookOpen, BarChart2, Settings, Copy, AlertTriangle, Library, Trash2, Check, UserX } from 'lucide-react'; // Added UserX
 import { useClassroom } from '../../context/ClassroomContext';
 import Button from '../../components/common/Button';
 import GameCard from '../../components/common/GameCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import LeaderboardTable from '../../components/common/LeaderboardTable';
-import ClassroomSettingsModal from '../../components/teacher/ClassroomSettingsModal'; // Import the new modal
-import { ClassroomDTO, AssignedGameDTO, LeaderboardEntry, Game, User as StudentUser } from '../../types';
+import ClassroomSettingsModal from '../../components/teacher/ClassroomSettingsModal';
+import Modal from '../../components/common/Modal'; // Import the common Modal
+import { Classroom, AssignedGameDTO, LeaderboardEntry, Game, User as StudentUser } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 
 const TeacherClassroomViewPage: React.FC = () => {
@@ -18,20 +19,27 @@ const TeacherClassroomViewPage: React.FC = () => {
     getClassroomLeaderboard,
     getStudentsInClassroom,
     fetchTeacherClassrooms,
-    // removeStudentFromClassroom // Assuming this function will be added to context
+    removeStudentFromClassroom, // Assuming this will be implemented in context
   } = useClassroom();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('overview');
   const [isLoading, setIsLoading] = useState(true);
-  const [classroom, setClassroom] = useState<ClassroomDTO | null>(null);
+  const [isLoadingAction, setIsLoadingAction] = useState(false); // For modal actions
+  const [classroom, setClassroom] = useState<Classroom | null>(null);
   const [assignedGames, setAssignedGames] = useState<AssignedGameDTO[]>([]);
   const [students, setStudents] = useState<StudentUser[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [averageScore, setAverageScore] = useState<number | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+
+  // State for the remove student confirmation modal
+  const [isRemoveStudentModalOpen, setIsRemoveStudentModalOpen] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState<StudentUser | null>(null);
+  const [removeStudentError, setRemoveStudentError] = useState<string | null>(null);
+
 
   const fetchClassroomData = useCallback(async (forceRefreshContext = false) => {
     if (!classroomId) {
@@ -68,9 +76,7 @@ const TeacherClassroomViewPage: React.FC = () => {
           setAverageScore(0);
         }
       } else {
-        console.warn("Classroom not found in context, attempting direct fetch or redirecting.");
-        // Optionally, you could try to fetch a single classroom here if context is stale
-        // or just navigate away if it's truly not found/accessible.
+        console.warn("Classroom not found in context, redirecting.");
         navigate('/teacher/classrooms');
       }
     } catch (error) {
@@ -87,8 +93,8 @@ const TeacherClassroomViewPage: React.FC = () => {
   }, [fetchClassroomData]);
 
   const handleCopyCode = () => {
-    if (classroom?.uniqueCode) {
-      navigator.clipboard.writeText(classroom.uniqueCode)
+    if (classroom?.code) {
+      navigator.clipboard.writeText(classroom.code)
         .then(() => {
           setCodeCopied(true);
           setTimeout(() => setCodeCopied(false), 2000);
@@ -97,25 +103,54 @@ const TeacherClassroomViewPage: React.FC = () => {
     }
   };
 
-  const handleRemoveStudent = async (studentId: string | number) => {
-    if (!classroomId) return;
-    // Confirm before removing
-    if (window.confirm(`Are you sure you want to remove this student? This action cannot be undone.`)) {
-        try {
-            // TODO: Implement removeStudentFromClassroom in ClassroomContext
-            // await removeStudentFromClassroom(classroomId, studentId.toString());
-            alert(`Student ${studentId} removed (simulated). Refreshing student list.`); // Placeholder
-            // Refetch students after removal
-            if (getStudentsInClassroom) {
-                const updatedStudents = await getStudentsInClassroom(classroomId);
-                setStudents(updatedStudents);
+  const openRemoveStudentModal = (student: StudentUser) => {
+    setStudentToRemove(student);
+    setRemoveStudentError(null);
+    setIsRemoveStudentModalOpen(true);
+  };
+
+  const closeRemoveStudentModal = () => {
+    setStudentToRemove(null);
+    setIsRemoveStudentModalOpen(false);
+    setRemoveStudentError(null);
+  };
+
+  const confirmRemoveStudent = async () => {
+    if (!studentToRemove || !classroomId) return;
+    
+    setIsLoadingAction(true);
+    setRemoveStudentError(null);
+    try {
+      if (removeStudentFromClassroom) { // Check if context function exists
+        await removeStudentFromClassroom(classroomId, studentToRemove.id.toString());
+         // Successfully removed, now refetch data
+        const updatedStudents = await getStudentsInClassroom(classroomId);
+        setStudents(updatedStudents);
+        // Also refetch classroom data to update studentCount on the card and overview
+        if (fetchTeacherClassrooms) { // Ensure context has this function
+            await fetchTeacherClassrooms(); // This updates teacherClassrooms in context
+            const updatedClassroomInContext = teacherClassrooms.find(c => c.id === classroomId);
+            if (updatedClassroomInContext) {
+                setClassroom(updatedClassroomInContext); // Update local classroom state
             }
-             // Also refetch classroom data to update studentCount
-            fetchClassroomData(true);
-        } catch (error) {
-            alert(`Failed to remove student: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            console.error("Error removing student:", error);
         }
+      } else {
+        // Fallback for when removeStudentFromClassroom is not implemented in context
+        console.warn("removeStudentFromClassroom not implemented in context. Simulating removal.");
+        alert(`Student ${studentToRemove.name} removed (simulated). Refreshing student list.`);
+        const updatedStudents = students.filter(s => s.id !== studentToRemove.id);
+        setStudents(updatedStudents);
+        if (classroom) {
+            setClassroom({...classroom, studentCount: Math.max(0, classroom.studentCount -1) });
+        }
+      }
+      closeRemoveStudentModal();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred.';
+      console.error("Error removing student:", error);
+      setRemoveStudentError(`Failed to remove student: ${errorMessage}`);
+    } finally {
+      setIsLoadingAction(false);
     }
   };
 
@@ -140,7 +175,7 @@ const TeacherClassroomViewPage: React.FC = () => {
     );
   }
 
-  const studentCount = classroom.studentCount !== undefined ? classroom.studentCount : students.length;
+  const studentCount = classroom.studentCount;
   const activityCount = assignedGames.length;
 
   const mapAssignedGameToGameCardProp = (assignedGame: AssignedGameDTO): Game => {
@@ -158,28 +193,28 @@ const TeacherClassroomViewPage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8 animate-fade-in">
       <header className="mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-primary-text dark:text-primary-text-dark">{classroom.name}</h1>
             {classroom.description && (
               <p className="text-gray-600 dark:text-gray-300 mt-2 max-w-2xl">{classroom.description}</p>
             )}
           </div>
-          <div className="flex items-center space-x-2 mt-4 sm:mt-0">
-            {classroom.uniqueCode && (
-              <div className="bg-primary-background dark:bg-slate-700 p-2.5 rounded-lg flex items-center shadow-sm border border-gray-200 dark:border-gray-600">
-                <p className="text-xs text-gray-600 dark:text-gray-300 mr-1.5">Code:</p>
-                <span className="font-mono text-sm font-semibold text-primary-text dark:text-primary-text-dark mr-2">{classroom.uniqueCode}</span>
+          <div className="flex items-center space-x-3 mt-4 sm:mt-0">
+            {classroom.code && (
+              <div className="flex items-baseline mr-2">
+                <span className="text-sm font-semibold text-primary-text dark:text-primary-text-dark mr-1.5 uppercase">Code:</span>
+                <span className="font-mono text-3xl font-bold text-primary-text dark:text-primary-text-dark mr-1.5 tracking-wider">
+                  {classroom.code}
+                </span>
                 <Button
                   variant="text"
                   size="sm"
                   onClick={handleCopyCode}
-                  icon={codeCopied ? <Check size={14} className="text-green-500"/> : <Copy size={14} />}
-                  className="!p-1.5"
+                  icon={codeCopied ? <Check size={16} className="text-green-500"/> : <Copy size={16} />}
+                  className="!p-1 text-gray-500 dark:text-gray-400 hover:text-primary-text dark:hover:text-primary-text-dark self-center"
                   aria-label="Copy class code"
-                >
-                  {codeCopied ? '' : ''}
-                </Button>
+                />
               </div>
             )}
             <Button
@@ -187,6 +222,7 @@ const TeacherClassroomViewPage: React.FC = () => {
               size="md"
               icon={<Library size={18} />}
               onClick={() => navigate(`/teacher/classrooms/${classroomId}/assign-game`)}
+              className="whitespace-nowrap"
             >
               Assign Game
             </Button>
@@ -247,7 +283,6 @@ const TeacherClassroomViewPage: React.FC = () => {
                 <p className="text-4xl font-bold text-primary-text dark:text-primary-text-dark">{averageScore !== null ? `${averageScore}%` : 'N/A'}</p>
               </div>
             </div>
-            {/* Further streamlining: Removed quick actions and recent activity */}
           </div>
         )}
 
@@ -255,7 +290,6 @@ const TeacherClassroomViewPage: React.FC = () => {
           <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark">Learning Activities ({activityCount})</h2>
-              {/* Assign Game button is now in the header for all tabs */}
             </div>
             {assignedGames.length === 0 ? (
               <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm p-8 text-center border-2 border-dashed dark:border-gray-700">
@@ -284,14 +318,13 @@ const TeacherClassroomViewPage: React.FC = () => {
           <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark">Enrolled Students ({studentCount})</h2>
-              {/* The "Enroll New Student" button is removed. Student management is now inline. */}
             </div>
             {students.length === 0 ? (
               <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm p-8 text-center border-2 border-dashed dark:border-gray-700">
                 <Users size={40} className="mx-auto mb-4 text-gray-400" />
                 <h3 className="text-xl font-semibold mb-2 text-primary-text dark:text-primary-text-dark">No Students Enrolled</h3>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">
-                  Share the classroom code <code className="font-mono bg-gray-100 dark:bg-slate-700 p-1 rounded">{classroom.uniqueCode}</code> with your students to let them join.
+                  Share the classroom code <code className="font-mono bg-gray-100 dark:bg-slate-700 p-1 rounded">{classroom.code}</code> with your students to let them join.
                 </p>
               </div>
             ) : (
@@ -321,7 +354,7 @@ const TeacherClassroomViewPage: React.FC = () => {
                           <Button
                             variant="text"
                             size="sm"
-                            onClick={() => handleRemoveStudent(student.id)}
+                            onClick={() => openRemoveStudentModal(student)} // Changed to open modal
                             className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-700/20"
                             icon={<Trash2 size={14}/>}
                           >
@@ -362,6 +395,39 @@ const TeacherClassroomViewPage: React.FC = () => {
           onClose={() => setIsSettingsModalOpen(false)}
           classroom={classroom}
         />
+      )}
+
+      {/* Remove Student Confirmation Modal */}
+      {studentToRemove && (
+        <Modal
+          isOpen={isRemoveStudentModalOpen}
+          onClose={closeRemoveStudentModal}
+          title="Confirm Student Removal"
+          size="sm"
+          footer={
+            <>
+              <Button variant="text" onClick={closeRemoveStudentModal} disabled={isLoadingAction}>
+                Cancel
+              </Button>
+              <Button variant="energetic" onClick={confirmRemoveStudent} isLoading={isLoadingAction} icon={<UserX size={16} />}>
+                Yes, Remove Student
+              </Button>
+            </>
+          }
+        >
+          <div className="text-center">
+            <AlertTriangle size={48} className="mx-auto text-red-500 mb-4" />
+            <p className="text-lg font-medium text-primary-text dark:text-primary-text-dark">
+              Are you sure you want to remove <span className="font-bold">{studentToRemove.name}</span> from this classroom?
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              This action will unenroll the student. Their past progress might be retained if they rejoin, but they will lose access until then.
+            </p>
+            {removeStudentError && (
+              <p className="text-red-500 text-xs mt-3 bg-red-100 dark:bg-red-900/30 p-2 rounded-md">{removeStudentError}</p>
+            )}
+          </div>
+        </Modal>
       )}
     </div>
   );

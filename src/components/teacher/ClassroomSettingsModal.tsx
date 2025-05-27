@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import Button from '../common/Button';
-import { ClassroomDTO, UpdateClassroomRequestDTO } from '../../types';
+import { Classroom, UpdateClassroomRequestDTO } from '../../types'; // Changed ClassroomDTO to Classroom
 import { useClassroom } from '../../context/ClassroomContext'; 
 import { Edit3, Trash2, AlertTriangle, Copy, Check } from 'lucide-react';
 
 interface ClassroomSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  classroom: ClassroomDTO;
+  classroom: Classroom; // Changed to Classroom
 }
 
 const ClassroomSettingsModal: React.FC<ClassroomSettingsModalProps> = ({ isOpen, onClose, classroom }) => {
@@ -39,13 +39,10 @@ const ClassroomSettingsModal: React.FC<ClassroomSettingsModalProps> = ({ isOpen,
     setError(null);
     try {
       const updateData: UpdateClassroomRequestDTO = { name, description };
-      // Ensure updateClassroom is available and classroom.id is a string
       if (updateClassroom && typeof classroom.id === 'string') { 
         await updateClassroom(classroom.id, updateData);
-        // alert(`Classroom updated: ${name} - ${description}`); // Optional: for immediate feedback
       } else {
         console.warn("updateClassroom function is not available or classroom.id is not a string.");
-        // Fallback to alert if the function isn't there, for testing
         alert(`Classroom updated (simulated): ${name} - ${description}`);
       }
       onClose(); 
@@ -61,13 +58,10 @@ const ClassroomSettingsModal: React.FC<ClassroomSettingsModalProps> = ({ isOpen,
     setIsLoading(true);
     setError(null);
     try {
-      // Ensure deleteClassroom is available and classroom.id is a string
       if (deleteClassroom && typeof classroom.id === 'string') {
         await deleteClassroom(classroom.id);
-        // alert(`Classroom "${classroom.name}" deleted.`); // Optional: for immediate feedback
       } else {
         console.warn("deleteClassroom function is not available or classroom.id is not a string.");
-        // Fallback
         alert(`Classroom "${classroom.name}" deleted (simulated).`);
       }
       onClose(); 
@@ -81,8 +75,8 @@ const ClassroomSettingsModal: React.FC<ClassroomSettingsModalProps> = ({ isOpen,
   };
 
   const handleCopyCode = () => {
-    if (classroom.uniqueCode) {
-      navigator.clipboard.writeText(classroom.uniqueCode);
+    if (classroom.code) { // Changed from classroom.uniqueCode
+      navigator.clipboard.writeText(classroom.code); // Changed from classroom.uniqueCode
       setCodeCopied(true);
       setTimeout(() => setCodeCopied(false), 2000);
     }
@@ -167,13 +161,15 @@ const ClassroomSettingsModal: React.FC<ClassroomSettingsModalProps> = ({ isOpen,
             ></textarea>
           </div>
 
-          {classroom.uniqueCode && (
+          {classroom.code && ( // Changed from classroom.uniqueCode
             <div className="pt-2">
               <label className="block text-sm font-medium text-primary-text dark:text-primary-text-dark mb-1">
                 Join Code
               </label>
               <div className="flex items-center justify-between bg-gray-50 dark:bg-slate-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
-                <span className="font-mono text-lg text-primary-text dark:text-primary-text-dark">{classroom.uniqueCode}</span>
+                <span className="font-mono text-lg text-primary-text dark:text-primary-text-dark">
+                  {classroom.code} {/* Changed from classroom.uniqueCode */}
+                </span>
                 <Button
                     variant="outline"
                     size="sm"

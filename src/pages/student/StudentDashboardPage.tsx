@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { BookOpen, Gamepad2, Sparkles, Users, LayoutGrid, Zap, Brain, Puzzle, Bell, ActivitySquare } from 'lucide-react';
+import { BookOpen, Gamepad2, Sparkles, Users, LayoutGrid, Zap, Brain, Puzzle, Bell, ActivitySquare, AlertTriangle } from 'lucide-react'; // Added AlertTriangle
 import Button from '../../components/common/Button';
 import { useAuth } from '../../context/AuthContext';
 import { useClassroom } from '../../context/ClassroomContext';
@@ -10,19 +10,22 @@ import JoinClassroomCard from '../../components/student/JoinClassroomCard';
 import { AssignedGameDTO, StudentClassroom } from '../../types';
 
 interface LatestActivityDisplay {
-  id: string;
+  id: string; // Should be unique for the key prop, e.g., assignedGame.id
+  gameId: string; // The actual game ID for linking
   title: string;
   description?: string;
   classroomIdForLink: string;
   classroomName?: string;
+  dueDate?: string; // Added dueDate
+  status?: AssignedGameDTO['status']; // Added status
 }
 
 const StudentDashboardPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const { 
-    studentClassrooms, 
-    fetchStudentClassrooms, 
-    getGamesForClassroom 
+  const {
+    studentClassrooms,
+    fetchStudentClassrooms,
+    getAssignedGames, // Assuming this is the function to get games for a classroom
   } = useClassroom();
   const navigate = useNavigate();
   const [latestActivities, setLatestActivities] = useState<LatestActivityDisplay[]>([]);
@@ -31,8 +34,10 @@ const StudentDashboardPage: React.FC = () => {
   useEffect(() => {
     if (!currentUser) {
       navigate('/login');
+      return; // Added return
     } else if (currentUser.role !== 'STUDENT') {
-      navigate('/dashboard'); 
+      navigate('/teacher/classrooms'); // Redirect non-students (e.g. teachers to their classrooms)
+      return; // Added return
     }
   }, [currentUser, navigate]);
 
@@ -40,66 +45,99 @@ const StudentDashboardPage: React.FC = () => {
     if (currentUser?.role === 'STUDENT' && fetchStudentClassrooms) {
       setIsLoadingDashboard(true);
       fetchStudentClassrooms().finally(() => setIsLoadingDashboard(false));
-    } else {
-      setIsLoadingDashboard(false);
+    } else if (currentUser) { // If not student but logged in, stop loading
+        setIsLoadingDashboard(false);
     }
+    // If no currentUser, loading will be handled by redirect or a general loading screen
   }, [currentUser, fetchStudentClassrooms]);
 
   useEffect(() => {
-    if (currentUser?.role === 'STUDENT' && studentClassrooms.length > 0 && getGamesForClassroom) {
+    if (currentUser?.role === 'STUDENT' && studentClassrooms.length > 0 && getAssignedGames) {
       const fetchAllGamesForDashboard = async () => {
-        const gamePromises = studentClassrooms.map(async (classroom) => {
-          const gamesInClass: AssignedGameDTO[] = await getGamesForClassroom(classroom.classroomId);
-          return { 
-            classroomId: classroom.classroomId, 
-            classroomName: classroom.classroomName, 
-            games: gamesInClass 
-          };
+        // Fetch games for a limited number of classrooms to avoid too many API calls on dashboard
+        const classroomsToFetchFor = studentClassrooms.slice(0, 5); // Example: fetch for first 5
+        
+        const gamePromises = classroomsToFetchFor.map(async (classroom) => {
+          try {
+            const gamesInClass: AssignedGameDTO[] = await getAssignedGames(classroom.classroomId);
+            return {
+              classroomId: classroom.classroomId,
+              classroomName: classroom.classroomName,
+              games: gamesInClass,
+            };
+          } catch (error) {
+            console.error(`Error fetching games for classroom ${classroom.classroomId}:`, error);
+            return { classroomId: classroom.classroomId, classroomName: classroom.classroomName, games: [] }; // Return empty games on error
+          }
         });
 
         try {
           const results = await Promise.all(gamePromises);
           let combinedActivities: LatestActivityDisplay[] = [];
-          
+
           results.forEach(result => {
             result.games.forEach(assignedGame => {
-              combinedActivities.push({
-                id: assignedGame.gameId || assignedGame.id, 
-                title: assignedGame.gameTitle || 'Untitled Game',
-                description: `New activity in ${result.classroomName}`,
-                classroomIdForLink: result.classroomId,
-                classroomName: result.classroomName,
-              });
+              // Filter for games that are PENDING or OVERDUE to show as "new" or "due"
+              if (assignedGame.status === 'PENDING' || assignedGame.status === 'OVERDUE') {
+                combinedActivities.push({
+                  id: assignedGame.id, // Use assignedGame.id as the unique key for the list item
+                  gameId: assignedGame.game?.id || assignedGame.gameId || assignedGame.id, // Actual game ID for the link
+                  title: assignedGame.game?.title || assignedGame.gameTitle || 'Untitled Game',
+                  description: assignedGame.game?.description || `New activity in ${result.classroomName}`,
+                  classroomIdForLink: result.classroomId,
+                  classroomName: result.classroomName,
+                  dueDate: assignedGame.dueDate,
+                  status: assignedGame.status,
+                });
+              }
             });
           });
+
+          // Sort by due date (earliest first), then by assignedAt if needed
+          combinedActivities.sort((a, b) => {
+            if (a.dueDate && b.dueDate) {
+              return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+            }
+            return 0;
+          });
           
-          const uniqueGames = Array.from(new Map(combinedActivities.map(item => [item.id + item.classroomIdForLink, item])).values());
-          setLatestActivities(uniqueGames.sort(() => 0.5 - Math.random()).slice(0, 4));
+          setLatestActivities(combinedActivities.slice(0, 4)); // Show top 4 relevant activities
         } catch (error) {
-          console.error("Error fetching games for dashboard activities:", error);
+          console.error("Error processing games for dashboard activities:", error);
           setLatestActivities([]);
         }
       };
-      
+
       fetchAllGamesForDashboard();
     } else {
       setLatestActivities([]);
     }
-  }, [studentClassrooms, currentUser, getGamesForClassroom]);
+  }, [studentClassrooms, currentUser, getAssignedGames]);
 
   const handleClassroomJoined = useCallback(() => {
     if (fetchStudentClassrooms) {
-      fetchStudentClassrooms();
+      // Add a small delay to allow backend to process and then refetch
+      setTimeout(() => fetchStudentClassrooms(), 500);
     }
   }, [fetchStudentClassrooms]);
 
-  if (!currentUser || currentUser.role !== 'STUDENT' || isLoadingDashboard) {
+  if (!currentUser || isLoadingDashboard) { // Show loading if no current user yet or dashboard is loading
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
+   // This case should ideally be caught by the redirect useEffect earlier
+  if (currentUser.role !== 'STUDENT') {
+    return (
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+            <p>Access Denied. Redirecting...</p>
+            <LoadingSpinner size="md" />
+      </div>
+    );
+  }
+
 
   const firstName = currentUser.firstName || currentUser.name.split(' ')[0];
 
@@ -129,37 +167,42 @@ const StudentDashboardPage: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark flex items-center">
             <Bell size={28} className="mr-3 text-primary-energetic dark:text-primary-energetic-dark animate-bell-ring" />
-            New Classroom Activities
+            Upcoming Activities
             </h2>
         </div>
         {latestActivities.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {latestActivities.map((activity) => (
                 <Link
-                to={`/student/classrooms/${activity.classroomIdForLink}/games/${activity.id}`}
-                key={`${activity.classroomIdForLink}-${activity.id}`}
+                to={`/student/classrooms/${activity.classroomIdForLink}/games/${activity.gameId}`}
+                key={activity.id} // Use assignedGame.id for the key
                 className="group block"
                 >
                 <div className="bg-white dark:bg-primary-card-dark p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 border-2 border-transparent hover:border-primary-energetic dark:hover:border-primary-energetic-dark">
                     <div className="flex items-center mb-2">
-                    <div className="p-2 bg-primary-energetic/20 dark:bg-primary-energetic-dark/30 rounded-full mr-3">
-                        <ActivitySquare size={20} className="text-primary-energetic dark:text-primary-energetic-dark" />
+                    <div className={`p-2 ${activity.status === 'OVERDUE' ? 'bg-red-500/20' : 'bg-primary-energetic/20 dark:bg-primary-energetic-dark/30'} rounded-full mr-3`}>
+                        {activity.status === 'OVERDUE' ? <AlertTriangle size={20} className="text-red-500 dark:text-red-400" /> : <ActivitySquare size={20} className="text-primary-energetic dark:text-primary-energetic-dark" />}
                     </div>
                     <h3 className="font-semibold text-primary-text dark:text-primary-text-dark group-hover:text-primary-energetic dark:group-hover:text-primary-energetic-dark">
                         {activity.title}
                     </h3>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
-                    {activity.description || "Time to learn something new!"}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 mb-1">
+                     In: {activity.classroomName || "Your Classroom"}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      From: {activity.classroomName || "Your Classroom"}
+                     {activity.dueDate && (
+                        <p className={`text-xs mb-2 ${activity.status === 'OVERDUE' ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+                            Due: {new Date(activity.dueDate).toLocaleDateString()} {activity.status === 'OVERDUE' && "(Overdue)"}
+                        </p>
+                    )}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
+                        {activity.description || "Time to learn something new!"}
                     </p>
                     <div className="mt-3 text-right">
-                        <span className="text-sm font-medium text-primary-energetic dark:text-primary-energetic-dark group-hover:underline">
-                            Start Now &rarr;
+                        <span className={`text-sm font-medium ${activity.status === 'OVERDUE' ? 'text-red-600 dark:text-red-400 group-hover:underline' : 'text-primary-energetic dark:text-primary-energetic-dark group-hover:underline'}`}>
+                            {activity.status === 'OVERDUE' ? "View Details" : "Start Now"} &rarr;
                         </span>
-                        </div>
+                    </div>
                 </div>
                 </Link>
             ))}
@@ -172,6 +215,7 @@ const StudentDashboardPage: React.FC = () => {
         )}
       </div>
 
+      {/* Practice Zone and Classrooms sections remain the same */}
       <div className="animate-slide-up animation-delay-400">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark flex items-center">

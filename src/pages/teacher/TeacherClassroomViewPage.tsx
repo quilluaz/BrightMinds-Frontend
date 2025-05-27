@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Plus, Users, BookOpen, BarChart2, Settings, Copy, AlertTriangle, Library } from 'lucide-react';
+import { Plus, Users, BookOpen, BarChart2, Settings, Copy, AlertTriangle, Library, RefreshCw } from 'lucide-react'; // Added RefreshCw
 import { useClassroom } from '../../context/ClassroomContext';
 import Button from '../../components/common/Button';
 import GameCard from '../../components/common/GameCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import LeaderboardTable from '../../components/common/LeaderboardTable';
-import { ClassroomDTO, AssignedGameDTO, LeaderboardEntry, Game } from '../../types';
+import { ClassroomDTO, AssignedGameDTO, LeaderboardEntry, Game, User as StudentUser } from '../../types'; // Added StudentUser
 import { useAuth } from '../../context/AuthContext';
 
 const TeacherClassroomViewPage: React.FC = () => {
@@ -15,7 +15,8 @@ const TeacherClassroomViewPage: React.FC = () => {
     teacherClassrooms,
     getAssignedGames,
     getClassroomLeaderboard,
-    // getClassroomDetails, // Assuming this is not used or handled by finding in teacherClassrooms
+    getStudentsInClassroom, // Added for student list
+    fetchTeacherClassrooms, // To refresh classroom list if needed
   } = useClassroom();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -24,67 +25,74 @@ const TeacherClassroomViewPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [classroom, setClassroom] = useState<ClassroomDTO | null>(null);
   const [assignedGames, setAssignedGames] = useState<AssignedGameDTO[]>([]);
+  const [students, setStudents] = useState<StudentUser[]>([]); // For student list tab
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [averageScore, setAverageScore] = useState<number | null>(null); // Placeholder for actual calculation
+  const [averageScore, setAverageScore] = useState<number | null>(null);
 
-  const fetchClassroomData = useCallback(async () => {
+  const fetchClassroomData = useCallback(async (forceRefreshContext = false) => {
     if (!classroomId) {
       navigate('/teacher/classrooms');
       return;
     }
     setIsLoading(true);
+
+    if (forceRefreshContext && fetchTeacherClassrooms) {
+        await fetchTeacherClassrooms(); // Refresh context data
+    }
+
     try {
-      const foundClassroom = teacherClassrooms.find(c => c.id === classroomId);
+      // Find classroom from potentially updated context
+      const currentClassrooms = teacherClassrooms; // Use the latest from context state
+      const foundClassroom = currentClassrooms.find(c => c.id === classroomId);
 
       if (foundClassroom) {
-        setClassroom(foundClassroom);
-        if (getAssignedGames) {
-          const gamesData = await getAssignedGames(classroomId);
-          setAssignedGames(gamesData);
-        }
-        if (getClassroomLeaderboard) {
-          const leaderboardData = await getClassroomLeaderboard(classroomId);
-          setLeaderboard(leaderboardData);
-          // Basic average score calculation placeholder
-          if (leaderboardData.length > 0) {
-            const totalScore = leaderboardData.reduce((sum, entry) => sum + entry.score, 0);
-            setAverageScore(Math.round(totalScore / leaderboardData.length));
-          } else {
-            setAverageScore(0);
-          }
+        setClassroom(foundClassroom); // Set classroom state
+
+        // Fetch games, students, and leaderboard concurrently
+        const [gamesData, studentsData, leaderboardData] = await Promise.all([
+          getAssignedGames ? getAssignedGames(classroomId) : Promise.resolve([]),
+          getStudentsInClassroom ? getStudentsInClassroom(classroomId) : Promise.resolve([]),
+          getClassroomLeaderboard ? getClassroomLeaderboard(classroomId) : Promise.resolve([])
+        ]);
+
+        setAssignedGames(gamesData);
+        setStudents(studentsData); // Set students state
+        setLeaderboard(leaderboardData);
+
+        if (leaderboardData.length > 0) {
+          const totalScore = leaderboardData.reduce((sum, entry) => sum + entry.score, 0);
+          setAverageScore(Math.round(totalScore / leaderboardData.length));
+        } else {
+          setAverageScore(0);
         }
       } else {
-        console.error("Classroom not found in context");
+        console.warn("Classroom not found in context after potential refresh, redirecting.");
         navigate('/teacher/classrooms');
       }
     } catch (error) {
       console.error("Failed to fetch classroom data:", error);
-      navigate('/teacher/classrooms');
+      // Optionally navigate or show error message
+      // navigate('/teacher/classrooms');
     } finally {
       setIsLoading(false);
     }
-  }, [classroomId, teacherClassrooms, getAssignedGames, getClassroomLeaderboard, navigate]);
+  }, [classroomId, getAssignedGames, getStudentsInClassroom, getClassroomLeaderboard, navigate, fetchTeacherClassrooms, teacherClassrooms]);
+
 
   useEffect(() => {
     fetchClassroomData();
-  }, [fetchClassroomData]);
-
+  }, [fetchClassroomData]); // fetchClassroomData is memoized and includes its dependencies
 
   const handleCopyCode = () => {
     if (classroom?.uniqueCode) {
       navigator.clipboard.writeText(classroom.uniqueCode)
-        .then(() => {
-          // Consider adding a toast notification for "Copied!"
-          console.log('Class code copied to clipboard');
-        })
-        .catch(err => {
-          console.error('Failed to copy class code: ', err);
-        });
+        .then(() => alert('Class code copied to clipboard!')) // Simple alert for feedback
+        .catch(err => console.error('Failed to copy class code: ', err));
     }
   };
 
   const handleRefreshData = () => {
-    fetchClassroomData(); // Re-fetch all classroom specific data
+    fetchClassroomData(true); // Pass true to force refresh context
   }
 
   if (isLoading) {
@@ -107,32 +115,25 @@ const TeacherClassroomViewPage: React.FC = () => {
     );
   }
 
-  const studentCount = classroom.studentCount || 0;
+  const studentCount = classroom.studentCount !== undefined ? classroom.studentCount : students.length;
   const activityCount = assignedGames.length;
 
-
-  // This function attempts to map AssignedGameDTO to the Game shape expected by GameCard
-  // It's a simplified mapping; GameCard might need more detailed game info for full functionality.
   const mapAssignedGameToGameCardProp = (assignedGame: AssignedGameDTO): Game => {
     return {
-      id: assignedGame.gameId || assignedGame.id, // Prefer gameId if available
-      title: assignedGame.gameTitle || 'Untitled Game',
-      description: assignedGame.game?.description, // Assumes 'game' object might be part of AssignedGameDTO
+      id: assignedGame.game?.id || assignedGame.gameId || assignedGame.id,
+      title: assignedGame.game?.title || assignedGame.gameTitle || 'Untitled Game',
+      description: assignedGame.game?.description,
       subject: assignedGame.game?.subject,
       questions: assignedGame.game?.questions || [],
       gameMode: assignedGame.game?.gameMode,
-      // Map status from AssignedGameDTO to GameStatus if GameCard expects it
-      // status: assignedGame.status ? mapDtoStatusToGameStatus(assignedGame.status) : 'not_started',
-      status: assignedGame.status as Game['status'], // Direct cast if types are compatible or mapped elsewhere
-      // score is not typically on the game definition itself, but on an attempt.
+      status: assignedGame.status as Game['status'] || 'not_started',
     };
   };
-
 
   return (
     <div className="container mx-auto px-4 py-8 animate-fade-in">
       <header className="mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-primary-text dark:text-primary-text-dark">{classroom.name}</h1>
             {classroom.description && (
@@ -144,15 +145,17 @@ const TeacherClassroomViewPage: React.FC = () => {
                 variant="outline"
                 size="md"
                 onClick={handleRefreshData}
+                icon={<RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />}
+                disabled={isLoading}
                 aria-label="Refresh classroom data"
             >
-                Refresh Data
+                {isLoading ? "Refreshing..." : "Refresh"}
             </Button>
             <Button
               variant="outline"
               size="md"
               icon={<Settings size={18} />}
-              onClick={() => navigate(`/teacher/classrooms/${classroomId}/settings`)} // Navigate to settings page
+              onClick={() => navigate(`/teacher/classrooms/${classroomId}/settings`)}
             >
               Settings
             </Button>
@@ -218,14 +221,14 @@ const TeacherClassroomViewPage: React.FC = () => {
             <div className="mb-8">
               <h3 className="text-xl font-semibold text-primary-text dark:text-primary-text-dark mb-4">Quick Actions</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <Button variant="primary" icon={<Library size={18}/>} onClick={() => navigate('/teacher/games/library')}>Assign From Library</Button>
+                <Button variant="primary" icon={<Library size={18}/>} onClick={() => navigate(`/teacher/classrooms/${classroomId}/assign-game`)}>Assign New Game</Button>
                 <Button variant="outline" icon={<Users size={18}/>} onClick={() => setActiveTab('students')}>Manage Students</Button>
                 <Button variant="outline" icon={<BarChart2 size={18}/>} onClick={() => setActiveTab('leaderboard')}>View Leaderboard</Button>
               </div>
             </div>
-
+            {/* Placeholder for Recent Activity, you'd fetch this data */}
             <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow p-6 border dark:border-gray-700">
-              <h3 className="text-xl font-semibold text-primary-text dark:text-primary-text-dark mb-4">Recent Activity</h3>
+              <h3 className="text-xl font-semibold text-primary-text dark:text-primary-text-dark mb-4">Recent Activity (Placeholder)</h3>
               <ul className="space-y-3">
                 <li className="text-sm text-gray-700 dark:text-gray-300">Juan Dela Cruz completed "Pangngalan Quiz" with 85%.</li>
                 <li className="text-sm text-gray-700 dark:text-gray-300">Maria Santos joined the classroom.</li>
@@ -238,13 +241,13 @@ const TeacherClassroomViewPage: React.FC = () => {
         {activeTab === 'activities' && (
           <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark">Learning Activities</h2>
+              <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark">Learning Activities ({activityCount})</h2>
               <Button
                 variant="primary"
                 icon={<Library size={18} />}
-                onClick={() => navigate('/teacher/games/library')}
+                 onClick={() => navigate(`/teacher/classrooms/${classroomId}/assign-game`)} // Or direct to game library with classroom context
               >
-                Assign From Library
+                Assign Game
               </Button>
             </div>
             {assignedGames.length === 0 ? (
@@ -252,7 +255,7 @@ const TeacherClassroomViewPage: React.FC = () => {
                 <AlertTriangle size={40} className="mx-auto mb-4 text-yellow-500" />
                 <h3 className="text-xl font-semibold mb-2 text-primary-text dark:text-primary-text-dark">No Activities Assigned Yet</h3>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">
-                  Assign games and learning activities from the library to engage your students.
+                  Assign games and learning activities to engage your students.
                 </p>
               </div>
             ) : (
@@ -262,7 +265,7 @@ const TeacherClassroomViewPage: React.FC = () => {
                     key={assignedGame.id}
                     game={mapAssignedGameToGameCardProp(assignedGame)}
                     classroomId={classroomId!}
-                    showPerformance
+                    showPerformance // Teachers might want to see performance indicators or links
                   />
                 ))}
               </div>
@@ -274,15 +277,16 @@ const TeacherClassroomViewPage: React.FC = () => {
           <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark">Enrolled Students ({studentCount})</h2>
+              {/* Enroll student button might open a modal or navigate to a separate page */}
               <Button
                 variant="primary"
                 icon={<Plus size={18} />}
-                 onClick={() => alert('Navigate to enroll student page or open modal - TBD')}
+                 onClick={() => alert('Functionality to enroll new student (e.g., manually or view invite link) - TBD')}
               >
                 Enroll New Student
               </Button>
             </div>
-            {studentCount === 0 ? (
+            {students.length === 0 ? (
               <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm p-8 text-center border-2 border-dashed dark:border-gray-700">
                 <Users size={40} className="mx-auto mb-4 text-gray-400" />
                 <h3 className="text-xl font-semibold mb-2 text-primary-text dark:text-primary-text-dark">No Students Enrolled</h3>
@@ -297,26 +301,23 @@ const TeacherClassroomViewPage: React.FC = () => {
                     <tr className="bg-gray-50 dark:bg-slate-800">
                       <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Name</th>
                       <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Email</th>
-                      <th className="py-3 px-4 text-center text-sm font-semibold text-gray-600 dark:text-gray-300">Activities Completed</th>
-                      <th className="py-3 px-4 text-center text-sm font-semibold text-gray-600 dark:text-gray-300">Avg. Score</th>
+                      {/* Add more relevant columns like 'Activities Completed', 'Avg. Score' if available */}
                       <th className="py-3 px-4 text-right text-sm font-semibold text-gray-600 dark:text-gray-300">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {[
-                      {id: 's1', name: 'Juan Dela Cruz', email: 'juan@example.com', completed: 5, total: 8, avgScore: 88, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=juan&backgroundColor=E8F9FF,B3E5FC,FFDF8E,F4B400`},
-                      {id: 's2', name: 'Maria Clara', email: 'maria@example.com', completed: 8, total: 8, avgScore: 92, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=maria&backgroundColor=E8F9FF,B3E5FC,FFDF8E,F4B400`}
-                    ].map(student => (
-                      <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-slate-700">
+                    {students.map(student => (
+                      <tr key={student.id.toString()} className="hover:bg-gray-50 dark:hover:bg-slate-700">
                         <td className="py-3 px-4 whitespace-nowrap text-primary-text dark:text-primary-text-dark">
                           <div className="flex items-center">
-                            <img src={student.avatar} alt={student.name} className="w-8 h-8 rounded-full mr-3"/>
+                            <img src={student.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${student.firstName}${student.lastName}`} alt={student.name} className="w-8 h-8 rounded-full mr-3"/>
                             {student.name}
                           </div>
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap text-primary-text dark:text-primary-text-dark">{student.email}</td>
-                        <td className="py-3 px-4 text-center whitespace-nowrap text-primary-text dark:text-primary-text-dark">{student.completed}/{student.total}</td>
-                        <td className="py-3 px-4 text-center whitespace-nowrap text-primary-text dark:text-primary-text-dark font-medium">{student.avgScore}%</td>
+                        {/* Example placeholder data for activities/score */}
+                        {/* <td className="py-3 px-4 text-center whitespace-nowrap text-primary-text dark:text-primary-text-dark">N/A</td> */}
+                        {/* <td className="py-3 px-4 text-center whitespace-nowrap text-primary-text dark:text-primary-text-dark font-medium">N/A</td> */}
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           <Button variant="text" size="sm" onClick={() => navigate(`/teacher/classrooms/${classroomId}/students/${student.id}`)}>View Progress</Button>
                         </td>
@@ -332,12 +333,18 @@ const TeacherClassroomViewPage: React.FC = () => {
         {activeTab === 'leaderboard' && (
           <div className="animate-fade-in">
             <h2 className="text-2xl font-semibold mb-6 text-primary-text dark:text-primary-text-dark">Classroom Leaderboard</h2>
-            <LeaderboardTable
-              entries={leaderboard}
-              highlightedUserId={currentUser?.id.toString()}
-            />
-            {leaderboard.length === 0 && (
-              <p className="mt-4 text-center text-gray-500 dark:text-gray-400">No leaderboard data available yet. Scores will appear here as students complete activities.</p>
+            {leaderboard.length === 0 ? (
+                 <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm p-8 text-center border dark:border-gray-700">
+                    <h3 className="text-xl font-semibold mb-2 text-primary-text dark:text-primary-text-dark">Leaderboard is Empty</h3>
+                    <p className="text-gray-600 dark:text-gray-300">
+                        No scores recorded yet. Scores will appear here as students complete activities.
+                    </p>
+                </div>
+            ) : (
+                <LeaderboardTable
+                  entries={leaderboard}
+                  // Teachers might not need to be highlighted, or highlight a specific student if selected
+                />
             )}
           </div>
         )}

@@ -42,6 +42,8 @@ import ImageMultipleChoiceGame from "./components/game/Selina/ImageMultipleChoic
 import MatchingGamePage from "./components/game/Jeric/MatchingGamePage";
 import LikasYamanGame from "./components/game/Zeke/LikasYamanGame";
 import FourPicsOneWord from "./components/game/Mae/4Pics1Word";
+import Create4Pics1Word from "./components/game/Mae/Create4Pics1Word";
+import CreateSortingGame from "./components/game/Zeke/CreateSortingGame";
 
 // --- Loading Component ---
 const LoadingScreen = () => (
@@ -151,6 +153,8 @@ function App() {
                 />
                 <Route path="/likas-yaman" element={<LikasYamanGame />} />
                 <Route path="/4pics1word" element={<FourPicsOneWord />} />
+                <Route path="/create4pics1word" element={<Create4Pics1Word />} />
+                <Route path="/createsortingame" element={<CreateSortingGame />} />
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
                 <Route

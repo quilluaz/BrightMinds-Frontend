@@ -44,6 +44,7 @@ import LikasYamanGame from "./components/game/Zeke/LikasYamanGame";
 import FourPicsOneWord from "./components/game/Mae/4Pics1Word";
 import Create4Pics1Word from "./components/game/Mae/Create4Pics1Word";
 import CreateSortingGame from "./components/game/Zeke/CreateSortingGame";
+import CreateMatchingGame from "./components/game/Jeric/CreateMatchingGame";
 
 // --- Loading Component ---
 const LoadingScreen = () => (
@@ -155,6 +156,7 @@ function App() {
                 <Route path="/4pics1word" element={<FourPicsOneWord />} />
                 <Route path="/create4pics1word" element={<Create4Pics1Word />} />
                 <Route path="/createsortingame" element={<CreateSortingGame />} />
+                <Route path="/creatematchinggame" element={<CreateMatchingGame />} />
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
                 <Route

@@ -6,54 +6,57 @@ import { GameDTO } from '../../types';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import AssignGameModal from '../../components/teacher/AssignGameModal';
 import { Library, Sparkles, Zap, Brain, Puzzle, Plus, BookCopy, Tag } from 'lucide-react';
+import Button from '../../components/common/Button'; // Assuming you have this common button
 
-interface LibraryGameDisplayConfig {
-  idKey: string;
-  title: string;
-  description: string;
-  subject?: string;
+// Interface for defining the types of games that can be created.
+// This is used for the "Create Game" modal and for providing consistent UI elements.
+interface CreatableGameType {
   gameMode: GameDTO['gameMode'];
+  title: string; // Title for display (e.g., in tabs, create modal)
+  description: string; // Description for the create modal
   icon: React.ReactNode;
 }
 
-const PREFERRED_LIBRARY_GAMES: LibraryGameDisplayConfig[] = [
+// Defines the game types teachers can create.
+const CREATABLE_GAME_TYPES: CreatableGameType[] = [
   {
-    idKey: 'matching-game',
-    title: "Matching Game",
-    description: "Test memory by matching pairs. Covers Anyong Tubig, Anyong Lupa, and Pambansang Sagisag.",
     gameMode: "MATCHING",
-    subject: "Araling Panlipunan / Tagalog",
+    title: "Matching Game",
+    description: "Test memory by matching pairs of words and/or images. Covers Anyong Tubig, Anyong Lupa, and Pambansang Sagisag.",
     icon: <Sparkles size={28} className="text-green-500 dark:text-green-400" />
   },
   {
-    idKey: 'image-quiz',
+    gameMode: "IMAGE_MULTIPLE_CHOICE",
     title: "Image Quiz",
     description: "Identify the correct image for each question. A fun Araling Panlipunan knowledge test!",
-    gameMode: "IMAGE_MULTIPLE_CHOICE",
-    subject: "Araling Panlipunan",
     icon: <Zap size={28} className="text-blue-500 dark:text-blue-400" />
   },
   {
-    idKey: 'sorting-game',
+    gameMode: "SORTING",
     title: "Sorting Game",
     description: "Create interactive sorting activities where students categorize items. Perfect for teaching classification and organization skills.",
-    gameMode: "SORTING",
-    subject: "All Subjects",
     icon: <Brain size={28} className="text-purple-500 dark:text-purple-400" />
   },
   {
-    idKey: '4pics1word',
+    gameMode: "FOUR_PICS_ONE_WORD",
     title: "4 Pics 1 Word",
     description: "Guess the common Tagalog word that connects four different pictures. Great for vocabulary!",
-    gameMode: "FOUR_PICS_ONE_WORD",
-    subject: "Tagalog",
     icon: <Puzzle size={28} className="text-yellow-500 dark:text-amber-400" />
   },
+  // Add other game modes that teachers can create here
 ];
 
+// This defines the structure for games to be displayed in the library list.
+// It takes data directly from the backend and adds a resolved icon.
 interface DisplayableLibraryGame {
-  config: LibraryGameDisplayConfig;
-  actualGameDataFromBackend?: GameDTO;
+  id: string; // Directly from backendGame.id
+  title: string;
+  description?: string;
+  subject?: string;
+  gameMode: GameDTO['gameMode'];
+  icon: React.ReactNode;
+  isPremade?: boolean; // From backend
+  actualGameDataFromBackend: GameDTO; // The full DTO from backend for assignment
 }
 
 const TeacherGameLibraryPage: React.FC = () => {
@@ -69,57 +72,27 @@ const TeacherGameLibraryPage: React.FC = () => {
     const fetchAndProcessGames = async () => {
       setIsLoading(true);
       try {
-        const allLibraryGames: GameDTO[] = await gameService.getLibraryGames();
+        const allLibraryGamesFromBackend: GameDTO[] = await gameService.getLibraryGames();
         
-        const finalGamesList: DisplayableLibraryGame[] = [];
-        const processedBackendGameIds = new Set<string>();
-
-        // Step 1: Iterate through PREFERRED_LIBRARY_GAMES configurations
-        PREFERRED_LIBRARY_GAMES.forEach(preferredConfig => {
-          const matchingBackendGame = allLibraryGames.find(
-            g => g.gameMode === preferredConfig.gameMode && g.isPremade
-          );
-
-          if (matchingBackendGame && !processedBackendGameIds.has(matchingBackendGame.id)) {
-            finalGamesList.push({
-              config: preferredConfig,
-              actualGameDataFromBackend: matchingBackendGame
-            });
-            processedBackendGameIds.add(matchingBackendGame.id);
-          } else {
-             if (!finalGamesList.some(fg => fg.config.idKey === preferredConfig.idKey && !fg.actualGameDataFromBackend)) {
-                finalGamesList.push({
-                    config: preferredConfig,
-                    actualGameDataFromBackend: undefined
-                });
-            }
-          }
-        });
-
-        // Step 2: Add all other games from the library that haven't been processed yet.
-        allLibraryGames.forEach(backendGame => {
-          if (!processedBackendGameIds.has(backendGame.id)) {
-            const genericConfig: LibraryGameDisplayConfig = {
-              idKey: backendGame.id,
-              title: backendGame.title,
-              description: backendGame.description || "No description available.",
-              subject: backendGame.subject,
-              gameMode: backendGame.gameMode,
-              icon: PREFERRED_LIBRARY_GAMES.find(pc => pc.gameMode === backendGame.gameMode)?.icon || <Library size={28} className="text-gray-500" />,
-            };
-            finalGamesList.push({
-              config: genericConfig,
-              actualGameDataFromBackend: backendGame
-            });
-            processedBackendGameIds.add(backendGame.id);
-          }
+        const finalGamesList: DisplayableLibraryGame[] = allLibraryGamesFromBackend.map(backendGame => {
+          const creatableTypeConfig = CREATABLE_GAME_TYPES.find(ct => ct.gameMode === backendGame.gameMode);
+          return {
+            id: backendGame.id,
+            title: backendGame.title,
+            description: backendGame.description || creatableTypeConfig?.description || "A learning game.",
+            subject: backendGame.subject,
+            gameMode: backendGame.gameMode,
+            icon: creatableTypeConfig?.icon || <Library size={28} className="text-gray-500" />,
+            isPremade: backendGame.isPremade,
+            actualGameDataFromBackend: backendGame,
+          };
         });
         
         setDisplayableGames(finalGamesList);
 
       } catch (error) {
         console.error("Failed to fetch or process game library:", error);
-        setDisplayableGames(PREFERRED_LIBRARY_GAMES.map(config => ({ config, actualGameDataFromBackend: undefined })));
+        setDisplayableGames([]); 
       } finally {
         setIsLoading(false);
       }
@@ -127,13 +100,10 @@ const TeacherGameLibraryPage: React.FC = () => {
     fetchAndProcessGames();
   }, []);
 
-  const handleOpenAssignModal = (gameDataForAssignment?: GameDTO) => {
-    if (gameDataForAssignment) {
-      setSelectedGameToAssign(gameDataForAssignment);
-      setIsAssignModalOpen(true);
-    } else {
-      alert("This game is currently not available for assignment.");
-    }
+  const handleOpenAssignModal = (gameDataForAssignment: GameDTO) => {
+    // No need to check for undefined here if the button is only enabled for existing games
+    setSelectedGameToAssign(gameDataForAssignment);
+    setIsAssignModalOpen(true);
   };
 
   const handleCloseAssignModal = () => {
@@ -141,7 +111,7 @@ const TeacherGameLibraryPage: React.FC = () => {
     setIsAssignModalOpen(false);
   };
 
-  const handleCreateGame = (gameMode: GameDTO['gameMode']) => {
+  const handleCreateGame = (gameMode?: GameDTO['gameMode']) => {
     if (!gameMode) return;
     
     const templateRoutes = {
@@ -154,6 +124,8 @@ const TeacherGameLibraryPage: React.FC = () => {
     const route = templateRoutes[gameMode as keyof typeof templateRoutes];
     if (route) {
       navigate(route);
+    } else {
+        alert(`Creation for ${gameMode} is not yet implemented.`);
     }
   };
 
@@ -161,9 +133,10 @@ const TeacherGameLibraryPage: React.FC = () => {
     setActiveTab(gameMode);
   };
 
+  // Filter games based on the active tab; all games from the backend are in displayableGames
   const filteredGames = activeTab === 'all'
     ? displayableGames
-    : displayableGames.filter(game => game.config.gameMode === activeTab);
+    : displayableGames.filter(game => game.gameMode === activeTab);
 
   if (isLoading) {
     return (
@@ -183,49 +156,52 @@ const TeacherGameLibraryPage: React.FC = () => {
               Game Library
             </h1>
             <p className="text-gray-600 dark:text-gray-300 mt-2 text-lg">
-              Browse premade activities or create your own to assign to your classrooms.
+              Browse available activities or create your own to assign to your classrooms.
             </p>
           </div>
-          <button
+          <Button
+            variant='primary'
+            size='lg'
             onClick={() => setIsGameModeModalOpen(true)}
-            className="btn btn-primary flex items-center gap-2"
+            className="btn btn-primary flex items-center gap-2" // Assuming Button component takes className
+            icon={<Plus size={20}/>}
           >
-            <Plus size={20} />
             Create Game
-          </button>
+          </Button>
         </div>
       </div>
 
       {isGameModeModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-primary-card-dark rounded-xl p-6 w-full max-w-md mx-4">
-            <h2 className="text-2xl font-bold mb-4 text-primary-text dark:text-primary-text-dark">Select Game Mode to Create</h2>
-            <div className="grid grid-cols-1 gap-3">
-              {PREFERRED_LIBRARY_GAMES.map((game) => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-primary-card-dark rounded-xl p-6 w-full max-w-md mx-auto">
+            <h2 className="text-2xl font-bold mb-6 text-primary-text dark:text-primary-text-dark text-center">Select Game Type to Create</h2>
+            <div className="grid grid-cols-1 gap-4">
+              {CREATABLE_GAME_TYPES.map((gameType) => (
                 <button
-                  key={game.idKey}
+                  key={gameType.gameMode}
                   onClick={() => {
                     setIsGameModeModalOpen(false);
-                    handleCreateGame(game.gameMode);
+                    handleCreateGame(gameType.gameMode);
                   }}
-                  className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-interactive"
                 >
-                  <div className="p-2 bg-gray-100 dark:bg-slate-700 rounded-full">
-                    {game.icon}
+                  <div className="p-3 bg-gray-100 dark:bg-slate-700 rounded-full">
+                    {gameType.icon}
                   </div>
                   <div className="text-left">
-                    <h3 className="font-semibold text-primary-text dark:text-primary-text-dark">{game.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{game.description}</p>
+                    <h3 className="font-semibold text-lg text-primary-text dark:text-primary-text-dark">{gameType.title}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{gameType.description}</p>
                   </div>
                 </button>
               ))}
             </div>
-            <button
+            <Button
+              variant='text'
               onClick={() => setIsGameModeModalOpen(false)}
-              className="btn btn-secondary w-full mt-4"
+              className="w-full mt-6"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -245,64 +221,74 @@ const TeacherGameLibraryPage: React.FC = () => {
           >
             All Games
           </button>
-          {PREFERRED_LIBRARY_GAMES.map((game) => 
+          {CREATABLE_GAME_TYPES.map((gameType) => 
             <button
-              key={game.idKey}
-              onClick={() => game.gameMode && handleTabClick(game.gameMode)}
+              key={gameType.gameMode}
+              onClick={() => handleTabClick(gameType.gameMode)}
               className={`
-                ${activeTab === game.gameMode
+                ${activeTab === gameType.gameMode
                   ? 'border-primary-interactive text-primary-interactive dark:border-primary-interactive-dark dark:text-primary-interactive-dark'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600'
                 }
                 whitespace-nowrap py-3 px-1 sm:py-4 sm:px-1 border-b-2 font-medium text-sm transition-colors duration-200
               `}
             >
-              {game.title}
+              {gameType.title} {/* Use title from CREATABLE_GAME_TYPES for tab name */}
             </button>
           )}
         </nav>
       </div>
 
       {filteredGames.length === 0 && !isLoading ? (
-        <div className="text-center py-10">
+        <div className="text-center py-10 bg-white dark:bg-primary-card-dark rounded-xl shadow border dark:border-gray-700">
+            <Library size={48} className="mx-auto text-gray-400 dark:text-gray-500 mb-4" />
           <p className="text-xl text-gray-500 dark:text-gray-400">
-             {activeTab === 'all' ? "No games found in the library." : "No games found for this category."}
+             {activeTab === 'all' ? "No games found in the library." : `No ${CREATABLE_GAME_TYPES.find(c => c.gameMode === activeTab)?.title || 'games'} found.`}
+          </p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+            Try creating a new game or check back later!
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredGames.map(({ config, actualGameDataFromBackend }) => (
+          {filteredGames.map((game) => ( // game is DisplayableLibraryGame
             <div 
-              key={actualGameDataFromBackend?.id || config.idKey} 
+              key={game.id} 
               className="card bg-white dark:bg-primary-card-dark p-5 shadow-lg rounded-xl flex flex-col justify-between border border-gray-200 dark:border-gray-700 transition-all hover:shadow-xl hover:scale-[1.03]"
             >
               <div className="flex flex-col items-center text-center flex-grow">
                 <div className="p-3 bg-gray-100 dark:bg-slate-700 rounded-full mb-4">
-                  {config.icon || <Library size={28} className="text-gray-500" />}
+                  {game.icon}
                 </div>
-                <h3 className="font-bold text-xl mb-2 text-primary-text dark:text-primary-text-dark">{config.title}</h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 h-20 line-clamp-4">{config.description}</p>
+                <h3 className="font-bold text-xl mb-2 text-primary-text dark:text-primary-text-dark">{game.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 h-20 line-clamp-4">{game.description}</p>
                 
                 <div className="w-full space-y-1 mb-4">
-                  {config.subject && (
+                  {game.subject && (
                      <span className="inline-flex items-center text-xs font-medium bg-primary-accent/20 dark:bg-primary-accent-dark/30 text-primary-accent dark:text-primary-accent-dark px-2.5 py-1 rounded-full mr-1.5 mb-1 sm:mb-0">
-                      <BookCopy size={12} className="mr-1" /> {config.subject}
+                      <BookCopy size={12} className="mr-1" /> {game.subject}
                     </span>
                   )}
-                   {config.gameMode && (
+                   {game.gameMode && (
                     <span className="inline-flex items-center text-xs font-medium bg-blue-100 dark:bg-blue-700/50 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full mb-1 sm:mb-0">
-                        <Tag size={12} className="mr-1" /> {config.gameMode.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                        <Tag size={12} className="mr-1" /> {game.gameMode.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                     </span>
+                  )}
+                   {game.isPremade && (
+                    <span className="inline-flex items-center text-xs font-medium bg-teal-100 dark:bg-teal-700/50 text-teal-700 dark:text-teal-300 px-2.5 py-1 rounded-full">
+                        <CheckCircle size={12} className="mr-1" /> Premade
                      </span>
                   )}
                 </div>
               </div>
-              <button
-                onClick={() => handleOpenAssignModal(actualGameDataFromBackend)}
-                className={`btn btn-primary w-full mt-auto ${!actualGameDataFromBackend ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={!actualGameDataFromBackend}
+              <Button
+                variant='primary' // Or your desired variant
+                onClick={() => handleOpenAssignModal(game.actualGameDataFromBackend)}
+                className="w-full mt-auto" // Ensure button is at the bottom
+                // Button is always enabled as actualGameDataFromBackend will exist for displayed games
               >
-                {actualGameDataFromBackend ? 'Assign to Classroom' : 'Unavailable'}
-              </button>
+                Assign to Classroom
+              </Button>
             </div>
           ))}
         </div>

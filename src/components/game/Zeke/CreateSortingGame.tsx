@@ -192,6 +192,10 @@ const CreateSortingGame: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/api/upload/image`, {
         method: 'POST',
         body: formData,
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+        },
       });
 
       if (!response.ok) {
@@ -199,7 +203,7 @@ const CreateSortingGame: React.FC = () => {
       }
 
       const data = await response.json();
-      const imagePath = data.imagePath; // The backend should return the path where the image was saved
+      const imagePath = data.imagePath;
       
       const newLevels = [...gameTemplate.levels];
       newLevels[levelIndex].items[itemIndex] = {

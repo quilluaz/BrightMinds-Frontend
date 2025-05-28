@@ -133,9 +133,10 @@ export interface ClassroomDTO {
 export interface LeaderboardEntry {
   studentId: string;
   studentName: string;
-  score: number;
+  score: number; // This is now classroom-specific
   rank: number;
   avatarUrl?: string;
+  classroomId?: string; // Added to track which classroom this score belongs to
 }
 
 export interface CreateClassroomRequestDTO {
@@ -199,6 +200,7 @@ export interface StudentGameAttemptDTO {
   studentId: string;
   assignedGameId: string; // Link to the AssignedGameDTO id
   gameId: string; // ID of the game that was attempted
+  classroomId: string; // Added to track which classroom this attempt belongs to
   score: number;
   completedAt: string;
   // Consider adding game details snapshot here if needed, e.g., gameTitle

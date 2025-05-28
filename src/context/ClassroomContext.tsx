@@ -46,6 +46,7 @@ interface BackendAssignedGameResponse {
     subject?: string;
     gameMode?: GameDTO["gameMode"];
     isPremade?: boolean;
+    gameData?: string;
   };
   deadline: string;
   isPremade: boolean;
@@ -297,6 +298,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
               subject: bg.game.subject,
               gameMode: bg.game.gameMode,
               isPremade: bg.game.isPremade,
+              gameData: bg.game.gameData,
             },
             assignedAt: new Date().toISOString(),
             dueDate: bg.deadline,

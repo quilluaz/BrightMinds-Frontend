@@ -579,10 +579,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
       if (!token) throw new Error("Authentication required.");
       setIsLoading(true);
       try {
-        await api.post(
-          `${CLASSROOM_API_BASE_URL}/${classroomId}/games/${assignedGameId}/attempt`,
-          attemptData
-        );
+        await api.post(`/attempts/submit`, attemptData);
       } catch (error: any) {
         console.error("Error submitting game results:", error);
         throw new Error(

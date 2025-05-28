@@ -16,9 +16,21 @@ interface BackendGame {
   // Add any other fields that your backend Game entity sends
 }
 
+// Interface for creating a new game
+interface CreateGameDTO {
+  activityName: string;
+  description?: string;
+  subject?: string;
+  gameMode: GameDTO['gameMode'];
+  isPremade: boolean;
+  maxScore: number;
+  maxExp: number;
+  gameData: string;
+}
+
 export const gameService = {
   getLibraryGames: async (): Promise<GameDTO[]> => {
-    const response = await api.get<BackendGame[]>('/games/premade');
+    const response = await api.get<BackendGame[]>('/games');
     // Map the backend response to the frontend GameDTO structure
     return response.data.map(backendGame => ({
       id: backendGame.activityId.toString(), // Convert to string if your GameDTO id is string
@@ -27,16 +39,28 @@ export const gameService = {
       subject: backendGame.subject,
       gameMode: backendGame.gameMode,
       isPremade: backendGame.isPremade,
-      // questions: [], // Assuming questions are not sent in the library preview
-                       // or map them if they are part of BackendGame and GameDTO
-      // maxScore: backendGame.maxScore, // Map if needed in GameDTO
-      // maxExp: backendGame.maxExp,     // Map if needed in GameDTO
-      // gameData: backendGame.gameData, // Map if needed in GameDTO
+      maxScore: backendGame.maxScore,
+      maxExp: backendGame.maxExp,
+      gameData: backendGame.gameData,
+    }));
+  },
+
+  getPremadeGames: async (): Promise<GameDTO[]> => {
+    const response = await api.get<BackendGame[]>('/games/premade');
+    return response.data.map(backendGame => ({
+      id: backendGame.activityId.toString(),
+      title: backendGame.activityName,
+      description: backendGame.description,
+      subject: backendGame.subject,
+      gameMode: backendGame.gameMode,
+      isPremade: backendGame.isPremade,
+      maxScore: backendGame.maxScore,
+      maxExp: backendGame.maxExp,
+      gameData: backendGame.gameData,
     }));
   },
 
   getGameById: async (gameId: string): Promise<GameDTO> => {
-    // Similar mapping might be needed here if the single game response also uses activityName
     const response = await api.get<BackendGame>(`/games/${gameId}`);
     const backendGame = response.data;
     return {
@@ -46,7 +70,9 @@ export const gameService = {
       subject: backendGame.subject,
       gameMode: backendGame.gameMode,
       isPremade: backendGame.isPremade,
-      // questions: parseGameDataIfNeeded(backendGame.gameData), // Example
+      maxScore: backendGame.maxScore,
+      maxExp: backendGame.maxExp,
+      gameData: backendGame.gameData,
     };
   },
 
@@ -60,5 +86,21 @@ export const gameService = {
       params: { assignedGameId }
     });
     return response.data;
+  },
+
+  createGame: async (gameData: CreateGameDTO): Promise<GameDTO> => {
+    const response = await api.post<BackendGame>('/games', gameData);
+    const backendGame = response.data;
+    return {
+      id: backendGame.activityId.toString(),
+      title: backendGame.activityName,
+      description: backendGame.description,
+      subject: backendGame.subject,
+      gameMode: backendGame.gameMode,
+      isPremade: backendGame.isPremade,
+      maxScore: backendGame.maxScore,
+      maxExp: backendGame.maxExp,
+      gameData: backendGame.gameData,
+    };
   }
 };

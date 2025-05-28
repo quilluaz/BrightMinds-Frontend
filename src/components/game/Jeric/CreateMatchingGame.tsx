@@ -12,6 +12,9 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ImageIcon from '@mui/icons-material/Image';
+import { gameService } from '../../../services/game';
+import { useNavigate } from 'react-router-dom';
+import { GameDTO } from '../../../types';
 
 interface MatchingPair {
   id: number;
@@ -33,6 +36,7 @@ interface GameTemplate {
 }
 
 const CreateMatchingGame: React.FC = () => {
+  const navigate = useNavigate();
   const [gameTemplate, setGameTemplate] = useState<GameTemplate>({
     activityName: '',
     maxScore: 100,
@@ -165,16 +169,15 @@ const CreateMatchingGame: React.FC = () => {
         maxScore: gameTemplate.maxScore,
         maxExp: gameTemplate.maxExp,
         isPremade: false,
-        gameMode: 'MATCHING',
+        gameMode: 'MATCHING' as GameDTO['gameMode'],
         gameData: JSON.stringify({
           levels: gameTemplate.levels,
         }),
       };
 
-      // TODO: Add your API call here to save the game
-      // const response = await gameService.createGame(gameData);
-
+      await gameService.createGame(gameData);
       setSuccess('Matching Game created successfully!');
+      
       // Reset form
       setGameTemplate({
         activityName: '',
@@ -187,6 +190,11 @@ const CreateMatchingGame: React.FC = () => {
           },
         ],
       });
+
+      // Navigate back to game library after successful creation
+      setTimeout(() => {
+        navigate('/teacher/games/library');
+      }, 2000);
     } catch (err) {
       setError('Failed to create game. Please try again.');
       console.error('Error creating matching game:', err);

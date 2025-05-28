@@ -14,6 +14,9 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ImageIcon from '@mui/icons-material/Image';
+import { gameService } from '../../../services/game';
+import { useNavigate } from 'react-router-dom';
+import { GameDTO } from '../../../types';
 
 interface Choice {
   id: string;
@@ -35,6 +38,7 @@ interface GameTemplate {
 }
 
 const CreateImageMultipleChoice: React.FC = () => {
+  const navigate = useNavigate();
   const [gameTemplate, setGameTemplate] = useState<GameTemplate>({
     activityName: '',
     maxScore: 100,
@@ -238,18 +242,33 @@ const CreateImageMultipleChoice: React.FC = () => {
     }
 
     try {
+      const teacherId = localStorage.getItem('teacherId');
+      const teacherName = localStorage.getItem('teacherName');
+      
+      if (!teacherId || !teacherName) {
+        setError('Teacher information not found. Please log in again.');
+        return;
+      }
+
       const gameData = {
         activityName: gameTemplate.activityName,
         maxScore: gameTemplate.maxScore,
         maxExp: gameTemplate.maxExp,
         isPremade: false,
-        gameMode: 'IMAGE_MULTIPLE_CHOICE',
+        gameMode: 'IMAGE_MULTIPLE_CHOICE' as const,
         gameData: JSON.stringify({
           questions: gameTemplate.questions,
         }),
+        createdBy: {
+          id: parseInt(teacherId),
+          name: teacherName
+        }
       };
 
-      setSuccess('Image Multiple Choice Game created successfully!');
+      await gameService.createGame(gameData);
+      setSuccess('Image Quiz created successfully!');
+      
+      // Reset form
       setGameTemplate({
         activityName: '',
         maxScore: 100,
@@ -267,10 +286,14 @@ const CreateImageMultipleChoice: React.FC = () => {
           },
         ],
       });
-      setPreviewUrls([['', '', '', '']]);
+
+      // Navigate back to game library after successful creation
+      setTimeout(() => {
+        navigate('/teacher/games/library');
+      }, 2000);
     } catch (err) {
       setError('Failed to create game. Please try again.');
-      console.error('Error creating image multiple choice game:', err);
+      console.error('Error creating image quiz:', err);
     }
   };
 

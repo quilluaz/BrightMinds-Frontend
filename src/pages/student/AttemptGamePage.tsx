@@ -6,12 +6,12 @@ import { useAuth } from "../../context/AuthContext";
 import { AssignedGameDTO, StudentGameAttemptDTO } from "../../types";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 
-// Import your actual game components
-import MatchingGamePage from "../../components/game/Jeric/MatchingGamePage";
-import ImageMultipleChoiceGame from "../../components/game/Selina/ImageMultipleChoiceGame";
-import LikasYamanGame from "../../components/game/Zeke/LikasYamanGame";
-import FourPicsOneWord from "../../components/game/Mae/4Pics1Word";
-// Add other game components as needed
+// Import your blank game components
+import BlankMatchingGame from "../../components/game/Jeric/BlankMatchingGame";
+import BlankImageMultipleChoiceGame from "../../components/game/Selina/BlankImageMultipleChoiceGame";
+import BlankSortingGame from "../../components/game/Zeke/BlankSortingGame";
+import Blank4Pics1Word from "../../components/game/Mae/Blank4Pics1Word";
+// Add other blank game components as needed
 
 const AttemptGamePage: React.FC = () => {
   const { classroomId, assignedGameId } = useParams<{
@@ -125,18 +125,36 @@ const AttemptGamePage: React.FC = () => {
     );
   }
 
-  if (!assignedGame || !assignedGame.game) {
+  if (!assignedGame || !assignedGame.game || !assignedGame.game.gameData) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        Game data not found or invalid.
+        Game data not found, invalid, or missing gameData payload.
+        <pre className="text-left text-xs mt-4 p-2 bg-gray-100 dark:bg-gray-800 rounded overflow-auto">
+            {JSON.stringify(assignedGame, null, 2)}
+          </pre>
       </div>
     );
   }
 
   const gameMode = assignedGame.game.gameMode;
+  let parsedGameData;
+  try {
+    parsedGameData = JSON.parse(assignedGame.game.gameData);
+  } catch (e) {
+    console.error("Failed to parse gameData JSON:", e);
+    return (
+      <div className="container mx-auto px-4 py-8 text-center text-red-500">
+        Error loading game data. Invalid JSON format.
+        <pre className="text-left text-xs mt-4 p-2 bg-gray-100 dark:bg-gray-800 rounded overflow-auto">
+            {assignedGame.game.gameData}
+          </pre>
+      </div>
+    );
+  }
 
   const gameProps = {
     isPracticeMode: false,
+    gameData: parsedGameData, // Pass the parsed gameData
     assignedGameData: assignedGame,
     onGameComplete: handleGameComplete,
     classroomId,
@@ -145,16 +163,14 @@ const AttemptGamePage: React.FC = () => {
 
   switch (gameMode) {
     case "MATCHING":
-      return <MatchingGamePage {...gameProps} />;
+      return <BlankMatchingGame {...gameProps} />;
     case "IMAGE_MULTIPLE_CHOICE":
-      return <ImageMultipleChoiceGame {...gameProps} />;
-    case "SORTING": // Assuming LikasYamanGame is for SORTING
-      return <LikasYamanGame {...gameProps} />;
+      return <BlankImageMultipleChoiceGame {...gameProps} />;
+    case "SORTING":
+      return <BlankSortingGame {...gameProps} />;
     case "FOUR_PICS_ONE_WORD":
-      return <FourPicsOneWord {...gameProps} />;
-    // Add cases for other game modes
-    // case 'BALLOON':
-    //   return <BalloonGame {...gameProps} />;
+      return <Blank4Pics1Word {...gameProps} />;
+    // Add cases for other game modes using their Blank components
     default:
       return (
         <div className="container mx-auto px-4 py-8 text-center">

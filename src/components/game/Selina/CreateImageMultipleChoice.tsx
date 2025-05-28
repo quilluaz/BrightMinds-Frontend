@@ -17,6 +17,7 @@ import ImageIcon from '@mui/icons-material/Image';
 import { gameService } from '../../../services/game';
 import { useNavigate } from 'react-router-dom';
 import { GameDTO } from '../../../types';
+import { useAuth } from '../../../context/AuthContext';
 
 interface Choice {
   id: string;
@@ -39,6 +40,7 @@ interface GameTemplate {
 
 const CreateImageMultipleChoice: React.FC = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [gameTemplate, setGameTemplate] = useState<GameTemplate>({
     activityName: '',
     maxScore: 100,
@@ -242,11 +244,8 @@ const CreateImageMultipleChoice: React.FC = () => {
     }
 
     try {
-      const teacherId = localStorage.getItem('teacherId');
-      const teacherName = localStorage.getItem('teacherName');
-      
-      if (!teacherId || !teacherName) {
-        setError('Teacher information not found. Please log in again.');
+      if (!currentUser || currentUser.role !== 'TEACHER') {
+        setError('You must be logged in as a teacher to create games.');
         return;
       }
 
@@ -260,8 +259,8 @@ const CreateImageMultipleChoice: React.FC = () => {
           questions: gameTemplate.questions,
         }),
         createdBy: {
-          id: parseInt(teacherId),
-          name: teacherName
+          id: currentUser.id,
+          name: currentUser.name
         }
       };
 

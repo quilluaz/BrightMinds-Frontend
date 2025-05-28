@@ -6,45 +6,40 @@ import {
   Typography,
   Paper,
   IconButton,
-  Grid,
   Alert,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import ImageIcon from '@mui/icons-material/Image';
 import { gameService } from '../../../services/game';
 import { useNavigate } from 'react-router-dom';
 import { GameDTO } from '../../../types';
+import { useAuth } from '../../../context/AuthContext';
 
 interface MatchingPair {
-  id: number;
-  word: string;
-  english: string;
-  imageUrl?: string; // Optional image URL
-}
-
-interface GameLevel {
-  level: number;
-  pairs: MatchingPair[];
+  id: string;
+  leftItem: string;
+  rightItem: string;
 }
 
 interface GameTemplate {
   activityName: string;
   maxScore: number;
   maxExp: number;
-  levels: GameLevel[];
+  pairs: MatchingPair[];
 }
 
 const CreateMatchingGame: React.FC = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [gameTemplate, setGameTemplate] = useState<GameTemplate>({
     activityName: '',
     maxScore: 100,
     maxExp: 50,
-    levels: [
+    pairs: [
       {
-        level: 1,
-        pairs: [],
+        id: `pair${Date.now()}`,
+        leftItem: '',
+        rightItem: '',
       },
     ],
   });
@@ -52,74 +47,40 @@ const CreateMatchingGame: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
 
-  const handleLevelChange = (levelIndex: number, field: keyof GameLevel, value: any) => {
-    const newLevels = [...gameTemplate.levels];
-    newLevels[levelIndex] = {
-      ...newLevels[levelIndex],
+  const handleGameTemplateChange = (field: keyof GameTemplate, value: any) => {
+    setGameTemplate({ ...gameTemplate, [field]: value });
+  };
+
+  const handlePairChange = (
+    pairIndex: number,
+    field: keyof MatchingPair,
+    value: string,
+  ) => {
+    const newPairs = [...gameTemplate.pairs];
+    newPairs[pairIndex] = {
+      ...newPairs[pairIndex],
       [field]: value,
     };
-    setGameTemplate({ ...gameTemplate, levels: newLevels });
+    setGameTemplate({ ...gameTemplate, pairs: newPairs });
   };
 
-  const handlePairChange = (levelIndex: number, pairIndex: number, field: keyof MatchingPair, value: string) => {
-    const newLevels = [...gameTemplate.levels];
-    newLevels[levelIndex].pairs[pairIndex] = {
-      ...newLevels[levelIndex].pairs[pairIndex],
-      [field]: value,
-    };
-    setGameTemplate({ ...gameTemplate, levels: newLevels });
-  };
-
-  const handleImageUpload = async (levelIndex: number, pairIndex: number, event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Convert the file path to a relative path format
-    const imagePath = `/images/matching/${file.name}`;
-    
-    const newLevels = [...gameTemplate.levels];
-    newLevels[levelIndex].pairs[pairIndex] = {
-      ...newLevels[levelIndex].pairs[pairIndex],
-      imageUrl: imagePath,
-    };
-    setGameTemplate({ ...gameTemplate, levels: newLevels });
-
-    // TODO: Implement actual image upload to your storage service
-  };
-
-  const addLevel = () => {
+  const addPair = () => {
     setGameTemplate({
       ...gameTemplate,
-      levels: [
-        ...gameTemplate.levels,
+      pairs: [
+        ...gameTemplate.pairs,
         {
-          level: gameTemplate.levels.length + 1,
-          pairs: [],
+          id: `pair${Date.now()}`,
+          leftItem: '',
+          rightItem: '',
         },
       ],
     });
   };
 
-  const removeLevel = (index: number) => {
-    const newLevels = gameTemplate.levels.filter((_, i) => i !== index);
-    setGameTemplate({ ...gameTemplate, levels: newLevels });
-  };
-
-  const addPair = (levelIndex: number) => {
-    const newLevels = [...gameTemplate.levels];
-    newLevels[levelIndex].pairs.push({
-      id: Date.now(), // Simple unique ID for the pair
-      word: '',
-      english: '',
-      imageUrl: '',
-    });
-    setGameTemplate({ ...gameTemplate, levels: newLevels });
-  };
-
-  const removePair = (levelIndex: number, pairIndex: number) => {
-    const newLevels = [...gameTemplate.levels];
-    newLevels[levelIndex].pairs = newLevels[levelIndex].pairs.filter((_, i) => i !== pairIndex);
-    setGameTemplate({ ...gameTemplate, levels: newLevels });
+  const removePair = (index: number) => {
+    const newPairs = gameTemplate.pairs.filter((_, i) => i !== index);
+    setGameTemplate({ ...gameTemplate, pairs: newPairs });
   };
 
   const validateGame = (): boolean => {
@@ -128,27 +89,15 @@ const CreateMatchingGame: React.FC = () => {
       return false;
     }
 
-    if (gameTemplate.levels.length === 0) {
-      setError('Please add at least one level');
+    if (gameTemplate.pairs.length === 0) {
+      setError('Please add at least one matching pair');
       return false;
     }
 
-    for (const level of gameTemplate.levels) {
-      if (level.pairs.length === 0) {
-        setError(`Level ${level.level} must have at least one matching pair`);
+    for (const pair of gameTemplate.pairs) {
+      if (!pair.leftItem.trim() || !pair.rightItem.trim()) {
+        setError('All pairs must have both left and right items');
         return false;
-      }
-
-      for (const pair of level.pairs) {
-        if (!pair.word.trim()) {
-          setError(`Level ${level.level}: All matching pairs must have a Word`);
-          return false;
-        }
-        if (!pair.english.trim()) {
-          setError(`Level ${level.level}: All matching pairs must have an English translation`);
-          return false;
-        }
-        // Image is optional, so no validation needed for imageUrl
       }
     }
 
@@ -164,15 +113,24 @@ const CreateMatchingGame: React.FC = () => {
     }
 
     try {
+      if (!currentUser || currentUser.role !== 'TEACHER') {
+        setError('You must be logged in as a teacher to create games.');
+        return;
+      }
+
       const gameData = {
         activityName: gameTemplate.activityName,
         maxScore: gameTemplate.maxScore,
         maxExp: gameTemplate.maxExp,
         isPremade: false,
-        gameMode: 'MATCHING' as GameDTO['gameMode'],
+        gameMode: 'MATCHING' as const,
         gameData: JSON.stringify({
-          levels: gameTemplate.levels,
+          pairs: gameTemplate.pairs,
         }),
+        createdBy: {
+          id: currentUser.id,
+          name: currentUser.name
+        }
       };
 
       await gameService.createGame(gameData);
@@ -183,10 +141,11 @@ const CreateMatchingGame: React.FC = () => {
         activityName: '',
         maxScore: 100,
         maxExp: 50,
-        levels: [
+        pairs: [
           {
-            level: 1,
-            pairs: [],
+            id: `pair${Date.now()}`,
+            leftItem: '',
+            rightItem: '',
           },
         ],
       });
@@ -220,12 +179,21 @@ const CreateMatchingGame: React.FC = () => {
       )}
 
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr) 1fr 1fr' }, gap: 3 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: 'repeat(2, 1fr) 1fr 1fr',
+            },
+            gap: 3,
+          }}
+        >
           <TextField
             fullWidth
             label="Game Name"
             value={gameTemplate.activityName}
-            onChange={(e) => setGameTemplate({ ...gameTemplate, activityName: e.target.value })}
+            onChange={(e) => handleGameTemplateChange('activityName', e.target.value)}
             required
           />
           <TextField
@@ -233,7 +201,9 @@ const CreateMatchingGame: React.FC = () => {
             type="number"
             label="Max Score"
             value={gameTemplate.maxScore}
-            onChange={(e) => setGameTemplate({ ...gameTemplate, maxScore: parseInt(e.target.value) })}
+            onChange={(e) =>
+              handleGameTemplateChange('maxScore', parseInt(e.target.value))
+            }
             required
           />
           <TextField
@@ -241,104 +211,48 @@ const CreateMatchingGame: React.FC = () => {
             type="number"
             label="Max Experience"
             value={gameTemplate.maxExp}
-            onChange={(e) => setGameTemplate({ ...gameTemplate, maxExp: parseInt(e.target.value) })}
+            onChange={(e) =>
+              handleGameTemplateChange('maxExp', parseInt(e.target.value))
+            }
             required
           />
         </Box>
       </Paper>
 
-      {gameTemplate.levels.map((level, levelIndex) => (
-        <Paper key={levelIndex} sx={{ p: 3, mb: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">Level {level.level}</Typography>
+      {gameTemplate.pairs.map((pair, pairIndex) => (
+        <Paper key={pair.id} sx={{ p: 3, mb: 3 }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+          >
+            <Typography variant="h6">Pair {pairIndex + 1}</Typography>
             <IconButton
               color="error"
-              onClick={() => removeLevel(levelIndex)}
-              disabled={gameTemplate.levels.length === 1}
+              onClick={() => removePair(pairIndex)}
+              disabled={gameTemplate.pairs.length === 1}
             >
               <DeleteIcon />
             </IconButton>
           </Box>
 
           <Box sx={{ display: 'grid', gap: 3 }}>
-            <Typography variant="h6" gutterBottom>Matching Pairs</Typography>
-            {level.pairs.map((pair, pairIndex) => (
-              <Box key={pairIndex} sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                <TextField
-                  fullWidth
-                  label="Word (e.g., Filipino)"
-                  value={pair.word}
-                  onChange={(e) => handlePairChange(levelIndex, pairIndex, 'word', e.target.value)}
-                  required
-                />
-                <TextField
-                  fullWidth
-                  label="English Translation"
-                  value={pair.english}
-                  onChange={(e) => handlePairChange(levelIndex, pairIndex, 'english', e.target.value)}
-                  required
-                />
-                <Box sx={{ position: 'relative' }}>
-                  <input
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    id={`image-upload-${levelIndex}-${pairIndex}`}
-                    type="file"
-                    onChange={(e) => handleImageUpload(levelIndex, pairIndex, e)}
-                  />
-                  <label htmlFor={`image-upload-${levelIndex}-${pairIndex}`}>
-                    <Box
-                      sx={{
-                        width: 100,
-                        height: 100,
-                        border: '2px dashed',
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        backgroundColor: pair.imageUrl ? 'transparent' : 'action.hover',
-                        '&:hover': {
-                          borderColor: 'primary.main',
-                          backgroundColor: 'action.hover',
-                        },
-                      }}
-                    >
-                      {pair.imageUrl ? (
-                        <Box
-                          component="img"
-                          src={pair.imageUrl}
-                          alt={`Pair ${pairIndex + 1} Image`}
-                          sx={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            borderRadius: 1,
-                          }}
-                        />
-                      ) : (
-                        <ImageIcon color="action" sx={{ fontSize: 40 }} />
-                      )}
-                    </Box>
-                  </label>
-                </Box>
-                <IconButton
-                  color="error"
-                  onClick={() => removePair(levelIndex, pairIndex)}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
-            ))}
-            <Button
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={() => addPair(levelIndex)}
-              sx={{ mt: 1 }}
-            >
-              Add Matching Pair
-            </Button>
+            <TextField
+              fullWidth
+              label="Left Item"
+              value={pair.leftItem}
+              onChange={(e) =>
+                handlePairChange(pairIndex, 'leftItem', e.target.value)
+              }
+              required
+            />
+            <TextField
+              fullWidth
+              label="Right Item"
+              value={pair.rightItem}
+              onChange={(e) =>
+                handlePairChange(pairIndex, 'rightItem', e.target.value)
+              }
+              required
+            />
           </Box>
         </Paper>
       ))}
@@ -348,9 +262,9 @@ const CreateMatchingGame: React.FC = () => {
           variant="contained"
           color="primary"
           startIcon={<AddIcon />}
-          onClick={addLevel}
+          onClick={addPair}
         >
-          Add Level
+          Add Pair
         </Button>
         <Button
           variant="contained"

@@ -22,6 +22,7 @@ import { useTheme } from '../../../context/ThemeContext';
 import { HexColorPicker } from 'react-colorful';
 import { useNavigate } from 'react-router-dom';
 import { gameService, GameMode } from '../../../services/gameService';
+import { useAuth } from '../../../context/AuthContext';
 
 interface GameItem {
   id: string;
@@ -59,6 +60,7 @@ interface GameTemplate {
 const CreateSortingGame: React.FC = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [gameTemplate, setGameTemplate] = useState<GameTemplate>({
     activityName: '',
     maxScore: 100,
@@ -246,9 +248,8 @@ const CreateSortingGame: React.FC = () => {
     }
 
     try {
-      const teacherId = localStorage.getItem('teacherId');
-      if (!teacherId) {
-        setError('Teacher ID not found. Please log in again.');
+      if (!currentUser || currentUser.role !== 'TEACHER') {
+        setError('You must be logged in as a teacher to create games.');
         return;
       }
 
@@ -262,20 +263,37 @@ const CreateSortingGame: React.FC = () => {
           levels: gameTemplate.levels,
         }),
         createdBy: {
-          id: parseInt(teacherId)
+          id: currentUser.id,
+          name: currentUser.name
         }
       };
 
       await gameService.createGame(gameData);
-      setSuccess('Game created successfully!');
+      setSuccess('Sorting Game created successfully!');
       
-      // Navigate back to game library after a short delay
+      // Reset form
+      setGameTemplate({
+        activityName: '',
+        maxScore: 100,
+        maxExp: 50,
+        levels: [
+          {
+            level: 1,
+            title: '',
+            items: [],
+            categories: [],
+            instructions: '',
+          },
+        ],
+      });
+
+      // Navigate back to game library after successful creation
       setTimeout(() => {
-        navigate('/teacher/game-library');
-      }, 1500);
+        navigate('/teacher/games/library');
+      }, 2000);
     } catch (err) {
       setError('Failed to create game. Please try again.');
-      console.error('Error creating game:', err);
+      console.error('Error creating sorting game:', err);
     }
   };
 

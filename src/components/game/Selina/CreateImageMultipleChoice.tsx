@@ -18,6 +18,7 @@ import { gameService } from '../../../services/game';
 import { useNavigate } from 'react-router-dom';
 import { GameDTO } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
+import { API_BASE_URL } from '../../../config';
 
 interface Choice {
   id: string;
@@ -116,20 +117,41 @@ const CreateImageMultipleChoice: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const previewUrl = URL.createObjectURL(file);
+    try {
+      // Create a FormData object to send the file
+      const formData = new FormData();
+      formData.append('file', file);
 
-    setPreviewUrls((prevUrls) => {
-      const newUrls = [...prevUrls];
-      if (!newUrls[questionIndex]) newUrls[questionIndex] = [];
-      newUrls[questionIndex][choiceIndex] = previewUrl;
-      return newUrls;
-    });
+      // Upload the file to the backend
+      const response = await fetch(`${API_BASE_URL}/api/upload/image`, {
+        method: 'POST',
+        body: formData,
+      });
 
-    const imagePath = `/images/multiple-choice/${file.name}`;
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
 
-    const newQuestions = [...gameTemplate.questions];
-    newQuestions[questionIndex].choices[choiceIndex].imagePath = imagePath;
-    setGameTemplate({ ...gameTemplate, questions: newQuestions });
+      const data = await response.json();
+      const imagePath = data.imagePath; // The backend should return the path where the image was saved
+
+      // Update preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewUrls((prevUrls) => {
+        const newUrls = [...prevUrls];
+        if (!newUrls[questionIndex]) newUrls[questionIndex] = [];
+        newUrls[questionIndex][choiceIndex] = previewUrl;
+        return newUrls;
+      });
+
+      // Update the game template with the actual image path from the backend
+      const newQuestions = [...gameTemplate.questions];
+      newQuestions[questionIndex].choices[choiceIndex].imagePath = imagePath;
+      setGameTemplate({ ...gameTemplate, questions: newQuestions });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setError('Failed to upload image. Please try again.');
+    }
   };
 
   const addQuestion = () => {

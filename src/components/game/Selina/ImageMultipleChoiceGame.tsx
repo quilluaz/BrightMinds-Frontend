@@ -5,6 +5,7 @@ import { playSound, SoundType, CelebrationAnimation, GameCompleteCelebration, an
 import BackgroundMusic from '../BackgroundMusic';
 import { AssignedGameDTO } from '../../../types'; // Import AssignedGameDTO
 import { useNavigate } from 'react-router-dom'; // For navigation if needed
+import { API_BASE_URL } from '../../../config'; // Import the API base URL
 
 // Color Palette (as originally provided)
 const COLORS = {
@@ -39,15 +40,19 @@ interface Choice {
 }
 
 interface Question {
-  id: number;
+  id: string;
   questionText: string;
   choices: Choice[];
+}
+
+interface GameData {
+  questions: Question[];
 }
 
 // Original questionsData from the provided file
 const questionsData: Question[] = [
   {
-    id: 1,
+    id: '1',
     questionText: 'Aling larawan ang nagpapakita ng pamumuhay sa tabing-ilog?',
     choices: [
       { id: 'A', imagePlaceholderText: '/images/multiple-choice/river1.jpg', isCorrect: true },
@@ -57,7 +62,7 @@ const questionsData: Question[] = [
     ],
   },
   {
-    id: 2,
+    id: '2',
     questionText: 'Alin sa mga ito ang nagpapakita ng hanapbuhay sa may bundok?',
     choices: [
       { id: 'A', imagePlaceholderText: '/images/multiple-choice/fish2.jpg', isCorrect: false },
@@ -67,7 +72,7 @@ const questionsData: Question[] = [
     ],
   },
   {
-    id: 3,
+    id: '3',
     questionText: 'Anong produkto ang karaniwang nakukuha sa pangingisda?',
     choices: [
       { id: 'A', imagePlaceholderText: '/images/multiple-choice/pigs3.jpg', isCorrect: false },
@@ -77,7 +82,7 @@ const questionsData: Question[] = [
     ],
   },
   {
-    id: 4,
+    id: '4',
     questionText: 'Alin ang hanapbuhay na hindi karaniwan sa lalawigan?',
     choices: [
       { id: 'A', imagePlaceholderText: '/images/multiple-choice/farmer4.jpg', isCorrect: false },
@@ -87,7 +92,7 @@ const questionsData: Question[] = [
     ],
   },
   {
-    id: 5,
+    id: '5',
     questionText: 'Anong hanapbuhay ang makikita sa kagubatan?',
     choices: [
       { id: 'A', imagePlaceholderText: '/images/multiple-choice/pangangahoy5.jpg', isCorrect: true },
@@ -97,7 +102,7 @@ const questionsData: Question[] = [
     ],
   },
   {
-    id: 6,
+    id: '6',
     questionText: 'Alin sa mga ito ang pamumuhay sa kabundukan?',
     choices: [
       { id: 'A', imagePlaceholderText: '/images/multiple-choice/farmer4.jpg', isCorrect: false },
@@ -107,7 +112,7 @@ const questionsData: Question[] = [
     ],
   },
   {
-    id: 7,
+    id: '7',
     questionText: 'Ano ang pangunahing hanapbuhay sa palayan?',
     choices: [
       { id: 'A', imagePlaceholderText: '/images/multiple-choice/fisherman4.jpg', isCorrect: false },
@@ -117,7 +122,7 @@ const questionsData: Question[] = [
     ],
   },
   {
-    id: 8,
+    id: '8',
     questionText: 'Anong hanapbuhay ang karaniwang makikita sa tabing-dagat?',
     choices: [
       { id: 'A', imagePlaceholderText: '/images/multiple-choice/fisherman4.jpg', isCorrect: true },
@@ -127,7 +132,7 @@ const questionsData: Question[] = [
     ],
   },
   {
-    id: 9,
+    id: '9',
     questionText: 'Anong hayop ang karaniwang kasama sa bukid?',
     choices: [
       { id: 'A', imagePlaceholderText: '/images/multiple-choice/carabao9.jpg', isCorrect: true },
@@ -137,7 +142,7 @@ const questionsData: Question[] = [
     ],
   },
   {
-    id: 10,
+    id: '10',
     questionText: 'Alin sa mga ito ang anyong lupa?',
     choices: [
       { id: 'A', imagePlaceholderText: '/images/multiple-choice/dagat10.jpg', isCorrect: false },
@@ -159,16 +164,33 @@ interface ImageMultipleChoiceGameProps {
 
 const ImageMultipleChoiceGame: React.FC<ImageMultipleChoiceGameProps> = ({
   isPracticeMode,
-  // assignedGameData, // Not using assignedGameData for questions in this minimal version
+  assignedGameData,
   onGameComplete,
   classroomId,
+  assignedGameId,
 }) => {
   const { theme } = useTheme();
   const colors = COLORS[theme];
   const navigate = useNavigate();
 
-  // Use the original local questionsData, as per strict minimal change request for this file
-  const activeQuestions = questionsData;
+  // Parse gameData from assignedGameData if available
+  const [activeQuestions, setActiveQuestions] = useState<Question[]>([]);
+
+  useEffect(() => {
+    if (assignedGameData?.game?.gameData) {
+      try {
+        const parsedGameData: GameData = JSON.parse(assignedGameData.game.gameData);
+        setActiveQuestions(parsedGameData.questions);
+      } catch (error) {
+        console.error('Error parsing game data:', error);
+        // Fallback to practice questions if parsing fails
+        setActiveQuestions(questionsData);
+      }
+    } else {
+      // Use practice questions if no assigned game data
+      setActiveQuestions(questionsData);
+    }
+  }, [assignedGameData]);
 
   const [hasGameStarted, setHasGameStarted] = useState(isPracticeMode ? false : true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -249,6 +271,12 @@ const ImageMultipleChoiceGame: React.FC<ImageMultipleChoiceGameProps> = ({
 
   const isImagePath = (text: string) => {
     return text.startsWith('/images/multiple-choice/') && (text.endsWith('.jpg') || text.endsWith('.svg') || text.endsWith('.png'));
+  };
+
+  const getFullImageUrl = (imagePath: string) => {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${API_BASE_URL}${imagePath}`;
   };
 
   useEffect(() => {
@@ -383,7 +411,7 @@ const ImageMultipleChoiceGame: React.FC<ImageMultipleChoiceGameProps> = ({
                       alt={`Choice ${choice.id}`}
                       className="w-full h-full object-cover rounded-xl"
                       onError={(e) => {
-                        e.currentTarget.src = '/images/placeholder.jpg'; 
+                        e.currentTarget.src = '/images/placeholder.jpg';
                         console.error(`Failed to load image: ${choice.imagePlaceholderText}`);
                       }}
                     />

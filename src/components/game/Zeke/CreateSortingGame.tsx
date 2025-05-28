@@ -23,6 +23,7 @@ import { HexColorPicker } from 'react-colorful';
 import { useNavigate } from 'react-router-dom';
 import { gameService, GameMode } from '../../../services/gameService';
 import { useAuth } from '../../../context/AuthContext';
+import { API_BASE_URL } from '../../../config';
 
 interface GameItem {
   id: string;
@@ -181,15 +182,34 @@ const CreateSortingGame: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Convert the file path to a relative path format
-    const imagePath = `/images/sorting/${file.name}`;
-    
-    const newLevels = [...gameTemplate.levels];
-    newLevels[levelIndex].items[itemIndex] = {
-      ...newLevels[levelIndex].items[itemIndex],
-      image: imagePath,
-    };
-    setGameTemplate({ ...gameTemplate, levels: newLevels });
+    try {
+      // Create a FormData object to send the file
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Upload the file to the backend
+      const response = await fetch(`${API_BASE_URL}/api/upload/image`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const data = await response.json();
+      const imagePath = data.imagePath; // The backend should return the path where the image was saved
+      
+      const newLevels = [...gameTemplate.levels];
+      newLevels[levelIndex].items[itemIndex] = {
+        ...newLevels[levelIndex].items[itemIndex],
+        image: imagePath,
+      };
+      setGameTemplate({ ...gameTemplate, levels: newLevels });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setError('Failed to upload image. Please try again.');
+    }
   };
 
   const validateGame = (): boolean => {

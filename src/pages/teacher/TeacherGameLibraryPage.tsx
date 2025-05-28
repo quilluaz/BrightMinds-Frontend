@@ -5,7 +5,7 @@ import { gameService } from '../../services/game';
 import { GameDTO } from '../../types';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import AssignGameModal from '../../components/teacher/AssignGameModal';
-import { Library, Sparkles, Zap, Brain, Puzzle, Plus } from 'lucide-react'; // Icons for games and Plus icon
+import { Library, Sparkles, Zap, Brain, Puzzle, Plus, ChevronDown, ChevronUp } from 'lucide-react'; // Icons for games and Plus icon
 
 // Define the structure for our desired library games
 interface LibraryGameDisplayConfig {
@@ -67,6 +67,7 @@ const TeacherGameLibraryPage: React.FC = () => {
   const [selectedGameToAssign, setSelectedGameToAssign] = useState<GameDTO | null>(null);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isGameModeModalOpen, setIsGameModeModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<GameDTO['gameMode'] | 'all' | null>('all');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -77,9 +78,6 @@ const TeacherGameLibraryPage: React.FC = () => {
         
         const processedGames: DisplayableLibraryGame[] = PREFERRED_LIBRARY_GAMES.map(config => {
           // Find the first game from backend that matches the gameMode.
-          // This assumes each of the 4 game types has a unique gameMode among premade games.
-          // If not, you might need a more specific way to identify the "template" game from the backend,
-          // e.g., by a specific title or a dedicated flag if your backend Game entity has one.
           const correspondingBackendGame = allPremadeGamesFromBackend.find(
             g => g.gameMode === config.gameMode
           );
@@ -94,7 +92,7 @@ const TeacherGameLibraryPage: React.FC = () => {
 
       } catch (error) {
         console.error("Failed to fetch or process game library:", error);
-        setDisplayableGames(PREFERRED_LIBRARY_GAMES.map(config => ({ config }))); // Show config even if backend match fails, but assign will be disabled
+        setDisplayableGames(PREFERRED_LIBRARY_GAMES.map(config => ({ config }))); // Show config even if backend match fails
       } finally {
         setIsLoading(false);
       }
@@ -107,7 +105,6 @@ const TeacherGameLibraryPage: React.FC = () => {
       setSelectedGameToAssign(gameDataForAssignment);
       setIsAssignModalOpen(true);
     } else {
-      // Handle case where the game might not be available in backend (e.g., show an alert)
       alert("This game is currently not available for assignment.");
     }
   };
@@ -120,7 +117,6 @@ const TeacherGameLibraryPage: React.FC = () => {
   const handleCreateGame = (gameMode: GameDTO['gameMode']) => {
     if (!gameMode) return;
     
-    // Map game modes to their template components
     const templateRoutes = {
       'MATCHING': '/teacher/create-game/matching',
       'IMAGE_MULTIPLE_CHOICE': '/teacher/create-game/image-quiz',
@@ -133,6 +129,14 @@ const TeacherGameLibraryPage: React.FC = () => {
       navigate(route);
     }
   };
+
+  const handleTabClick = (gameMode: GameDTO['gameMode'] | 'all') => {
+    setActiveTab(gameMode);
+  };
+
+  const filteredGames = activeTab === 'all'
+    ? displayableGames
+    : displayableGames.filter(game => game.config.gameMode === activeTab);
 
   if (isLoading) {
     return (
@@ -200,16 +204,51 @@ const TeacherGameLibraryPage: React.FC = () => {
         </div>
       )}
 
-      {displayableGames.length === 0 && !isLoading ? (
+      {/* Tabs for Game Modes */}
+      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+          <button
+            key="all"
+            onClick={() => handleTabClick('all')}
+            className={`
+              ${activeTab === 'all'
+                ? 'border-primary-interactive text-primary-interactive dark:border-primary-interactive-dark dark:text-primary-interactive-dark'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600'
+              }
+              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200
+            `}
+          >
+            All Games
+          </button>
+          {PREFERRED_LIBRARY_GAMES.map((game) => (
+            <button
+              key={game.idKey}
+              onClick={() => game.gameMode && handleTabClick(game.gameMode)}
+              className={`
+                ${activeTab === game.gameMode
+                  ? 'border-primary-interactive text-primary-interactive dark:border-primary-interactive-dark dark:text-primary-interactive-dark'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600'
+                }
+                whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200
+              `}
+            >
+              {game.title}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Display Filtered Games */}
+      {filteredGames.length === 0 && !isLoading ? (
         <div className="text-center py-10">
-          <p className="text-xl text-gray-500 dark:text-gray-400">Game library is currently empty or encountered an issue.</p>
+          <p className="text-xl text-gray-500 dark:text-gray-400">No games found for this category.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {displayableGames.map(({ config, actualGameDataFromBackend }) => (
+          {filteredGames.map(({ config, actualGameDataFromBackend }) => (
             <div 
               key={config.idKey} 
-              className={`card bg-white dark:bg-primary-card-dark p-5 shadow-lg rounded-xl flex flex-col justify-between border border-gray-200 dark:border-gray-700 transition-all hover:shadow-xl hover:scale-[1.03]`}
+              className="card bg-white dark:bg-primary-card-dark p-5 shadow-lg rounded-xl flex flex-col justify-between border border-gray-200 dark:border-gray-700 transition-all hover:shadow-xl hover:scale-[1.03]"
             >
               <div className="flex flex-col items-center text-center">
                 <div className="p-3 bg-gray-100 dark:bg-slate-700 rounded-full mb-4">
@@ -224,7 +263,7 @@ const TeacherGameLibraryPage: React.FC = () => {
                       {config.subject}
                     </span>
                   )}
-                  {config.gameMode && (
+                   {config.gameMode && (
                      <span className="inline-block bg-blue-500/20 dark:bg-blue-400/30 text-blue-600 dark:text-blue-300 text-xs font-semibold px-2.5 py-1 rounded-full">
                         {config.gameMode.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
                      </span>

@@ -260,14 +260,44 @@ const StudentClassroomViewPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <LeaderboardTable
-                entries={leaderboard}
-                highlightedUserId={
-                  currentUser?.id !== undefined
-                    ? currentUser.id.toString()
-                    : undefined
-                }
-              />
+              <div className="space-y-6">
+                {/* Student's Current Rank */}
+                <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm p-6 border dark:border-gray-700">
+                  <h3 className="text-lg font-semibold mb-4 text-primary-text dark:text-primary-text-dark">
+                    Your Current Rank
+                  </h3>
+                  {currentUser && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="text-3xl font-bold text-primary-accent">
+                          #{leaderboard.find(entry => entry.studentId === currentUser.id.toString())?.rank || 'N/A'}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-primary-text dark:text-primary-text-dark">
+                            {currentUser.name}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Score: {leaderboard.find(entry => entry.studentId === currentUser.id.toString())?.score || 0} pts
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Top Performers */}
+                <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm overflow-hidden border dark:border-gray-700">
+                  <div className="p-4 border-b dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-primary-text dark:text-primary-text-dark">
+                      Top Performers
+                    </h3>
+                  </div>
+                  <LeaderboardTable
+                    entries={leaderboard.slice(0, 5)} // Only show top 5
+                    highlightedUserId={currentUser?.id?.toString()}
+                  />
+                </div>
+              </div>
             )}
           </div>
         )}

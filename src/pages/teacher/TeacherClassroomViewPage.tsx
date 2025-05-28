@@ -10,6 +10,7 @@ import ClassroomSettingsModal from '../../components/teacher/ClassroomSettingsMo
 import Modal from '../../components/common/Modal'; // Import the common Modal
 import { Classroom, AssignedGameDTO, LeaderboardEntry, Game, User as StudentUser } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import ClassroomStatistics from '../../components/teacher/ClassroomStatistics';
 
 const TeacherClassroomViewPage: React.FC = () => {
   const { classroomId } = useParams<{ classroomId: string }>();
@@ -239,20 +240,57 @@ const TeacherClassroomViewPage: React.FC = () => {
       </header>
 
       <div className="mb-8 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex space-x-1 sm:space-x-4">
-          {['overview', 'activities', 'students', 'leaderboard'].map((tabName) => (
-            <button
-              key={tabName}
-              className={`py-3 px-3 sm:px-4 text-sm font-medium border-b-2 transition-colors capitalize ${
-                activeTab === tabName
-                  ? 'border-primary-interactive dark:border-primary-interactive-dark text-primary-interactive dark:text-primary-interactive-dark'
-                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-primary-text dark:hover:text-primary-text-dark'
-              }`}
-              onClick={() => setActiveTab(tabName)}
-            >
-              {tabName.replace('_', ' ')}
-            </button>
-          ))}
+        <div className="flex space-x-4 mb-6">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-4 py-2 rounded-lg ${
+              activeTab === 'overview'
+                ? 'bg-primary-accent text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('games')}
+            className={`px-4 py-2 rounded-lg ${
+              activeTab === 'games'
+                ? 'bg-primary-accent text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Games
+          </button>
+          <button
+            onClick={() => setActiveTab('students')}
+            className={`px-4 py-2 rounded-lg ${
+              activeTab === 'students'
+                ? 'bg-primary-accent text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Students
+          </button>
+          <button
+            onClick={() => setActiveTab('statistics')}
+            className={`px-4 py-2 rounded-lg ${
+              activeTab === 'statistics'
+                ? 'bg-primary-accent text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Statistics
+          </button>
+          <button
+            onClick={() => setActiveTab('leaderboard')}
+            className={`px-4 py-2 rounded-lg ${
+              activeTab === 'leaderboard'
+                ? 'bg-primary-accent text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Leaderboard
+          </button>
         </div>
       </div>
 
@@ -286,7 +324,7 @@ const TeacherClassroomViewPage: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'activities' && (
+        {activeTab === 'games' && (
           <div className="animate-fade-in">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark">Learning Activities ({activityCount})</h2>
@@ -367,6 +405,20 @@ const TeacherClassroomViewPage: React.FC = () => {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'statistics' && (
+          <div className="animate-fade-in">
+            <h2 className="text-2xl font-semibold mb-6 text-primary-text dark:text-primary-text-dark">
+              Classroom Statistics
+            </h2>
+            <ClassroomStatistics
+              leaderboard={leaderboard}
+              assignedGames={assignedGames}
+              averageScore={averageScore}
+              totalStudents={students.length}
+            />
           </div>
         )}
 

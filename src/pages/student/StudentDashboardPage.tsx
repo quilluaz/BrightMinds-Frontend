@@ -220,7 +220,7 @@ const StudentDashboardPage: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark flex items-center">
             <Gamepad2 size={30} className="mr-3 text-primary-accent dark:text-primary-accent-dark" />
-            Fun Practice Zone!
+            Playground
           </h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-6">

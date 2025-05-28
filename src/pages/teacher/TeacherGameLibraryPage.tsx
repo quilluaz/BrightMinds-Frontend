@@ -5,40 +5,38 @@ import { gameService } from '../../services/game';
 import { GameDTO } from '../../types';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import AssignGameModal from '../../components/teacher/AssignGameModal';
-import { Library, Sparkles, Zap, Brain, Puzzle, Plus, ChevronDown, ChevronUp } from 'lucide-react'; // Icons for games and Plus icon
+import { Library, Sparkles, Zap, Brain, Puzzle, Plus, BookCopy, Tag } from 'lucide-react';
 
-// Define the structure for our desired library games
 interface LibraryGameDisplayConfig {
-  idKey: string; // Unique key for React list
+  idKey: string;
   title: string;
   description: string;
   subject?: string;
   gameMode: GameDTO['gameMode'];
-  icon: React.ReactNode; // Icon for the card
+  icon: React.ReactNode;
 }
 
-// Configuration for the 4 main games to be displayed in the library
 const PREFERRED_LIBRARY_GAMES: LibraryGameDisplayConfig[] = [
   {
     idKey: 'matching-game',
     title: "Matching Game",
-    description: "Create pairs of related items like historical events and dates, or Filipino words and their meanings. Perfect for reinforcing connections between concepts.",
+    description: "Test memory by matching pairs. Covers Anyong Tubig, Anyong Lupa, and Pambansang Sagisag.",
     gameMode: "MATCHING",
-    subject: "All Subjects",
+    subject: "Araling Panlipunan / Tagalog",
     icon: <Sparkles size={28} className="text-green-500 dark:text-green-400" />
   },
   {
     idKey: 'image-quiz',
     title: "Image Quiz",
-    description: "Create quizzes with images to test knowledge of historical landmarks, geographical features, or cultural artifacts. Great for visual learning!",
+    description: "Identify the correct image for each question. A fun Araling Panlipunan knowledge test!",
     gameMode: "IMAGE_MULTIPLE_CHOICE",
-    subject: "All Subjects",
+    subject: "Araling Panlipunan",
     icon: <Zap size={28} className="text-blue-500 dark:text-blue-400" />
   },
   {
     idKey: 'sorting-game',
     title: "Sorting Game",
-    description: "Create interactive sorting activities where students categorize items into different groups. Perfect for teaching classification and organization skills.",
+    description: "Create interactive sorting activities where students categorize items. Perfect for teaching classification and organization skills.",
     gameMode: "SORTING",
     subject: "All Subjects",
     icon: <Brain size={28} className="text-purple-500 dark:text-purple-400" />
@@ -46,18 +44,15 @@ const PREFERRED_LIBRARY_GAMES: LibraryGameDisplayConfig[] = [
   {
     idKey: '4pics1word',
     title: "4 Pics 1 Word",
-    description: "Create puzzles where students identify the common word connecting four related images. Great for vocabulary building and critical thinking!",
+    description: "Guess the common Tagalog word that connects four different pictures. Great for vocabulary!",
     gameMode: "FOUR_PICS_ONE_WORD",
-    subject: "All Subjects",
+    subject: "Tagalog",
     icon: <Puzzle size={28} className="text-yellow-500 dark:text-amber-400" />
   },
 ];
 
-// Interface for the game data that will be displayed and used for assignment
 interface DisplayableLibraryGame {
   config: LibraryGameDisplayConfig;
-  // This will hold the actual game fetched from backend, primarily for its ID.
-  // We prefer display text from `config` but need `id` from `actualGameDataFromBackend`.
   actualGameDataFromBackend?: GameDTO;
 }
 
@@ -74,25 +69,57 @@ const TeacherGameLibraryPage: React.FC = () => {
     const fetchAndProcessGames = async () => {
       setIsLoading(true);
       try {
-        const allPremadeGamesFromBackend = await gameService.getLibraryGames();
+        const allLibraryGames: GameDTO[] = await gameService.getLibraryGames();
         
-        const processedGames: DisplayableLibraryGame[] = PREFERRED_LIBRARY_GAMES.map(config => {
-          // Find the first game from backend that matches the gameMode.
-          const correspondingBackendGame = allPremadeGamesFromBackend.find(
-            g => g.gameMode === config.gameMode
+        const finalGamesList: DisplayableLibraryGame[] = [];
+        const processedBackendGameIds = new Set<string>();
+
+        // Step 1: Iterate through PREFERRED_LIBRARY_GAMES configurations
+        PREFERRED_LIBRARY_GAMES.forEach(preferredConfig => {
+          const matchingBackendGame = allLibraryGames.find(
+            g => g.gameMode === preferredConfig.gameMode && g.isPremade
           );
-          
-          return {
-            config: config,
-            actualGameDataFromBackend: correspondingBackendGame
-          };
+
+          if (matchingBackendGame && !processedBackendGameIds.has(matchingBackendGame.id)) {
+            finalGamesList.push({
+              config: preferredConfig,
+              actualGameDataFromBackend: matchingBackendGame
+            });
+            processedBackendGameIds.add(matchingBackendGame.id);
+          } else {
+             if (!finalGamesList.some(fg => fg.config.idKey === preferredConfig.idKey && !fg.actualGameDataFromBackend)) {
+                finalGamesList.push({
+                    config: preferredConfig,
+                    actualGameDataFromBackend: undefined
+                });
+            }
+          }
+        });
+
+        // Step 2: Add all other games from the library that haven't been processed yet.
+        allLibraryGames.forEach(backendGame => {
+          if (!processedBackendGameIds.has(backendGame.id)) {
+            const genericConfig: LibraryGameDisplayConfig = {
+              idKey: backendGame.id,
+              title: backendGame.title,
+              description: backendGame.description || "No description available.",
+              subject: backendGame.subject,
+              gameMode: backendGame.gameMode,
+              icon: PREFERRED_LIBRARY_GAMES.find(pc => pc.gameMode === backendGame.gameMode)?.icon || <Library size={28} className="text-gray-500" />,
+            };
+            finalGamesList.push({
+              config: genericConfig,
+              actualGameDataFromBackend: backendGame
+            });
+            processedBackendGameIds.add(backendGame.id);
+          }
         });
         
-        setDisplayableGames(processedGames);
+        setDisplayableGames(finalGamesList);
 
       } catch (error) {
         console.error("Failed to fetch or process game library:", error);
-        setDisplayableGames(PREFERRED_LIBRARY_GAMES.map(config => ({ config }))); // Show config even if backend match fails
+        setDisplayableGames(PREFERRED_LIBRARY_GAMES.map(config => ({ config, actualGameDataFromBackend: undefined })));
       } finally {
         setIsLoading(false);
       }
@@ -156,7 +183,7 @@ const TeacherGameLibraryPage: React.FC = () => {
               Game Library
             </h1>
             <p className="text-gray-600 dark:text-gray-300 mt-2 text-lg">
-              Browse and assign premade activities to your classrooms.
+              Browse premade activities or create your own to assign to your classrooms.
             </p>
           </div>
           <button
@@ -169,11 +196,10 @@ const TeacherGameLibraryPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Game Mode Selection Modal */}
       {isGameModeModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-primary-card-dark rounded-xl p-6 w-full max-w-md mx-4">
-            <h2 className="text-2xl font-bold mb-4 text-primary-text dark:text-primary-text-dark">Select Game Mode</h2>
+            <h2 className="text-2xl font-bold mb-4 text-primary-text dark:text-primary-text-dark">Select Game Mode to Create</h2>
             <div className="grid grid-cols-1 gap-3">
               {PREFERRED_LIBRARY_GAMES.map((game) => (
                 <button
@@ -189,7 +215,7 @@ const TeacherGameLibraryPage: React.FC = () => {
                   </div>
                   <div className="text-left">
                     <h3 className="font-semibold text-primary-text dark:text-primary-text-dark">{game.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{game.description}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{game.description}</p>
                   </div>
                 </button>
               ))}
@@ -204,9 +230,8 @@ const TeacherGameLibraryPage: React.FC = () => {
         </div>
       )}
 
-      {/* Tabs for Game Modes */}
       <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+        <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto pb-px" aria-label="Tabs">
           <button
             key="all"
             onClick={() => handleTabClick('all')}
@@ -215,12 +240,12 @@ const TeacherGameLibraryPage: React.FC = () => {
                 ? 'border-primary-interactive text-primary-interactive dark:border-primary-interactive-dark dark:text-primary-interactive-dark'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600'
               }
-              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200
+              whitespace-nowrap py-3 px-1 sm:py-4 sm:px-1 border-b-2 font-medium text-sm transition-colors duration-200
             `}
           >
             All Games
           </button>
-          {PREFERRED_LIBRARY_GAMES.map((game) => (
+          {PREFERRED_LIBRARY_GAMES.map((game) => 
             <button
               key={game.idKey}
               onClick={() => game.gameMode && handleTabClick(game.gameMode)}
@@ -229,28 +254,29 @@ const TeacherGameLibraryPage: React.FC = () => {
                   ? 'border-primary-interactive text-primary-interactive dark:border-primary-interactive-dark dark:text-primary-interactive-dark'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600'
                 }
-                whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200
+                whitespace-nowrap py-3 px-1 sm:py-4 sm:px-1 border-b-2 font-medium text-sm transition-colors duration-200
               `}
             >
               {game.title}
             </button>
-          ))}
+          )}
         </nav>
       </div>
 
-      {/* Display Filtered Games */}
       {filteredGames.length === 0 && !isLoading ? (
         <div className="text-center py-10">
-          <p className="text-xl text-gray-500 dark:text-gray-400">No games found for this category.</p>
+          <p className="text-xl text-gray-500 dark:text-gray-400">
+             {activeTab === 'all' ? "No games found in the library." : "No games found for this category."}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredGames.map(({ config, actualGameDataFromBackend }) => (
             <div 
-              key={config.idKey} 
+              key={actualGameDataFromBackend?.id || config.idKey} 
               className="card bg-white dark:bg-primary-card-dark p-5 shadow-lg rounded-xl flex flex-col justify-between border border-gray-200 dark:border-gray-700 transition-all hover:shadow-xl hover:scale-[1.03]"
             >
-              <div className="flex flex-col items-center text-center">
+              <div className="flex flex-col items-center text-center flex-grow">
                 <div className="p-3 bg-gray-100 dark:bg-slate-700 rounded-full mb-4">
                   {config.icon || <Library size={28} className="text-gray-500" />}
                 </div>
@@ -259,13 +285,13 @@ const TeacherGameLibraryPage: React.FC = () => {
                 
                 <div className="w-full space-y-1 mb-4">
                   {config.subject && (
-                    <span className="inline-block bg-primary-accent/20 dark:bg-primary-accent-dark/30 text-primary-accent dark:text-primary-accent-dark text-xs font-semibold mr-2 px-2.5 py-1 rounded-full">
-                      {config.subject}
+                     <span className="inline-flex items-center text-xs font-medium bg-primary-accent/20 dark:bg-primary-accent-dark/30 text-primary-accent dark:text-primary-accent-dark px-2.5 py-1 rounded-full mr-1.5 mb-1 sm:mb-0">
+                      <BookCopy size={12} className="mr-1" /> {config.subject}
                     </span>
                   )}
                    {config.gameMode && (
-                     <span className="inline-block bg-blue-500/20 dark:bg-blue-400/30 text-blue-600 dark:text-blue-300 text-xs font-semibold px-2.5 py-1 rounded-full">
-                        {config.gameMode.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                    <span className="inline-flex items-center text-xs font-medium bg-blue-100 dark:bg-blue-700/50 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full mb-1 sm:mb-0">
+                        <Tag size={12} className="mr-1" /> {config.gameMode.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
                      </span>
                   )}
                 </div>

@@ -5,7 +5,7 @@ import { gameService } from '../../services/game';
 import { GameDTO } from '../../types';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import AssignGameModal from '../../components/teacher/AssignGameModal';
-import { Library, Sparkles, Zap, Brain, Puzzle } from 'lucide-react'; // Icons for games
+import { Library, Sparkles, Zap, Brain, Puzzle, Plus } from 'lucide-react'; // Icons for games and Plus icon
 
 // Define the structure for our desired library games
 interface LibraryGameDisplayConfig {
@@ -66,6 +66,7 @@ const TeacherGameLibraryPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedGameToAssign, setSelectedGameToAssign] = useState<GameDTO | null>(null);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isGameModeModalOpen, setIsGameModeModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -116,6 +117,23 @@ const TeacherGameLibraryPage: React.FC = () => {
     setIsAssignModalOpen(false);
   };
 
+  const handleCreateGame = (gameMode: GameDTO['gameMode']) => {
+    if (!gameMode) return;
+    
+    // Map game modes to their template components
+    const templateRoutes = {
+      'MATCHING': '/teacher/create-game/matching',
+      'IMAGE_MULTIPLE_CHOICE': '/teacher/create-game/image-quiz',
+      'SORTING': '/teacher/create-game/sorting',
+      'FOUR_PICS_ONE_WORD': '/teacher/create-game/4pics1word'
+    } as const;
+
+    const route = templateRoutes[gameMode as keyof typeof templateRoutes];
+    if (route) {
+      navigate(route);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
@@ -127,14 +145,60 @@ const TeacherGameLibraryPage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8 animate-fade-in">
       <div className="mb-10 pb-6 border-b border-gray-200 dark:border-gray-700">
-        <h1 className="text-3xl md:text-4xl font-bold text-primary-text dark:text-primary-text-dark flex items-center">
-          <Library size={32} className="mr-3 text-primary-interactive dark:text-primary-interactive-dark" />
-          Game Library
-        </h1>
-        <p className="text-gray-600 dark:text-gray-300 mt-2 text-lg">
-          Browse and assign premade activities to your classrooms.
-        </p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-primary-text dark:text-primary-text-dark flex items-center">
+              <Library size={32} className="mr-3 text-primary-interactive dark:text-primary-interactive-dark" />
+              Game Library
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-2 text-lg">
+              Browse and assign premade activities to your classrooms.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsGameModeModalOpen(true)}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            <Plus size={20} />
+            Create Game
+          </button>
+        </div>
       </div>
+
+      {/* Game Mode Selection Modal */}
+      {isGameModeModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-primary-card-dark rounded-xl p-6 w-full max-w-md mx-4">
+            <h2 className="text-2xl font-bold mb-4 text-primary-text dark:text-primary-text-dark">Select Game Mode</h2>
+            <div className="grid grid-cols-1 gap-3">
+              {PREFERRED_LIBRARY_GAMES.map((game) => (
+                <button
+                  key={game.idKey}
+                  onClick={() => {
+                    setIsGameModeModalOpen(false);
+                    handleCreateGame(game.gameMode);
+                  }}
+                  className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <div className="p-2 bg-gray-100 dark:bg-slate-700 rounded-full">
+                    {game.icon}
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-primary-text dark:text-primary-text-dark">{game.title}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{game.description}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setIsGameModeModalOpen(false)}
+              className="btn btn-secondary w-full mt-4"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {displayableGames.length === 0 && !isLoading ? (
         <div className="text-center py-10">

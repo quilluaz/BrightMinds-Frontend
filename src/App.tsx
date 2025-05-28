@@ -49,6 +49,7 @@ import FourPicsOneWord from "./components/game/Mae/4Pics1Word";
 import Create4Pics1Word from "./components/game/Mae/Create4Pics1Word";
 import CreateSortingGame from "./components/game/Zeke/CreateSortingGame";
 import CreateMatchingGame from "./components/game/Jeric/CreateMatchingGame";
+import CreateImageMultipleChoice from "./components/game/Selina/CreateImageMultipleChoice";
 
 // --- Loading Component ---
 const LoadingScreen = () => (
@@ -194,18 +195,45 @@ function App() {
 
                 {/* Create Game Routes (if used by teachers directly) */}
                 <Route
-                  path="/create4pics1word"
-                  element={<Create4Pics1Word />}
+                  path="/teacher/create-game/4pics1word"
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRole="TEACHER">
+                        <Create4Pics1Word />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
-                  path="/createsortingame"
-                  element={<CreateSortingGame />}
+                  path="/teacher/create-game/sorting"
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRole="TEACHER">
+                        <CreateSortingGame />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
-                  path="/creatematchinggame"
-                  element={<CreateMatchingGame />}
+                  path="/teacher/create-game/matching"
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRole="TEACHER">
+                        <CreateMatchingGame />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  }
                 />
-                {/* <Route path="/createimagemultiplechoice" element={<CreateImageMultipleChoiceGame />} /> */}
+                <Route
+                  path="/teacher/create-game/image-quiz"
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRole="TEACHER">
+                        <CreateImageMultipleChoice />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  }
+                />
 
                 <Route
                   path="/profile"

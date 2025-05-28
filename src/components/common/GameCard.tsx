@@ -1,22 +1,24 @@
 import React from "react";
 import { PlayCircle, Check, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Game } from "../../types";
+import { Game } from "../../types"; // Game type for displaying game details
 import { useAuth } from "../../context/AuthContext";
 
 interface GameCardProps {
-  game: Game;
+  game: Game; // Represents the game template's details for display
   classroomId: string;
+  assignedGameId?: string; // <<< NEW PROP: For the specific assignment ID
   showPerformance?: boolean;
 }
 
 const GameCard: React.FC<GameCardProps> = ({
   game,
   classroomId,
+  assignedGameId, // <<< USE NEW PROP
   showPerformance = false,
 }) => {
   const { currentUser } = useAuth();
-  const isTeacher = currentUser?.role === "teacher";
+  const isTeacher = currentUser?.role === "TEACHER"; // Corrected: TEACHER, not teacher
 
   const getStatusIcon = () => {
     const status = game.status || "not_started";
@@ -47,19 +49,26 @@ const GameCard: React.FC<GameCardProps> = ({
     if (status === "not_started") {
       return "Play Now";
     } else if (status === "completed") {
-      return "Play Again";
-    } else {
+      return "Play Again"; // Or "View Score"
+    } else { // in_progress or PENDING or OVERDUE
       return "Continue";
     }
   };
 
   const getLinkPath = () => {
     if (isTeacher) {
+      // Teacher links to game details or performance, using the game template ID (game.id)
       return showPerformance
         ? `/teacher/classrooms/${classroomId}/games/${game.id}/performance`
         : `/teacher/classrooms/${classroomId}/games/${game.id}`;
     } else {
-      return `/student/classrooms/${classroomId}/game/${game.id}/attempt`;
+      // Student links to an attempt page using the specific ASSIGNMENT ID
+      if (!assignedGameId) {
+        console.warn("GameCard: assignedGameId is missing for student link. Falling back to game.id, which might be incorrect for attempts.");
+        // Fallback or error, ideally assignedGameId should always be provided for student attempts
+        return `/student/classrooms/${classroomId}/game/${game.id}/attempt`; 
+      }
+      return `/student/classrooms/${classroomId}/game/${assignedGameId}/attempt`;
     }
   };
 
@@ -70,22 +79,28 @@ const GameCard: React.FC<GameCardProps> = ({
           <h3 className="font-bold text-lg mb-2 text-primary-text dark:text-primary-text-dark">
             {game.title}
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3"> {/* Added line-clamp */}
             {game.description}
           </p>
 
-          <div className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 bg-primary-interactive bg-opacity-10 text-primary-interactive dark:bg-primary-interactive-dark dark:bg-opacity-20 dark:text-primary-interactive-dark">
-            {game.subject === "tagalog" ? "Tagalog" : "Araling Panlipunan"}
-          </div>
+          {game.subject && ( /* Display subject if available */
+            <div className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 bg-primary-interactive bg-opacity-10 text-primary-interactive dark:bg-primary-interactive-dark dark:bg-opacity-20 dark:text-primary-interactive-dark">
+              {game.subject}
+            </div>
+          )}
         </div>
 
         <div className="mt-auto">
+          {/* Displaying score for completed games for students might need more context,
+              as 'game.score' on the Game template might not be student-specific.
+              This often comes from attempt data. For now, we'll keep it as is if your 'Game' type can hold a score.
+          */}
           {game.status === "completed" &&
             game.score !== undefined &&
             !isTeacher && (
               <div className="flex items-center mb-3">
                 <div className="bg-primary-accent bg-opacity-20 text-primary-text dark:bg-primary-accent-dark dark:bg-opacity-20 dark:text-primary-text-dark px-3 py-1 rounded-full text-sm font-medium">
-                  Your Score: {game.score}%
+                  Your Score: {game.score}% {/* Ensure score is percentage or adjust display */}
                 </div>
               </div>
             )}
@@ -100,9 +115,9 @@ const GameCard: React.FC<GameCardProps> = ({
               </span>
             </span>
 
-            {isTeacher && showPerformance && (
+            {isTeacher && showPerformance && game.status !== 'not_started' && ( /* Added status check */
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Avg. Score: 78%
+                Avg. Score: {game.score !== undefined ? `${game.score}%` : "N/A"} {/* Example display */}
               </span>
             )}
           </Link>

@@ -1,12 +1,18 @@
+// src/components/game/Mae/4Pics1Word.tsx
 import React, { useState, ChangeEvent, useRef, KeyboardEvent, useEffect } from 'react';
-import { useTheme } from '../../../context/ThemeContext';
-import { Box, TextField, Button, Typography, Theme } from '@mui/material';
+import { useTheme as useMuiTheme } from '@mui/material/styles'; // Alias MUI useTheme
+import { Box, TextField, Button as MuiButton, Typography, Theme } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
+// Assuming GameConfigurations contains general animation styles
 import { CelebrationAnimation, GameCompleteCelebration, animationStyles } from '../Selina/GameConfigurations';
 import HintModal from './HintModal';
 import GameLandingPage from '../GameLandingPage';
 import { playSound, WordCelebration, WordGameCompleteCelebration, wordAnimationStyles } from './GameSoundEffects';
 import BackgroundMusic from '../BackgroundMusic';
+import { useTheme as useAppTheme } from '../../../context/ThemeContext'; // Your app's theme context
+import { AssignedGameDTO } from '../../../types'; // For assignedGameData prop
+import { useNavigate } from 'react-router-dom';
+
 
 interface GameQuestion {
   images: string[];
@@ -120,7 +126,7 @@ const COLORS = {
 
 const GameContainer = styled(Box)(({ theme }: { theme: Theme }) => ({
   padding: theme.spacing(4),
-  backgroundColor: theme.palette.mode === 'dark' ? '#1A1B41' : '#E8F9F0',
+  backgroundColor: theme.palette.mode === 'dark' ? '#1A1B41' : '#E8F9F0', // Example background
   minHeight: '100vh',
   display: 'flex',
   flexDirection: 'column',
@@ -226,7 +232,7 @@ const ImageContainer = styled(Box)(({ theme }: { theme: Theme }) => ({
     maxHeight: '100%',
     objectFit: 'contain',
     borderRadius: '12px',
-    border: '4px solid #9BA8E5',
+    border: '4px solid #9BA8E5', // Example border color, can be themed
     transition: 'transform 0.3s ease',
     '&:hover': {
       transform: 'scale(1.02)',
@@ -234,9 +240,35 @@ const ImageContainer = styled(Box)(({ theme }: { theme: Theme }) => ({
   },
 }));
 
-const FourPicsOneWord: React.FC = () => {
-  const { theme } = useTheme();
-  const colors = COLORS[theme];
+// Props definition for the game component
+interface FourPicsOneWordProps {
+  isPracticeMode: boolean;
+  assignedGameData?: AssignedGameDTO; // Data if game is assigned
+  onGameComplete: (score: number, timeTakenSeconds?: number, expReward?: number) => void; // Callback
+  classroomId?: string; // Optional: for navigation or context
+  assignedGameId?: string; // Optional
+}
+
+const FourPicsOneWord: React.FC<FourPicsOneWordProps> = ({ 
+  isPracticeMode, 
+  assignedGameData, 
+  onGameComplete,
+  classroomId 
+}) => {
+  const muiTheme = useMuiTheme(); // MUI theme for styled components
+  const { theme: appTheme } = useAppTheme(); // Your app's theme context
+  const colors = COLORS[appTheme];
+  const navigate = useNavigate();
+
+
+  // Determine active questions: if assigned and data exists, parse it; otherwise, use default.
+  // This simplified version still uses local `questions`.
+  // For a real scenario:
+  // const activeQuestions = (!isPracticeMode && assignedGameData?.game?.gameData) 
+  // ? JSON.parse(assignedGameData.game.gameData).questions // Ensure this structure matches your gameData
+  // : questions;
+  const activeQuestions = questions; // Keeping it simple as per "minimal changes"
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [letterInputs, setLetterInputs] = useState<string[]>([]);
   const [score, setScore] = useState(0);
@@ -245,7 +277,7 @@ const FourPicsOneWord: React.FC = () => {
   const [isAnswerCorrect, setIsAnswerCorrect] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
-  const [hasGameStarted, setHasGameStarted] = useState(false);
+  const [hasGameStarted, setHasGameStarted] = useState(isPracticeMode ? false : true); // Start immediately if assigned
   const [showCelebration, setShowCelebration] = useState(false);
   const [showGameCompleteCelebration, setShowGameCompleteCelebration] = useState(false);
   const [attempts, setAttempts] = useState(0);
@@ -256,9 +288,8 @@ const FourPicsOneWord: React.FC = () => {
   const isInitialMount = useRef(true);
   const [showFunFact, setShowFunFact] = useState(false);
 
-  // Helper function to format score
-  const formatScore = (score: number): string => {
-    return Number.isInteger(score) ? score.toString() : score.toFixed(1);
+  const formatScore = (s: number): string => {
+    return Number.isInteger(s) ? s.toString() : s.toFixed(1);
   };
 
   const handleStartGame = () => {
@@ -267,7 +298,7 @@ const FourPicsOneWord: React.FC = () => {
   };
 
   const revealRandomLetter = () => {
-    const answer = questions[currentQuestion].answer;
+    const answer = activeQuestions[currentQuestion].answer;
     const availableIndices = answer
       .split('')
       .map((_, index) => index)
@@ -277,16 +308,10 @@ const FourPicsOneWord: React.FC = () => {
       const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
       const newRevealedLetters = [...revealedLetters, randomIndex];
       setRevealedLetters(newRevealedLetters);
-
-      // Update the letter inputs with the revealed letter
       const newInputs = [...letterInputs];
       newInputs[randomIndex] = answer[randomIndex];
       setLetterInputs(newInputs);
-
-      // Deduct points
-      setScore((prev) => Math.max(0, prev - 0.2));
-
-      // Focus the next empty input after the revealed letter
+      setScore((prev) => Math.max(0, prev - 0.2)); // Small penalty for hint
       const nextEmptyIndex = newInputs.findIndex((letter, idx) => idx > randomIndex && letter === '');
       if (nextEmptyIndex !== -1) {
         setTimeout(() => {
@@ -298,20 +323,17 @@ const FourPicsOneWord: React.FC = () => {
 
   const handleLetterChange = (index: number, value: string) => {
     if (isShaking || (isAnswerSubmitted && isAnswerCorrect) || revealedLetters.includes(index)) return;
-
     playSound('click');
     const newValue = value.slice(-1).toUpperCase();
     const newInputs = [...letterInputs];
     newInputs[index] = newValue;
     setLetterInputs(newInputs);
 
-    // Find the next non-revealed letter position
     if (newValue) {
       let nextIndex = index + 1;
       while (nextIndex < inputRefs.current.length && revealedLetters.includes(nextIndex)) {
         nextIndex++;
       }
-
       if (nextIndex < inputRefs.current.length) {
         setTimeout(() => {
           inputRefs.current[nextIndex]?.focus();
@@ -322,16 +344,13 @@ const FourPicsOneWord: React.FC = () => {
 
   const handleKeyDown = (index: number, event: KeyboardEvent<HTMLInputElement>) => {
     if (isShaking || (isAnswerSubmitted && isAnswerCorrect) || revealedLetters.includes(index)) return;
-
     if (event.key === 'Backspace') {
       const newInputs = [...letterInputs];
       if (!letterInputs[index] && index > 0) {
-        // Find the previous non-revealed letter position
         let prevIndex = index - 1;
         while (prevIndex >= 0 && revealedLetters.includes(prevIndex)) {
           prevIndex--;
         }
-
         if (prevIndex >= 0) {
           newInputs[prevIndex] = '';
           setLetterInputs(newInputs);
@@ -344,24 +363,20 @@ const FourPicsOneWord: React.FC = () => {
         setLetterInputs(newInputs);
       }
     } else if (event.key === 'ArrowLeft') {
-      // Find the previous non-revealed letter position
       let prevIndex = index - 1;
       while (prevIndex >= 0 && revealedLetters.includes(prevIndex)) {
         prevIndex--;
       }
-
       if (prevIndex >= 0) {
         setTimeout(() => {
           inputRefs.current[prevIndex]?.focus();
         }, 0);
       }
     } else if (event.key === 'ArrowRight') {
-      // Find the next non-revealed letter position
       let nextIndex = index + 1;
       while (nextIndex < inputRefs.current.length && revealedLetters.includes(nextIndex)) {
         nextIndex++;
       }
-
       if (nextIndex < inputRefs.current.length) {
         setTimeout(() => {
           inputRefs.current[nextIndex]?.focus();
@@ -372,21 +387,16 @@ const FourPicsOneWord: React.FC = () => {
 
   const handleInputClick = (index: number) => {
     if (isShaking || (isAnswerSubmitted && isAnswerCorrect)) return;
-
-    // Find the first empty non-revealed position
     const firstEmptyIndex = letterInputs.findIndex((letter, i) => i <= index && letter === '' && !revealedLetters.includes(i));
-
     if (firstEmptyIndex !== -1) {
       setTimeout(() => {
         inputRefs.current[firstEmptyIndex]?.focus();
       }, 0);
     } else {
-      // If no empty position found, find the next non-revealed position
       let nextIndex = index;
       while (nextIndex < inputRefs.current.length && revealedLetters.includes(nextIndex)) {
         nextIndex++;
       }
-
       if (nextIndex < inputRefs.current.length) {
         setTimeout(() => {
           inputRefs.current[nextIndex]?.focus();
@@ -401,51 +411,50 @@ const FourPicsOneWord: React.FC = () => {
       return;
     }
 
-    // Create a complete answer by combining user input and revealed letters
     const completeAnswer = letterInputs
-      .map((letter, index) => (revealedLetters.includes(index) ? questions[currentQuestion].answer[index] : letter))
+      .map((letter, index) => (revealedLetters.includes(index) ? activeQuestions[currentQuestion].answer[index] : letter))
       .join('');
-
-    const correctAnswer = questions[currentQuestion].answer;
-
-    // Check if all non-revealed positions are filled
+    const correctAnswer = activeQuestions[currentQuestion].answer;
     const allPositionsFilled = letterInputs.every((letter, index) => revealedLetters.includes(index) || letter !== '');
 
     if (allPositionsFilled && !isShaking && !isAnswerSubmitted) {
-      const isCorrect = completeAnswer === correctAnswer;
-
+      const currentAnswerIsCorrect = completeAnswer === correctAnswer;
       setIsAnswerSubmitted(true);
-      setIsAnswerCorrect(isCorrect);
+      setIsAnswerCorrect(currentAnswerIsCorrect);
 
-      if (isCorrect) {
+      if (currentAnswerIsCorrect) {
         playSound('correct');
-        setScore((prev) => prev + 5);
+        const pointsForCorrectAnswer = 5; // Define points for a correct answer
+        setScore((prev) => prev + pointsForCorrectAnswer);
         setShowFunFact(true);
+        setShowCelebration(true); setTimeout(() => setShowCelebration(false), 2000);
+
         setTimeout(() => {
-          if (currentQuestion < questions.length - 1) {
+          if (currentQuestion < activeQuestions.length - 1) {
             setCurrentQuestion((prev) => prev + 1);
             setShowClue(false);
             setShowFunFact(false);
           } else {
             playSound('gameComplete');
+            setShowGameCompleteCelebration(true);
             setGameOver(true);
+            if (!isPracticeMode) {
+              // Score state already includes points for the last answer.
+              onGameComplete(score + pointsForCorrectAnswer); // Pass the updated score.
+            }
           }
         }, 3000);
       } else {
         playSound('incorrect');
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
-
-        // Add logic to show modal after 3 incorrect attempts, only once per question
         if (newAttempts >= 3 && !hasShownHintModalForQuestion) {
           setShowHintModal(true);
           setHasShownHintModalForQuestion(true);
         }
-
         setShowClue(true);
         setIsShaking(true);
         setTimeout(() => {
-          // Preserve revealed letters when resetting
           setLetterInputs(
             Array(letterInputs.length)
               .fill('')
@@ -454,21 +463,21 @@ const FourPicsOneWord: React.FC = () => {
           setIsAnswerSubmitted(false);
           setIsAnswerCorrect(false);
           setIsShaking(false);
-
-          // Focus on the first non-revealed position
           const firstNonRevealedIndex = letterInputs.findIndex((_, idx) => !revealedLetters.includes(idx));
-          if (firstNonRevealedIndex !== -1) {
+          if (firstNonRevealedIndex !== -1 && inputRefs.current[firstNonRevealedIndex]) {
             inputRefs.current[firstNonRevealedIndex]?.focus();
           }
         }, 700);
       }
     }
-  }, [letterInputs, currentQuestion, isShaking, isAnswerSubmitted, attempts, revealedLetters, hasShownHintModalForQuestion]);
+  }, [letterInputs, currentQuestion, isShaking, isAnswerSubmitted, attempts, revealedLetters, hasShownHintModalForQuestion, activeQuestions, score, isPracticeMode, onGameComplete]); // Added score to dependencies for onGameComplete
 
   useEffect(() => {
-    const answerLength = questions[currentQuestion].answer.length;
-    setLetterInputs(Array(answerLength).fill(''));
-    inputRefs.current = Array(answerLength).fill(null);
+    if(activeQuestions[currentQuestion]) { // Check if question data exists before accessing length
+        const answerLength = activeQuestions[currentQuestion].answer.length;
+        setLetterInputs(Array(answerLength).fill(''));
+        inputRefs.current = Array(answerLength).fill(null);
+    }
     setIsAnswerCorrect(false);
     setIsShaking(false);
     setIsAnswerSubmitted(false);
@@ -476,16 +485,16 @@ const FourPicsOneWord: React.FC = () => {
     setRevealedLetters([]);
     setShowFunFact(false);
     setHasShownHintModalForQuestion(false);
-    isInitialMount.current = true;
-
+    isInitialMount.current = true; 
     setTimeout(() => {
       if (inputRefs.current[0]) {
         inputRefs.current[0].focus();
       }
     }, 0);
-  }, [currentQuestion]);
+  }, [currentQuestion, activeQuestions]);
 
   const resetGame = () => {
+    playSound('click');
     setCurrentQuestion(0);
     setScore(0);
     setShowClue(false);
@@ -495,9 +504,37 @@ const FourPicsOneWord: React.FC = () => {
     setIsAnswerSubmitted(false);
     setAttempts(0);
     setRevealedLetters([]);
+    setShowFunFact(false);
+    setShowGameCompleteCelebration(false);
+    
+    if (isPracticeMode) {
+        setHasGameStarted(false); // Go back to landing for practice mode
+    } else {
+        // For assigned games, the "Finish" button typically means the attempt is over.
+        // The onGameComplete should have been called already.
+        // This can navigate back to the classroom or dashboard.
+        if(classroomId) {
+            navigate(`/student/classrooms/${classroomId}`);
+        } else {
+            navigate('/student/dashboard'); // Fallback
+        }
+    }
   };
 
-  if (!hasGameStarted) {
+  useEffect(() => {
+    if (!document.getElementById('4pics-animations')) {
+        const styleSheet = document.createElement('style');
+        styleSheet.id = '4pics-animations';
+        styleSheet.innerText = `
+        ${animationStyles} 
+        ${wordAnimationStyles}
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`;
+        document.head.appendChild(styleSheet);
+    }
+  }, []);
+
+
+  if (!hasGameStarted && isPracticeMode) {
     return (
       <>
         <BackgroundMusic 
@@ -510,13 +547,15 @@ const FourPicsOneWord: React.FC = () => {
           description="Match the pictures to form a word that connects them all."
           instruction="Look at the 4 pictures and type the word that connects them all together."
           onStart={handleStartGame}
+          gameIcon="/images/4pics1word/game-icon.svg" // Added game icon
         />
       </>
     );
   }
 
   if (gameOver) {
-    const PASSING_SCORE = 30;
+    const PASSING_SCORE = 30; // Example passing score for practice mode visuals
+    const maxPossibleScore = activeQuestions.length * 5; // Assuming 5 points per correct answer
     const hasPassed = score >= PASSING_SCORE;
 
     return (
@@ -535,23 +574,41 @@ const FourPicsOneWord: React.FC = () => {
             style={{ backgroundColor: colors.cardBackground }}
           >
             <h2 className="text-5xl font-bold mb-6" style={{ color: colors.primaryAccent }}>
-              {hasPassed ? 'Congratulations!' : 'Better Luck Next Time'}
+              {isPracticeMode ? (hasPassed ? 'Congratulations!' : 'Game Over') : 'Game Finished!'}
             </h2>
             <p className="text-3xl mb-10" style={{ color: colors.primaryText }}>
-              Your Score: <span className="font-bold text-4xl" style={{ color: colors.secondaryAccent }}>{formatScore(score)}</span> / 50
+              Your Score: <span className="font-bold text-4xl" style={{ color: colors.secondaryAccent }}>{formatScore(score)}</span> / {maxPossibleScore}
             </p>
-            <button
-              onClick={resetGame}
-              className="hover:bg-[#5f6b9a] text-white font-bold py-2 px-4 rounded-full text-lg transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#DBD053] shadow-lg"
-              style={{ backgroundColor: colors.interactiveElements }}
+            <MuiButton 
+                onClick={resetGame} 
+                variant="contained" 
+                sx={{ 
+                    backgroundColor: colors.interactiveElements, 
+                    color: appTheme === 'dark' ? colors.primaryText : '#FFFFFF', // Ensure contrast for text
+                    '&:hover': { 
+                        backgroundColor: muiTheme.palette.augmentColor({ color: {main: colors.interactiveElements}}).dark 
+                    }, 
+                    padding: '10px 20px', 
+                    borderRadius: '9999px', 
+                    fontSize: '1.1rem' 
+                }}
             >
-              {hasPassed ? 'Play Again' : 'Try Again'}
-            </button>
+              {isPracticeMode ? (hasPassed ? 'Play Again' : 'Try Again') : 'Finish'}
+            </MuiButton>
           </div>
         </div>
       </>
     );
   }
+
+  if (!activeQuestions || !activeQuestions[currentQuestion]) {
+      return (
+           <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
+            Loading question data... If this persists, the game data might be missing or corrupted.
+        </div>
+      )
+  }
+
 
   return (
     <>
@@ -580,23 +637,23 @@ const FourPicsOneWord: React.FC = () => {
 
           <div className="mb-8 text-center">
             <p className="text-xl sm:text-2xl font-semibold mb-2" style={{ color: colors.interactiveElements }}>
-              Question {currentQuestion + 1} of {questions.length}
+              Question {currentQuestion + 1} of {activeQuestions.length}
             </p>
-            <Typography variant="h3" gutterBottom style={{ color: colors.primaryText }}>
+            <Typography variant="h3" gutterBottom sx={{ color: colors.primaryText, fontWeight:'bold' }}>
               4 Pics 1 Word
             </Typography>
-            <Typography variant="h5" gutterBottom style={{ color: colors.secondaryAccent }}>
+            <Typography variant="h5" gutterBottom sx={{ color: colors.secondaryAccent, fontWeight:'bold' }}>
               Score: {formatScore(score)}
             </Typography>
           </div>
 
-          <Box display="flex" flexWrap="wrap" justifyContent="center" sx={{ columnGap: 0, rowGap: 2 }} mb={4}>
-            {questions[currentQuestion].images.map((image, index) => (
-              <ImageContainer key={index} sx={{ flexBasis: 'calc(40% - 8px)', maxWidth: 'calc(40% - 8px)' }}>
-                {image.includes('/') && image.endsWith('.svg') ? (
+          <Box display="flex" flexWrap="wrap" justifyContent="center" sx={{ columnGap: {xs:1, sm:2}, rowGap: {xs:1, sm:2} }} mb={4}>
+            {activeQuestions[currentQuestion].images.map((image, index) => (
+              <ImageContainer key={index} sx={{ flexBasis: {xs: 'calc(50% - 8px)', sm:'calc(40% - 8px)'}, maxWidth: {xs: 'calc(50% - 8px)', sm:'calc(40% - 8px)'}, height:{xs:150, sm:200} }}>
+                {image.includes('/') && (image.endsWith('.svg') || image.endsWith('.png') || image.endsWith('.jpg')) ? (
                   <img src={image} alt={`Image ${index + 1}`} />
                 ) : (
-                  <Typography variant="h6" style={{ color: colors.primaryText }}>
+                  <Typography variant="h6" sx={{ color: colors.primaryText }}>
                     {image.toUpperCase()}
                   </Typography>
                 )}
@@ -606,11 +663,11 @@ const FourPicsOneWord: React.FC = () => {
 
           <Box textAlign="center" mb={4}>
             {letterInputs.length > 0 && (
-              <Box display="flex" justifyContent="center" alignItems="center" mb={3}>
+              <Box display="flex" justifyContent="center" alignItems="center" mb={3} flexWrap="wrap">
                 {letterInputs.map((letter, index) => (
                   <LetterInput
                     key={index}
-                    value={revealedLetters.includes(index) ? questions[currentQuestion].answer[index] : letter}
+                    value={revealedLetters.includes(index) ? activeQuestions[currentQuestion].answer[index] : letter}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => handleLetterChange(index, e.target.value)}
                     onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => handleKeyDown(index, e)}
                     onClick={() => handleInputClick(index)}
@@ -631,13 +688,13 @@ const FourPicsOneWord: React.FC = () => {
                     isCorrect={
                       isAnswerSubmitted &&
                       !isShaking &&
-                      letterInputs.every((letter, i) => revealedLetters.includes(i) || letter !== '') &&
+                      letterInputs.every((l, i) => revealedLetters.includes(i) || l !== '') &&
                       isAnswerCorrect
                     }
                     isWrong={
                       isAnswerSubmitted &&
                       !isAnswerCorrect &&
-                      letterInputs.every((letter, i) => revealedLetters.includes(i) || letter !== '')
+                      letterInputs.every((l, i) => revealedLetters.includes(i) || l !== '')
                     }
                     isShaking={isShaking}
                     isRevealed={revealedLetters.includes(index)}
@@ -648,6 +705,7 @@ const FourPicsOneWord: React.FC = () => {
                       visibility: 'visible',
                       minWidth: '50px',
                       minHeight: '55px',
+                      marginY: {xs: '4px', sm: 0} // Added Y margin for smaller screens if they wrap
                     }}
                   />
                 ))}
@@ -656,22 +714,23 @@ const FourPicsOneWord: React.FC = () => {
           </Box>
 
           <Box textAlign="center" mb={4}>
-            <Typography variant="body1" gutterBottom style={{ color: colors.primaryText }}>
-              {questions[currentQuestion].englishTranslation}
+            <Typography variant="body1" gutterBottom sx={{ color: colors.primaryText, fontSize: '1.1rem' }}>
+              {activeQuestions[currentQuestion].englishTranslation}
             </Typography>
-            <Typography variant="body2" gutterBottom style={{ color: colors.interactiveElements, fontStyle: 'italic' }}>
-              {questions[currentQuestion].clue}
+            <Typography variant="body2" gutterBottom sx={{ color: colors.interactiveElements, fontStyle: 'italic', fontSize: '1rem' }}>
+              {activeQuestions[currentQuestion].clue}
             </Typography>
             {showFunFact && isAnswerCorrect && (
               <Typography
                 variant="body1"
-                style={{
+                sx={{
                   color: colors.secondaryAccent,
                   marginTop: '1rem',
                   animation: 'fadeIn 0.5s ease-in',
+                  fontSize: '1.1rem', fontWeight: 'medium'
                 }}
               >
-                {questions[currentQuestion].funFact}
+                {activeQuestions[currentQuestion].funFact}
               </Typography>
             )}
           </Box>
@@ -690,17 +749,5 @@ const FourPicsOneWord: React.FC = () => {
     </>
   );
 };
-
-// Append styles to document
-const styleSheet = document.createElement('style');
-styleSheet.innerText = `
-  ${animationStyles}
-  ${wordAnimationStyles}
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-`;
-document.head.appendChild(styleSheet);
 
 export default FourPicsOneWord;

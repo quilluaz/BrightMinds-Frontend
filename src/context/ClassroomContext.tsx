@@ -19,6 +19,7 @@ import {
   BackendUserResponse,
   UserRole,
   GameDTO,
+  StudentGameAttemptDTO,
 } from "../types";
 
 interface BackendTeacherClassroomResponse {
@@ -43,12 +44,12 @@ interface BackendAssignedGameResponse {
     activityName: string;
     description?: string;
     subject?: string;
-    gameMode?: GameDTO['gameMode'];
+    gameMode?: GameDTO["gameMode"];
     isPremade?: boolean;
   };
   deadline: string;
-  isPremade: boolean; 
-  status?: AssignedGameDTO['status'];
+  isPremade: boolean;
+  status?: AssignedGameDTO["status"];
   maxAttempts?: number;
 }
 
@@ -93,6 +94,12 @@ interface ClassroomContextType {
     classroomId: string,
     studentId: string
   ) => Promise<void>;
+  submitGameResults: (
+    classroomId: string,
+    assignedGameId: string,
+    score: number,
+    attemptData: Omit<StudentGameAttemptDTO, "id" | "createdAt">
+  ) => Promise<void>;
 }
 
 const ClassroomContext = createContext<ClassroomContextType | undefined>(
@@ -121,7 +128,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         teacherName: `${dto.teacher.firstName} ${dto.teacher.lastName}`.trim(),
         code: dto.joinCode,
         studentCount: dto.students ? dto.students.length : 0,
-        activityCount: 0, 
+        activityCount: 0,
         iconUrl: dto.iconUrl,
       };
     },
@@ -192,7 +199,6 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [currentUser, token, fetchTeacherClassrooms, fetchStudentClassrooms]);
 
-
   const createClassroom = useCallback(
     async (data: CreateClassroomRequestDTO): Promise<Classroom | null> => {
       if (!currentUser || currentUser.role !== "TEACHER" || !token) {
@@ -209,13 +215,16 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
           `${CLASSROOM_API_BASE_URL}`,
           payload
         );
-        const newClassroom =
-          transformBackendTeacherClassroomToFrontend(response.data);
+        const newClassroom = transformBackendTeacherClassroomToFrontend(
+          response.data
+        );
         setTeacherClassrooms((prev) => [...prev, newClassroom]);
         return newClassroom;
       } catch (error: any) {
         console.error("Error creating classroom:", error);
-        throw new Error(error.response?.data?.message || "Failed to create classroom");
+        throw new Error(
+          error.response?.data?.message || "Failed to create classroom"
+        );
       } finally {
         setIsLoading(false);
       }
@@ -249,14 +258,16 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         return newStudentCls;
       } catch (error: any) {
         console.error("Error joining classroom:", error);
-        throw new Error(error.response?.data?.message || "Failed to join classroom. Invalid code or server error.");
+        throw new Error(
+          error.response?.data?.message ||
+            "Failed to join classroom. Invalid code or server error."
+        );
       } finally {
         setIsLoading(false);
       }
     },
     [currentUser, token, fetchStudentClassrooms]
   );
-
 
   const setCurrentClassroom = useCallback(
     (classroom: Classroom | null): void => {
@@ -279,7 +290,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
             classroomId: bg.classroom.id.toString(),
             gameId: bg.game.activityId.toString(),
             gameTitle: bg.game.activityName,
-            game: { 
+            game: {
               id: bg.game.activityId.toString(),
               title: bg.game.activityName,
               description: bg.game.description,
@@ -287,14 +298,17 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
               gameMode: bg.game.gameMode,
               isPremade: bg.game.isPremade,
             },
-            assignedAt: new Date().toISOString(), 
+            assignedAt: new Date().toISOString(),
             dueDate: bg.deadline,
-            status: bg.status || 'PENDING',
+            status: bg.status || "PENDING",
             maxAttempts: bg.maxAttempts,
           })
         );
       } catch (error) {
-        console.error(`Error fetching games for classroom ${classroomId}:`, error);
+        console.error(
+          `Error fetching games for classroom ${classroomId}:`,
+          error
+        );
         return [];
       } finally {
         setIsLoading(false);
@@ -317,12 +331,18 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
           lastName: studentDto.lastName,
           name: `${studentDto.firstName} ${studentDto.lastName}`.trim(),
           role: studentDto.role as UserRole,
-          avatarUrl: studentDto.avatarImage ||
+          avatarUrl:
+            studentDto.avatarImage ||
             `https://api.dicebear.com/7.x/bottts/svg?seed=${studentDto.firstName}${studentDto.lastName}`,
         }));
       } catch (error: any) {
-        console.error(`Error fetching students for classroom ${classroomId}:`, error);
-        throw new Error(error.response?.data?.message || "Failed to fetch students.");
+        console.error(
+          `Error fetching students for classroom ${classroomId}:`,
+          error
+        );
+        throw new Error(
+          error.response?.data?.message || "Failed to fetch students."
+        );
       }
     },
     [token]
@@ -338,27 +358,36 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
       if (!currentUser || currentUser.role !== "TEACHER" || !token) {
         throw new Error("User must be a logged-in teacher.");
       }
-      if (!gameToAssign || typeof gameToAssign.id !== 'string' || gameToAssign.id.trim() === '') {
-        console.error("Context: Invalid gameToAssign object or gameToAssign.id:", gameToAssign);
+      if (
+        !gameToAssign ||
+        typeof gameToAssign.id !== "string" ||
+        gameToAssign.id.trim() === ""
+      ) {
+        console.error(
+          "Context: Invalid gameToAssign object or gameToAssign.id:",
+          gameToAssign
+        );
         throw new Error("Invalid game data provided for assignment.");
       }
-      
+
       setIsLoading(true);
       try {
         const gameIdLong = parseInt(gameToAssign.id, 10);
         if (isNaN(gameIdLong)) {
-            console.error(`Context: Game ID "${gameToAssign.id}" is not a valid number format.`);
-            throw new Error("Invalid game ID format."); 
+          console.error(
+            `Context: Game ID "${gameToAssign.id}" is not a valid number format.`
+          );
+          throw new Error("Invalid game ID format.");
         }
 
         // For games assigned from the library, ClassroomGame.isPremade should be true.
         // The GameDTO's isPremade field (gameToAssign.isPremade) refers to the game's nature.
-        const isPremadeForAssignmentPayload = true; 
+        const isPremadeForAssignmentPayload = true;
 
         let queryParams = `gameId=${gameIdLong}&deadline=${encodeURIComponent(
           deadline
         )}&isPremade=${isPremadeForAssignmentPayload}`;
-        
+
         if (maxAttempts !== undefined) {
           queryParams += `&maxAttempts=${maxAttempts}`;
         }
@@ -368,37 +397,38 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         );
         const assignedBackendGame = response.data;
         return {
-            id: assignedBackendGame.id.toString(),
-            classroomId: assignedBackendGame.classroom.id.toString(),
-            gameId: assignedBackendGame.game.activityId.toString(),
-            gameTitle: assignedBackendGame.game.activityName,
-            assignedAt: new Date().toISOString(), 
-            dueDate: assignedBackendGame.deadline,
-            status: assignedBackendGame.status || 'PENDING',
-            maxAttempts: assignedBackendGame.maxAttempts,
-            game: {
-                id: assignedBackendGame.game.activityId.toString(),
-                title: assignedBackendGame.game.activityName,
-                description: assignedBackendGame.game.description,
-                subject: assignedBackendGame.game.subject,
-                gameMode: assignedBackendGame.game.gameMode,
-                isPremade: assignedBackendGame.game.isPremade,
-            }
+          id: assignedBackendGame.id.toString(),
+          classroomId: assignedBackendGame.classroom.id.toString(),
+          gameId: assignedBackendGame.game.activityId.toString(),
+          gameTitle: assignedBackendGame.game.activityName,
+          assignedAt: new Date().toISOString(),
+          dueDate: assignedBackendGame.deadline,
+          status: assignedBackendGame.status || "PENDING",
+          maxAttempts: assignedBackendGame.maxAttempts,
+          game: {
+            id: assignedBackendGame.game.activityId.toString(),
+            title: assignedBackendGame.game.activityName,
+            description: assignedBackendGame.game.description,
+            subject: assignedBackendGame.game.subject,
+            gameMode: assignedBackendGame.game.gameMode,
+            isPremade: assignedBackendGame.game.isPremade,
+          },
         };
       } catch (error: any) {
         console.error("Error assigning game in Context:", error);
         // Check if the error is the one we threw, or a new one from the API
         if (error.message === "Invalid game ID format.") {
-            throw error; // Re-throw the specific error
+          throw error; // Re-throw the specific error
         }
-        throw new Error(error.response?.data?.message || "Failed to assign game.");
+        throw new Error(
+          error.response?.data?.message || "Failed to assign game."
+        );
       } finally {
         setIsLoading(false);
       }
     },
     [currentUser, token]
   );
-
 
   const getClassroomLeaderboard = useCallback(
     async (classroomId: string): Promise<LeaderboardEntry[]> => {
@@ -427,15 +457,20 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
           }));
       } catch (error: any) {
         console.error("Error fetching classroom leaderboard:", error);
-        throw new Error(error.response?.data?.message || "Failed to fetch leaderboard.");
+        throw new Error(
+          error.response?.data?.message || "Failed to fetch leaderboard."
+        );
       }
     },
     [token]
   );
 
   const updateClassroom = useCallback(
-    async (classroomId: string, data: UpdateClassroomRequestDTO): Promise<Classroom | null> => {
-      if (!token || !currentUser || currentUser.role !== 'TEACHER') {
+    async (
+      classroomId: string,
+      data: UpdateClassroomRequestDTO
+    ): Promise<Classroom | null> => {
+      if (!token || !currentUser || currentUser.role !== "TEACHER") {
         throw new Error("Unauthorized or not a teacher.");
       }
       setIsLoading(true);
@@ -444,37 +479,52 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
           `${CLASSROOM_API_BASE_URL}/${classroomId}`,
           data
         );
-        const updatedClassroom = transformBackendTeacherClassroomToFrontend(response.data);
-        setTeacherClassrooms(prev => prev.map(c => c.id === classroomId ? updatedClassroom : c));
+        const updatedClassroom = transformBackendTeacherClassroomToFrontend(
+          response.data
+        );
+        setTeacherClassrooms((prev) =>
+          prev.map((c) => (c.id === classroomId ? updatedClassroom : c))
+        );
         if (currentClassroom?.id === classroomId) {
-            setCurrentClassroomState(updatedClassroom);
+          setCurrentClassroomState(updatedClassroom);
         }
         return updatedClassroom;
       } catch (error: any) {
         console.error("Error updating classroom:", error);
-        throw new Error(error.response?.data?.message || "Failed to update classroom.");
+        throw new Error(
+          error.response?.data?.message || "Failed to update classroom."
+        );
       } finally {
         setIsLoading(false);
       }
     },
-    [token, currentUser, transformBackendTeacherClassroomToFrontend, currentClassroom]
+    [
+      token,
+      currentUser,
+      transformBackendTeacherClassroomToFrontend,
+      currentClassroom,
+    ]
   );
 
   const deleteClassroom = useCallback(
     async (classroomId: string): Promise<void> => {
-      if (!token || !currentUser || currentUser.role !== 'TEACHER') {
+      if (!token || !currentUser || currentUser.role !== "TEACHER") {
         throw new Error("Unauthorized or not a teacher.");
       }
       setIsLoading(true);
       try {
         await api.delete(`${CLASSROOM_API_BASE_URL}/${classroomId}`);
-        setTeacherClassrooms(prev => prev.filter(c => c.id !== classroomId));
+        setTeacherClassrooms((prev) =>
+          prev.filter((c) => c.id !== classroomId)
+        );
         if (currentClassroom?.id === classroomId) {
-            setCurrentClassroomState(null);
+          setCurrentClassroomState(null);
         }
       } catch (error: any) {
         console.error("Error deleting classroom:", error);
-        throw new Error(error.response?.data?.message || "Failed to delete classroom.");
+        throw new Error(
+          error.response?.data?.message || "Failed to delete classroom."
+        );
       } finally {
         setIsLoading(false);
       }
@@ -484,8 +534,10 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
 
   const removeStudentFromClassroom = useCallback(
     async (classroomId: string, studentId: string): Promise<void> => {
-      if (!token || !currentUser || currentUser.role !== 'TEACHER') {
-        throw new Error("Unauthorized or not a teacher to perform this action.");
+      if (!token || !currentUser || currentUser.role !== "TEACHER") {
+        throw new Error(
+          "Unauthorized or not a teacher to perform this action."
+        );
       }
       setIsLoading(true);
       try {
@@ -493,16 +545,23 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         const studentIdLong = parseInt(studentId, 10);
 
         if (isNaN(classroomIdLong) || isNaN(studentIdLong)) {
-            throw new Error("Invalid Classroom or Student ID format.");
+          throw new Error("Invalid Classroom or Student ID format.");
         }
 
-        await api.delete(`${CLASSROOM_API_BASE_URL}/${classroomIdLong}/students/${studentIdLong}`);
-        
-        await fetchTeacherClassrooms();
+        await api.delete(
+          `${CLASSROOM_API_BASE_URL}/${classroomIdLong}/students/${studentIdLong}`
+        );
 
+        await fetchTeacherClassrooms();
       } catch (error: any) {
-        console.error(`Error removing student ${studentId} from classroom ${classroomId}:`, error);
-        throw new Error(error.response?.data?.message || "Failed to remove student from classroom.");
+        console.error(
+          `Error removing student ${studentId} from classroom ${classroomId}:`,
+          error
+        );
+        throw new Error(
+          error.response?.data?.message ||
+            "Failed to remove student from classroom."
+        );
       } finally {
         setIsLoading(false);
       }
@@ -510,6 +569,31 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
     [token, currentUser, fetchTeacherClassrooms]
   );
 
+  const submitGameResults = useCallback(
+    async (
+      classroomId: string,
+      assignedGameId: string,
+      score: number,
+      attemptData: Omit<StudentGameAttemptDTO, "id" | "createdAt">
+    ): Promise<void> => {
+      if (!token) throw new Error("Authentication required.");
+      setIsLoading(true);
+      try {
+        await api.post(
+          `${CLASSROOM_API_BASE_URL}/${classroomId}/games/${assignedGameId}/attempt`,
+          attemptData
+        );
+      } catch (error: any) {
+        console.error("Error submitting game results:", error);
+        throw new Error(
+          error.response?.data?.message || "Failed to submit game results."
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [token]
+  );
 
   return (
     <ClassroomContext.Provider
@@ -530,8 +614,8 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         updateClassroom,
         deleteClassroom,
         removeStudentFromClassroom,
-      }}
-    >
+        submitGameResults,
+      }}>
       {children}
     </ClassroomContext.Provider>
   );

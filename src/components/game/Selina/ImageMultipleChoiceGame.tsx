@@ -1,9 +1,12 @@
+// src/components/game/Selina/ImageMultipleChoiceGame.tsx
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../../context/ThemeContext';
 import { playSound, SoundType, CelebrationAnimation, GameCompleteCelebration, animationStyles } from './GameConfigurations';
 import BackgroundMusic from '../BackgroundMusic';
+import { AssignedGameDTO } from '../../../types'; // Import AssignedGameDTO
+import { useNavigate } from 'react-router-dom'; // For navigation if needed
 
-// Color Palette
+// Color Palette (as originally provided)
 const COLORS = {
   light: {
     primaryBackground: '#E8F9FF',
@@ -41,6 +44,7 @@ interface Question {
   choices: Choice[];
 }
 
+// Original questionsData from the provided file
 const questionsData: Question[] = [
   {
     id: 1,
@@ -62,16 +66,6 @@ const questionsData: Question[] = [
       { id: 'D', imagePlaceholderText: '/images/multiple-choice/jeepney2.jpg', isCorrect: false },
     ],
   },
- /* {
-    id: 3,
-    questionText: 'Ano ang tawag sa uri ng pamumuhay na simple at tahimik sa lalawigan?',
-    choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Mataas na pamumuhay', isCorrect: false },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Modernong pamumuhay', isCorrect: false },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Payak na pamumuhay', isCorrect: true },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Masayang pamumuhay', isCorrect: false },
-    ],
-  },*/
   {
     id: 3,
     questionText: 'Anong produkto ang karaniwang nakukuha sa pangingisda?',
@@ -92,26 +86,6 @@ const questionsData: Question[] = [
       { id: 'D', imagePlaceholderText: '/images/multiple-choice/fisherman4.jpg', isCorrect: false },
     ],
   },
- /* {
-    id: 6,
-    questionText: 'Ano ang ginagawa ng mangingisda pagkatapos manghuli ng isda?',
-    choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Itinatago ito', isCorrect: false },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Itinitinda sa palengke', isCorrect: true },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Itinatapon', isCorrect: false },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Ibinibigay sa zoo', isCorrect: false },
-    ],
-  },
-  {
-    id: 7,
-    questionText: 'Anong larawan ang nagpapakita ng pagtatanim ng gulay?',
-    choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Lalaking may lambat', isCorrect: false },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Batang nagbubungkal ng lupa', isCorrect: true },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Babaeng namamalengke', isCorrect: false },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Lolo na nagbabasa', isCorrect: false },
-    ],
-  },*/
   {
     id: 5,
     questionText: 'Anong hanapbuhay ang makikita sa kagubatan?',
@@ -122,16 +96,6 @@ const questionsData: Question[] = [
       { id: 'D', imagePlaceholderText: '/images/multiple-choice/paglalako5.jpg', isCorrect: false },
     ],
   },
-  /*{
-    id: 9,
-    questionText: 'Ano ang karaniwang tanim sa mga lalawigan?',
-    choices: [
-      { id: 'A', imagePlaceholderText: '/assets/multiple-choice/rice-fields1.jpg', isCorrect: true },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Mansanas', isCorrect: false },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Ubas', isCorrect: false },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Repolyo', isCorrect: false },
-    ],
-  },*/
   {
     id: 6,
     questionText: 'Alin sa mga ito ang pamumuhay sa kabundukan?',
@@ -162,16 +126,6 @@ const questionsData: Question[] = [
       { id: 'D', imagePlaceholderText: '/images/multiple-choice/paglalako5.jpg', isCorrect: false },
     ],
   },
- /*  {
-    id: 13,
-    questionText: 'Alin sa mga ito ang gawain sa pamayanan?',
-    choices: [
-      { id: 'A', imagePlaceholderText: 'Placeholder: Paglilinis ng kalsada', isCorrect: true },
-      { id: 'B', imagePlaceholderText: 'Placeholder: Panonood ng sine', isCorrect: false },
-      { id: 'C', imagePlaceholderText: 'Placeholder: Pagkain sa fast food', isCorrect: false },
-      { id: 'D', imagePlaceholderText: 'Placeholder: Pamamasyal', isCorrect: false },
-    ],
-  },*/
   {
     id: 9,
     questionText: 'Anong hayop ang karaniwang kasama sa bukid?',
@@ -194,10 +148,29 @@ const questionsData: Question[] = [
   },
 ];
 
-const ImageMultipleChoiceGame: React.FC = () => {
+// Props definition for the game component
+interface ImageMultipleChoiceGameProps {
+  isPracticeMode: boolean;
+  assignedGameData?: AssignedGameDTO; // Data if game is assigned
+  onGameComplete: (score: number, timeTakenSeconds?: number, expReward?: number) => void; // Callback
+  classroomId?: string;
+  assignedGameId?: string;
+}
+
+const ImageMultipleChoiceGame: React.FC<ImageMultipleChoiceGameProps> = ({
+  isPracticeMode,
+  // assignedGameData, // Not using assignedGameData for questions in this minimal version
+  onGameComplete,
+  classroomId,
+}) => {
   const { theme } = useTheme();
   const colors = COLORS[theme];
-  const [hasGameStarted, setHasGameStarted] = useState(false);
+  const navigate = useNavigate();
+
+  // Use the original local questionsData, as per strict minimal change request for this file
+  const activeQuestions = questionsData;
+
+  const [hasGameStarted, setHasGameStarted] = useState(isPracticeMode ? false : true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -207,7 +180,7 @@ const ImageMultipleChoiceGame: React.FC = () => {
   const [showCelebration, setShowCelebration] = useState(false);
   const [showGameCompleteCelebration, setShowGameCompleteCelebration] = useState(false);
 
-  const currentQuestion = questionsData[currentQuestionIndex];
+  const currentQuestion = activeQuestions[currentQuestionIndex];
 
   const handleStartGame = () => {
     playSound('click');
@@ -224,9 +197,11 @@ const ImageMultipleChoiceGame: React.FC = () => {
       setSelectedAnswer(choiceId);
       const correct = choice.isCorrect;
       setIsAnswerCorrect(correct);
+      let newScore = score; // Keep track of score for this answer
       if (correct) {
         playSound('correct');
-        setScore(prevScore => prevScore + 1);
+        newScore = score + 1; // Update score
+        setScore(newScore);
         setShowCelebration(true);
         setTimeout(() => setShowCelebration(false), 2000);
       } else {
@@ -237,12 +212,15 @@ const ImageMultipleChoiceGame: React.FC = () => {
       setTimeout(() => {
         setShowFeedback(false);
         setSelectedAnswer(null);
-        if (currentQuestionIndex < questionsData.length - 1) {
+        if (currentQuestionIndex < activeQuestions.length - 1) {
           setCurrentQuestionIndex(prevIndex => prevIndex + 1);
         } else {
           playSound('gameComplete');
           setShowGameCompleteCelebration(true);
           setShowScore(true);
+          if (!isPracticeMode) {
+            onGameComplete(newScore); // Call onGameComplete with the final score
+          }
         }
       }, 2000);
     }
@@ -256,15 +234,33 @@ const ImageMultipleChoiceGame: React.FC = () => {
     setShowFeedback(false);
     setShowScore(false);
     setShowGameCompleteCelebration(false);
-    setHasGameStarted(false);
+    if (isPracticeMode) {
+      setHasGameStarted(false);
+    } else {
+      // For assigned games, "Finish" button behavior
+      // onGameComplete has been called. This button navigates away.
+      if(classroomId) {
+        navigate(`/student/classrooms/${classroomId}`);
+      } else {
+        navigate('/student/dashboard'); // Fallback navigation
+      }
+    }
   };
 
-  // Function to determine if the imagePlaceholderText is an actual image path
   const isImagePath = (text: string) => {
-    return text.startsWith('/images/multiple-choice/') && text.endsWith('.jpg');
+    return text.startsWith('/images/multiple-choice/') && (text.endsWith('.jpg') || text.endsWith('.svg') || text.endsWith('.png'));
   };
 
-  if (!hasGameStarted) {
+  useEffect(() => {
+    if (!document.getElementById('selina-game-animations')) {
+        const styleSheet = document.createElement('style');
+        styleSheet.id = 'selina-game-animations';
+        styleSheet.innerText = animationStyles;
+        document.head.appendChild(styleSheet);
+    }
+  }, []);
+
+  if (!hasGameStarted && isPracticeMode) { // Logic for practice mode start screen
     return (
       <>
         <BackgroundMusic 
@@ -298,7 +294,7 @@ const ImageMultipleChoiceGame: React.FC = () => {
     );
   }
 
-  if (showScore) {
+  if (showScore) { // Final score display screen
     return (
       <>
         <BackgroundMusic 
@@ -308,16 +304,18 @@ const ImageMultipleChoiceGame: React.FC = () => {
         <div className={`bg-pattern min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-200`} style={{ color: colors.primaryText }}>
           {showGameCompleteCelebration && <GameCompleteCelebration />}
           <div className={`p-10 rounded-3xl shadow-xl text-center max-w-md w-full transition-colors duration-200`} style={{ backgroundColor: colors.cardBackground }}>
-            <h2 className="text-5xl font-bold mb-6" style={{ color: colors.primaryAccent }}>The Game has Finished</h2>
+            <h2 className="text-5xl font-bold mb-6" style={{ color: colors.primaryAccent }}>
+              {isPracticeMode ? "Game Finished" : "Results Submitted!"}
+            </h2>
             <p className="text-3xl mb-10" style={{ color: colors.primaryText }}>
-              Your Score: <span className="font-bold text-4xl" style={{ color: colors.secondaryAccent }}>{score}</span> / {questionsData.length}
+              Your Score: <span className="font-bold text-4xl" style={{ color: colors.secondaryAccent }}>{score}</span> / {activeQuestions.length}
             </p>
             <button
-              onClick={restartGame}
+              onClick={restartGame} // This button text will change based on mode
               className="hover:bg-[#5f6b9a] text-white font-bold py-4 px-10 rounded-full text-2xl transition duration-150 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#DBD053] shadow-lg"
               style={{ backgroundColor: colors.interactiveElements }}
             >
-              Play Again
+              {isPracticeMode ? "Play Again" : "Back to Classroom"}
             </button>
           </div>
         </div>
@@ -325,7 +323,7 @@ const ImageMultipleChoiceGame: React.FC = () => {
     );
   }
 
-  if (!currentQuestion) {
+  if (!currentQuestion) { // Loading state or if questions array is empty/invalid
     return (
       <>
         <BackgroundMusic 
@@ -333,12 +331,13 @@ const ImageMultipleChoiceGame: React.FC = () => {
           volume={0.15} 
         />
         <div className={`bg-pattern min-h-screen flex items-center justify-center transition-colors duration-200`} style={{ color: colors.primaryText }}>
-          Nagloloading ang laro...
+          Loading question...
         </div>
       </>
     );
   }
 
+  // Main game UI (unchanged from your original structure)
   return (
     <>
       <BackgroundMusic 
@@ -350,7 +349,7 @@ const ImageMultipleChoiceGame: React.FC = () => {
         <div className={`p-6 sm:p-10 rounded-3xl shadow-xl w-full max-w-3xl transition-colors duration-200`} style={{ backgroundColor: colors.cardBackground }}>
           <div className="mb-8 text-center">
             <p className="text-xl sm:text-2xl font-semibold mb-2" style={{ color: colors.interactiveElements }}>
-              Tanong {currentQuestionIndex + 1} ng {questionsData.length}
+              Question {currentQuestionIndex + 1} of {activeQuestions.length}
             </p>
             <h2 className="text-3xl sm:text-4xl font-bold" style={{ color: colors.primaryText }}>{currentQuestion.questionText}</h2>
           </div>
@@ -364,10 +363,15 @@ const ImageMultipleChoiceGame: React.FC = () => {
                 className={`relative border-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-150 ease-in-out transform hover:scale-105 focus:outline-none group p-6 pt-14 sm:p-8 sm:pt-16
                   ${selectedAnswer === choice.id && showFeedback && isAnswerCorrect ? 'border-[#DBD053] ring-4 ring-[#DBD053]' : 'border-transparent'}
                   ${selectedAnswer === choice.id && showFeedback && !isAnswerCorrect ? 'border-red-500 ring-4 ring-red-500' : selectedAnswer !== choice.id ? 'border-transparent' : ''}
-                  ${!selectedAnswer && !showFeedback ? 'focus:border-[#7A89C2]' : ''}
+                  ${!selectedAnswer && !showFeedback ? `focus:border-[${colors.interactiveElements}]` : ''}
                   ${showFeedback ? 'cursor-not-allowed' : 'cursor-pointer'}
                 `}
-                style={{ backgroundColor: colors.cardBackground, borderColor: colors.borderColor }}
+                style={{ 
+                    backgroundColor: colors.cardBackground, 
+                    borderColor: selectedAnswer === choice.id && showFeedback 
+                        ? (isAnswerCorrect ? colors.primaryAccent : 'rgb(239, 68, 68)') 
+                        : (theme === 'dark' ? colors.borderColor : 'transparent')
+                }}
               >
                 <div className="absolute top-3 left-3 text-white text-lg font-bold w-10 h-10 rounded-full flex items-center justify-center shadow-md" style={{ backgroundColor: colors.secondaryAccent }}>
                   {choice.id}
@@ -379,7 +383,7 @@ const ImageMultipleChoiceGame: React.FC = () => {
                       alt={`Choice ${choice.id}`}
                       className="w-full h-full object-cover rounded-xl"
                       onError={(e) => {
-                        e.currentTarget.src = '/path/to/fallback-image.jpg';
+                        e.currentTarget.src = '/images/placeholder.jpg'; 
                         console.error(`Failed to load image: ${choice.imagePlaceholderText}`);
                       }}
                     />
@@ -410,10 +414,5 @@ const ImageMultipleChoiceGame: React.FC = () => {
     </>
   );
 };
-
-// Add the styles to the document
-const styleSheet = document.createElement("style");
-styleSheet.innerText = animationStyles;
-document.head.appendChild(styleSheet);
 
 export default ImageMultipleChoiceGame;

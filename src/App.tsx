@@ -9,7 +9,7 @@ import {
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ClassroomProvider } from "./context/ClassroomContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import { UserRole } from "./types";
+import { UserRole } from "./types"; // GameMode is not directly used in App.tsx imports
 
 // Layouts and Common Components
 import Header from "./components/common/Header";
@@ -30,19 +30,22 @@ import PrivacyPolicyPage from "./pages/common/PrivacyPolicyPage";
 import TeacherClassroomsPage from "./pages/teacher/TeacherClassroomsPage";
 import TeacherClassroomViewPage from "./pages/teacher/TeacherClassroomViewPage";
 import TeacherGameLibraryPage from "./pages/teacher/TeacherGameLibraryPage";
-import AssignGameToClassroomPage from "./pages/teacher/AssignGameToClassroomPage"; // Import the new page
+import AssignGameToClassroomPage from "./pages/teacher/AssignGameToClassroomPage";
 
 // Student Specific Pages
 import StudentDashboardPage from "./pages/student/StudentDashboardPage";
 import StudentClassroomsPage from "./pages/student/StudentClassroomsPage";
 import StudentClassroomViewPage from "./pages/student/StudentClassroomViewPage";
-import GameplayPage from "./pages/student/GameplayPage";
+// import GameplayPage from "./pages/student/GameplayPage"; // No longer primary for assigned games
+import AttemptGamePage from "./pages/student/AttemptGamePage"; // NEW: Wrapper for assigned games
 
-// Game components
+// Game components (These will be used by AttemptGamePage or as standalone practice)
 import ImageMultipleChoiceGame from "./components/game/Selina/ImageMultipleChoiceGame";
 import MatchingGamePage from "./components/game/Jeric/MatchingGamePage";
 import LikasYamanGame from "./components/game/Zeke/LikasYamanGame";
 import FourPicsOneWord from "./components/game/Mae/4Pics1Word";
+
+// Create Game components (if you have routes for these, keep them)
 import Create4Pics1Word from "./components/game/Mae/Create4Pics1Word";
 import CreateSortingGame from "./components/game/Zeke/CreateSortingGame";
 import CreateMatchingGame from "./components/game/Jeric/CreateMatchingGame";
@@ -83,10 +86,12 @@ const RoleRoute = ({
 
   if (currentUser.role !== allowedRole) {
     console.warn(
-      `RoleRoute: Role mismatch. Expected ${allowedRole}, got ${currentUser.role}. Redirecting to landing.`
+      `RoleRoute: Role mismatch. Expected ${allowedRole}, got ${currentUser.role}. Redirecting.`
     );
-    // Redirect to a generic dashboard or landing page based on actual role if desired, or just landing
-    const redirectPath = currentUser.role === "STUDENT" ? "/student/dashboard" : "/teacher/classrooms";
+    const redirectPath =
+      currentUser.role === "STUDENT"
+        ? "/student/dashboard"
+        : "/teacher/classrooms";
     return <Navigate to={redirectPath} replace />;
   }
   return <>{children}</>;
@@ -95,29 +100,28 @@ const RoleRoute = ({
 // --- AuthenticatedRedirect Component ---
 const AuthenticatedRedirect = ({ children }: { children: JSX.Element }) => {
   const { isAuthenticated, currentUser, isLoading } = useAuth();
-
   if (isLoading) return <LoadingScreen />;
-
   if (isAuthenticated && currentUser) {
     if (currentUser.role === "STUDENT") {
       return <Navigate to="/student/dashboard" replace />;
     } else if (currentUser.role === "TEACHER") {
-      return <Navigate to="/teacher/classrooms" replace />; // Default teacher redirect
+      return <Navigate to="/teacher/classrooms" replace />;
     }
-    // Fallback for users with role but not STUDENT or TEACHER (if any such roles exist)
     console.warn(
       "AuthenticatedRedirect: User role is not STUDENT or TEACHER, redirecting to landing."
     );
     return <Navigate to="/" replace />;
   }
-  return children; // If not authenticated, show the children (e.g., LandingPage)
+  return children;
 };
 
 // --- AppLayout Component ---
 const AppLayout = () => (
   <div className="flex flex-col min-h-screen bg-pattern dark:bg-primary-background-dark">
     <Header />
-    <main className="flex-grow container mx-auto px-4 py-6">
+    <main className="flex-grow">
+      {" "}
+      {/* Container and padding will be handled by individual page components */}
       <Outlet />
     </main>
     <Footer />
@@ -147,20 +151,61 @@ function App() {
                   }
                 />
                 <Route path="/about" element={<AboutUsPage />} />
+                <Route path="/privacy" element={<PrivacyPolicyPage />} />
+
+                {/* Standalone Practice Game Routes */}
+                {/* Pass isPracticeMode={true} to distinguish from assigned games */}
                 <Route
                   path="/image-quiz"
-                  element={<ImageMultipleChoiceGame />}
+                  element={
+                    <ImageMultipleChoiceGame
+                      isPracticeMode={true}
+                      onGameComplete={() => {}}
+                    />
+                  }
                 />
                 <Route
                   path="/matching-game-test"
-                  element={<MatchingGamePage />}
+                  element={
+                    <MatchingGamePage
+                      isPracticeMode={true}
+                      onGameComplete={() => {}}
+                    />
+                  }
                 />
-                <Route path="/likas-yaman" element={<LikasYamanGame />} />
-                <Route path="/4pics1word" element={<FourPicsOneWord />} />
-                <Route path="/create4pics1word" element={<Create4Pics1Word />} />
-                <Route path="/createsortingame" element={<CreateSortingGame />} />
-                <Route path="/creatematchinggame" element={<CreateMatchingGame />} />
-                <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                <Route
+                  path="/likas-yaman"
+                  element={
+                    <LikasYamanGame
+                      isPracticeMode={true}
+                      onGameComplete={() => {}}
+                    />
+                  }
+                />
+                <Route
+                  path="/4pics1word"
+                  element={
+                    <FourPicsOneWord
+                      isPracticeMode={true}
+                      onGameComplete={() => {}}
+                    />
+                  }
+                />
+
+                {/* Create Game Routes (if used by teachers directly) */}
+                <Route
+                  path="/create4pics1word"
+                  element={<Create4Pics1Word />}
+                />
+                <Route
+                  path="/createsortingame"
+                  element={<CreateSortingGame />}
+                />
+                <Route
+                  path="/creatematchinggame"
+                  element={<CreateMatchingGame />}
+                />
+                {/* <Route path="/createimagemultiplechoice" element={<CreateImageMultipleChoiceGame />} /> */}
 
                 <Route
                   path="/profile"
@@ -202,12 +247,13 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                {/* MODIFIED ROUTE for attempting an assigned game */}
                 <Route
-                  path="/student/classrooms/:classroomId/games/:gameId"
+                  path="/student/classrooms/:classroomId/game/:assignedGameId/attempt"
                   element={
                     <ProtectedRoute>
                       <RoleRoute allowedRole="STUDENT">
-                        <GameplayPage />
+                        <AttemptGamePage /> {/* Uses the new wrapper */}
                       </RoleRoute>
                     </ProtectedRoute>
                   }
@@ -244,7 +290,6 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                {/* New route for assigning a game to a specific classroom */}
                 <Route
                   path="/teacher/classrooms/:classroomId/assign-game"
                   element={

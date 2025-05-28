@@ -87,40 +87,47 @@ export interface Game {
   description?: string;
   subject?: string;
   questions: GameQuestion[];
-  gameMode?: "BALLOON" | "TREASURE_HUNT" | "MATCHING" | "IMAGE_MULTIPLE_CHOICE" | "SORTING" | "FOUR_PICS_ONE_WORD"; // Added "FOUR_PICS_ONE_WORD"
-  status?: 'not_started' | 'in_progress' | 'completed' | 'PENDING' | 'OVERDUE'; // Added PENDING and OVERDUE from AssignedGameDTO
+  gameMode?:
+    | "BALLOON"
+    | "TREASURE_HUNT"
+    | "MATCHING"
+    | "IMAGE_MULTIPLE_CHOICE"
+    | "SORTING"
+    | "FOUR_PICS_ONE_WORD"; // Added "FOUR_PICS_ONE_WORD"
+  status?: "not_started" | "in_progress" | "completed" | "PENDING" | "OVERDUE"; // Added PENDING and OVERDUE from AssignedGameDTO
   score?: number;
 }
 
 export interface StudentPerformance {
-    studentId: string;
-    studentName: string;
-    gameId: string;
-    score: number;
-    completedAt: string;
+  studentId: string;
+  studentName: string;
+  gameId: string;
+  score: number;
+  completedAt: string;
 }
 
-export interface AssignedGame { // This interface seems more detailed, perhaps for specific contexts
-    id: string;
-    classroomId: string;
-    gameId: string;
-    assignedAt: string;
-    dueDate: string;
-    game?: Game; // References the updated Game interface
-    classroom?: Classroom;
+export interface AssignedGame {
+  // This interface seems more detailed, perhaps for specific contexts
+  id: string;
+  classroomId: string;
+  gameId: string;
+  assignedAt: string;
+  dueDate: string;
+  game?: Game; // References the updated Game interface
+  classroom?: Classroom;
 }
 
-
-export interface ClassroomDTO { // Primarily for API request/response bodies, might be less detailed than frontend Classroom
-    id: string;
-    name: string;
-    description?: string;
-    teacherId: string; // Assuming backend sends teacherId
-    teacherName?: string;
-    studentCount?: number;
-    activityCount?: number; // This seems to be derived or added on frontend from assigned games
-    uniqueCode?: string;
-    iconUrl?: string;
+export interface ClassroomDTO {
+  // Primarily for API request/response bodies, might be less detailed than frontend Classroom
+  id: string;
+  name: string;
+  description?: string;
+  teacherId: string; // Assuming backend sends teacherId
+  teacherName?: string;
+  studentCount?: number;
+  activityCount?: number; // This seems to be derived or added on frontend from assigned games
+  uniqueCode?: string;
+  iconUrl?: string;
 }
 
 export interface LeaderboardEntry {
@@ -162,7 +169,7 @@ export interface AssignedGameDTO {
   gameTitle?: string; // Denormalized for quick display
   assignedAt: string;
   dueDate: string;
-  status?: 'PENDING' | 'COMPLETED' | 'OVERDUE' | 'not_started' | 'in_progress'; // Added more statuses for consistency
+  status?: "PENDING" | "COMPLETED" | "OVERDUE" | "not_started" | "in_progress"; // Added more statuses for consistency
   game?: GameDTO; // The actual game details from the library (GameDTO)
   maxAttempts?: number;
 }
@@ -171,17 +178,27 @@ export interface AssignedGameDTO {
 export interface GameDTO {
   id: string;
   title: string;
+  maxScore?: number;
+  maxExp?: number;
   description?: string;
   subject?: string;
   questions?: GameQuestion[]; // Optional for previews
-  gameMode?: "BALLOON" | "TREASURE_HUNT" | "MATCHING" | "IMAGE_MULTIPLE_CHOICE" | "SORTING" | "FOUR_PICS_ONE_WORD";
+  gameMode?:
+    | "BALLOON"
+    | "TREASURE_HUNT"
+    | "MATCHING"
+    | "IMAGE_MULTIPLE_CHOICE"
+    | "SORTING"
+    | "FOUR_PICS_ONE_WORD";
   isPremade?: boolean;
+  gameData?: string; // JSON string containing game-specific data
 }
 
 export interface StudentGameAttemptDTO {
   id: string;
   studentId: string;
   assignedGameId: string; // Link to the AssignedGameDTO id
+  gameId: string; // ID of the game that was attempted
   score: number;
   completedAt: string;
   // Consider adding game details snapshot here if needed, e.g., gameTitle
@@ -203,16 +220,27 @@ export interface MatchSortQuestion {
 export interface MatchingCard {
   id: string; // Unique ID for the card instance
   pairId: number; // Identifies which pair this card belongs to
-  type: 'word' | 'picture' | 'left' | 'right'; // 'left'/'right' could be for other matching types
+  type: "word" | "picture" | "left" | "right"; // 'left'/'right' could be for other matching types
   content: string; // The text content (e.g., Tagalog word, English word)
   imageUrl?: string; // URL if it's a picture card
   isFaceUp: boolean;
   isMatched: boolean;
 }
 
-export interface MatchingPair { // Represents the original pair data for a level
+export interface MatchingPair {
+  // Represents the original pair data for a level
   id: number; // Unique ID for the pair concept
   word: string; // e.g., Tagalog word
   english: string; // e.g., English translation or related concept for image
   imageUrl: string; // Image associated with the pair
+}
+
+export interface ClassroomContextType {
+  getAssignedGames: (classroomId: string) => Promise<AssignedGameDTO[]>;
+  submitGameResults: (
+    classroomId: string,
+    assignedGameId: string,
+    score: number,
+    attemptData: Omit<StudentGameAttemptDTO, "id" | "createdAt">
+  ) => Promise<void>;
 }

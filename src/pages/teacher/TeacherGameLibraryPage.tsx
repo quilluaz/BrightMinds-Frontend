@@ -22,17 +22,17 @@ const PREFERRED_LIBRARY_GAMES: LibraryGameDisplayConfig[] = [
   {
     idKey: 'matching-game',
     title: "Matching Game",
-    description: "Test memory by matching pairs. Covers Anyong Tubig, Anyong Lupa, and Pambansang Sagisag.",
+    description: "Create pairs of related items like historical events and dates, or Filipino words and their meanings. Perfect for reinforcing connections between concepts.",
     gameMode: "MATCHING",
-    subject: "Araling Panlipunan / Tagalog",
+    subject: "All Subjects",
     icon: <Sparkles size={28} className="text-green-500 dark:text-green-400" />
   },
   {
     idKey: 'image-quiz',
     title: "Image Quiz",
-    description: "Identify the correct image for each question. A fun Araling Panlipunan knowledge test!",
+    description: "Create quizzes with images to test knowledge of historical landmarks, geographical features, or cultural artifacts. Great for visual learning!",
     gameMode: "IMAGE_MULTIPLE_CHOICE",
-    subject: "Araling Panlipunan",
+    subject: "All Subjects",
     icon: <Zap size={28} className="text-blue-500 dark:text-blue-400" />
   },
   {
@@ -46,9 +46,9 @@ const PREFERRED_LIBRARY_GAMES: LibraryGameDisplayConfig[] = [
   {
     idKey: '4pics1word',
     title: "4 Pics 1 Word",
-    description: "Guess the common Tagalog word that connects four different pictures. Great for vocabulary!",
+    description: "Create puzzles where students identify the common word connecting four related images. Great for vocabulary building and critical thinking!",
     gameMode: "FOUR_PICS_ONE_WORD",
-    subject: "Tagalog",
+    subject: "All Subjects",
     icon: <Puzzle size={28} className="text-yellow-500 dark:text-amber-400" />
   },
 ];

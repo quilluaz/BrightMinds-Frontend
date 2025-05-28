@@ -1,4 +1,5 @@
 import axios from 'axios';
+import api from './api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -19,7 +20,7 @@ interface GameData {
 export const gameService = {
   createGame: async (gameData: GameData) => {
     try {
-      const response = await axios.post(`${API_URL}/games`, gameData);
+      const response = await api.post('/games', gameData)
       return response.data;
     } catch (error) {
       console.error('Error creating game:', error);

@@ -146,9 +146,22 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
       const response = await api.get<BackendTeacherClassroomResponse[]>(
         `${CLASSROOM_API_BASE_URL}/teacher/${currentUser.id}`
       );
-      setTeacherClassrooms(
-        response.data.map(transformBackendTeacherClassroomToFrontend)
-      );
+      console.log("API response for teacher classrooms:", response);
+      console.log("Actual response.data:", response.data);
+      if (Array.isArray(response.data)) {
+        setTeacherClassrooms(
+          response.data.map(transformBackendTeacherClassroomToFrontend)
+        );
+      } else {
+        console.error(
+          "Error: response.data is not an array. Actual data:",
+          response.data
+        );
+        // Optionally, set teacherClassrooms to an empty array or handle appropriately
+        setTeacherClassrooms([]);
+        // You might want to throw an error here or set an error state
+        // throw new Error("Received unexpected data format for teacher classrooms.");
+      }
     } catch (error) {
       console.error("Error fetching teacher classrooms:", error);
       setTeacherClassrooms([]);
@@ -587,7 +600,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
           classroomId, // Include classroomId in the attempt data
           score,
           assignedGameId,
-          completedAt: new Date().toISOString()
+          completedAt: new Date().toISOString(),
         });
       } catch (error: any) {
         console.error("Error submitting game results:", error);

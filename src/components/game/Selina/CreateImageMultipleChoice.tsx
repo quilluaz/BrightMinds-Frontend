@@ -1,544 +1,408 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Paper,
-  IconButton,
-  Grid,
-  Alert,
-  FormControlLabel,
-  Checkbox,
-} from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import ImageIcon from '@mui/icons-material/Image';
-import { gameService } from '../../../services/game';
-import { useNavigate } from 'react-router-dom';
-import { GameDTO } from '../../../types';
-import { useAuth } from '../../../context/AuthContext';
-import { API_BASE_URL } from '../../../config';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { PlusCircle, Trash2, UploadCloud, Image as ImageIconLucide, AlertCircle, CheckCircle, CheckSquare, XSquare } from 'lucide-react';
+import { gameService } from "../../../services/game";
+// Assuming GameDTO might be used by gameService, but the payload is constructed locally.
+// import { GameDTO } from "../../../types"; 
+import { useAuth } from "../../../context/AuthContext";
+import { API_BASE_URL } from "../../../config";
+import Button from "../../common/Button";
 
-interface Choice {
-  id: string;
-  imagePath: string;
+// Interfaces for state management, aligned with other create-game components
+interface ImageChoiceSlot {
+  id: string; // Unique ID for the choice, e.g., "choice-timestamp-A"
+  file?: File;
+  previewUrl?: string;
+  backendUrl: string; // Will store the URL from the backend after upload
   isCorrect: boolean;
 }
 
-interface Question {
-  id: string;
+interface QuestionState {
+  id: string; // Unique ID for the question
   questionText: string;
-  choices: Choice[];
+  choices: ImageChoiceSlot[]; // Expecting 2-4 choices
 }
 
-interface GameTemplate {
+interface GameTemplateState {
   activityName: string;
   maxScore: number;
   maxExp: number;
-  questions: Question[];
+  questions: QuestionState[];
 }
+
+// Helper to create an initial ImageChoiceSlot
+const createInitialImageChoiceSlot = (uniqueIdPart: string): ImageChoiceSlot => ({
+  id: `choice-${Date.now()}-${uniqueIdPart}`,
+  backendUrl: "",
+  previewUrl: "",
+  isCorrect: false,
+});
+
+// Helper to create an initial Question
+const createInitialQuestion = (): QuestionState => ({
+  id: `question-${Date.now()}`,
+  questionText: "",
+  choices: [ // Default to 4 choices
+    createInitialImageChoiceSlot("A"),
+    createInitialImageChoiceSlot("B"),
+    createInitialImageChoiceSlot("C"),
+    createInitialImageChoiceSlot("D"),
+  ],
+});
 
 const CreateImageMultipleChoice: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const [gameTemplate, setGameTemplate] = useState<GameTemplate>({
-    activityName: '',
+  const [gameTemplate, setGameTemplate] = useState<GameTemplateState>({
+    activityName: "",
     maxScore: 100,
     maxExp: 50,
-    questions: [
-      {
-        id: `question${Date.now()}`,
-        questionText: '',
-        choices: [
-          { id: `choice${Date.now()}A`, imagePath: '', isCorrect: false },
-          { id: `choice${Date.now()}B`, imagePath: '', isCorrect: false },
-          { id: `choice${Date.now()}C`, imagePath: '', isCorrect: false },
-          { id: `choice${Date.now()}D`, imagePath: '', isCorrect: false },
-        ],
-      },
-    ],
+    questions: [createInitialQuestion()],
   });
 
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isLoadingSubmit, setIsLoadingSubmit] = useState<boolean>(false);
 
-  const [previewUrls, setPreviewUrls] = useState<string[][]>(
-    gameTemplate.questions.map((q) => q.choices.map(() => '')),
-  );
-
-  useEffect(() => {
-    setPreviewUrls(gameTemplate.questions.map((q) => q.choices.map(() => '')));
-  }, [gameTemplate.questions]);
-
-  const handleGameTemplateChange = (field: keyof GameTemplate, value: any) => {
+  const handleGameTemplateChange = (field: keyof Omit<GameTemplateState, 'questions'>, value: string | number) => {
     setGameTemplate({ ...gameTemplate, [field]: value });
   };
 
-  const handleQuestionChange = (
-    questionIndex: number,
-    field: keyof Question,
-    value: any,
-  ) => {
+  const handleQuestionTextChange = (questionIndex: number, text: string) => {
     const newQuestions = [...gameTemplate.questions];
-    newQuestions[questionIndex] = {
-      ...newQuestions[questionIndex],
-      [field]: value,
-    };
+    newQuestions[questionIndex].questionText = text;
     setGameTemplate({ ...gameTemplate, questions: newQuestions });
   };
 
-  const handleChoiceChange = (
+  const handleImageSelect = (
     questionIndex: number,
     choiceIndex: number,
-    field: keyof Choice,
-    value: any,
-  ) => {
-    const newQuestions = [...gameTemplate.questions];
-    newQuestions[questionIndex].choices[choiceIndex] = {
-      ...newQuestions[questionIndex].choices[choiceIndex],
-      [field]: value,
-    };
-    if (field === 'isCorrect' && value) {
-      newQuestions[questionIndex].choices.forEach((choice, idx) => {
-        if (idx !== choiceIndex) {
-          choice.isCorrect = false;
-        }
-      });
-    }
-    setGameTemplate({ ...gameTemplate, questions: newQuestions });
-  };
-
-  const handleImageUpload = async (
-    questionIndex: number,
-    choiceIndex: number,
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    const newQuestions = [...gameTemplate.questions];
+    const targetChoiceSlot = newQuestions[questionIndex].choices[choiceIndex];
 
-    try {
-      // Create a FormData object to send the file
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('gameType', 'image-quiz');
-
-      // Upload the file to the backend
-      const response = await fetch(`${API_BASE_URL}/api/upload/image`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
-
-      const data = await response.json();
-      const imagePath = data.imagePath;
-
-      // Update preview URL
-      const previewUrl = URL.createObjectURL(file);
-      setPreviewUrls((prevUrls) => {
-        const newUrls = [...prevUrls];
-        if (!newUrls[questionIndex]) newUrls[questionIndex] = [];
-        newUrls[questionIndex][choiceIndex] = previewUrl;
-        return newUrls;
-      });
-
-      // Update the game template with the actual image path from the backend
-      const newQuestions = [...gameTemplate.questions];
-      newQuestions[questionIndex].choices[choiceIndex].imagePath = imagePath;
-      setGameTemplate({ ...gameTemplate, questions: newQuestions });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      setError('Failed to upload image. Please try again.');
+    if (file) {
+      targetChoiceSlot.file = file;
+      targetChoiceSlot.previewUrl = URL.createObjectURL(file);
+      targetChoiceSlot.backendUrl = ""; // Clear previous backend URL
+    } else {
+      targetChoiceSlot.file = undefined;
+      targetChoiceSlot.previewUrl = "";
+      targetChoiceSlot.backendUrl = "";
     }
+    setGameTemplate({ ...gameTemplate, questions: newQuestions });
+    setError(null); // Clear error on new image selection
+  };
+
+  const handleSetCorrectChoice = (questionIndex: number, correctChoiceIndex: number) => {
+    const newQuestions = [...gameTemplate.questions];
+    newQuestions[questionIndex].choices.forEach((choice, idx) => {
+      choice.isCorrect = (idx === correctChoiceIndex);
+    });
+    setGameTemplate({ ...gameTemplate, questions: newQuestions });
   };
 
   const addQuestion = () => {
-    const newQuestionId = `question${Date.now()}`;
+    if (gameTemplate.questions.length >= 10) { // Example limit
+        setError("You can add a maximum of 10 questions.");
+        return;
+    }
     setGameTemplate({
       ...gameTemplate,
-      questions: [
-        ...gameTemplate.questions,
-        {
-          id: newQuestionId,
-          questionText: '',
-          choices: [
-            { id: `choice${Date.now()}A`, imagePath: '', isCorrect: false },
-            { id: `choice${Date.now()}B`, imagePath: '', isCorrect: false },
-            { id: `choice${Date.now()}C`, imagePath: '', isCorrect: false },
-            { id: `choice${Date.now()}D`, imagePath: '', isCorrect: false },
-          ],
-        },
-      ],
+      questions: [...gameTemplate.questions, createInitialQuestion()],
     });
-    setPreviewUrls((prevUrls) => [...prevUrls, ['', '', '', '']]);
   };
 
   const removeQuestion = (index: number) => {
+    if (gameTemplate.questions.length <= 1) {
+      setError("You must have at least one question.");
+      return;
+    }
     const newQuestions = gameTemplate.questions.filter((_, i) => i !== index);
     setGameTemplate({ ...gameTemplate, questions: newQuestions });
-    setPreviewUrls((prevUrls) => prevUrls.filter((_, i) => i !== index));
-  };
-
-  const addChoice = (questionIndex: number) => {
-    const newQuestions = [...gameTemplate.questions];
-    const newChoiceId = `choice${Date.now()}${String.fromCharCode(
-      65 + newQuestions[questionIndex].choices.length,
-    )}`;
-    newQuestions[questionIndex].choices.push({
-      id: newChoiceId,
-      imagePath: '',
-      isCorrect: false,
-    });
-    setGameTemplate({ ...gameTemplate, questions: newQuestions });
-    setPreviewUrls((prevUrls) => {
-      const newUrls = [...prevUrls];
-      if (newUrls[questionIndex]) {
-        newUrls[questionIndex].push('');
-      }
-      return newUrls;
-    });
-  };
-
-  const removeChoice = (questionIndex: number, choiceIndex: number) => {
-    const newQuestions = [...gameTemplate.questions];
-    newQuestions[questionIndex].choices = newQuestions[
-      questionIndex
-    ].choices.filter((_, i) => i !== choiceIndex);
-    setGameTemplate({ ...gameTemplate, questions: newQuestions });
-    setPreviewUrls((prevUrls) => {
-      const newUrls = [...prevUrls];
-      if (newUrls[questionIndex]) {
-        newUrls[questionIndex] = newUrls[questionIndex].filter(
-          (_, i) => i !== choiceIndex,
-        );
-      }
-      return newUrls;
-    });
   };
 
   const validateGame = (): boolean => {
+    setError(null);
     if (!gameTemplate.activityName.trim()) {
-      setError('Please enter a game name');
+      setError("Please enter a game name.");
       return false;
     }
-
+    if (Number(gameTemplate.maxScore) <= 0 || Number(gameTemplate.maxExp) <= 0) {
+      setError("Max Score and Max EXP must be positive values.");
+      return false;
+    }
     if (gameTemplate.questions.length === 0) {
-      setError('Please add at least one question');
+      setError("Please add at least one question.");
       return false;
     }
-
-    for (const question of gameTemplate.questions) {
+    for (let i = 0; i < gameTemplate.questions.length; i++) {
+      const question = gameTemplate.questions[i];
       if (!question.questionText.trim()) {
-        setError(`Question ${question.id}: Please enter the question text`);
+        setError(`Question ${i + 1}: Please enter the question text.`);
         return false;
       }
-      if (question.choices.length < 2) {
-        setError(
-          `Question ${question.id}: Please add at least two answer choices`,
-        );
+      if (question.choices.some(choice => !choice.file && !choice.backendUrl)) {
+        setError(`Question ${i + 1}: All choices must have an image selected.`);
         return false;
       }
-      if (question.choices.filter((choice) => choice.isCorrect).length !== 1) {
-        setError(`Question ${question.id}: Please select exactly one correct answer`);
-        return false;
-      }
-      if (
-        question.choices.some(
-          (choice) => !choice.imagePath || !choice.imagePath.trim(),
-        )
-      ) {
-        setError(`Question ${question.id}: All choices must have an image selected.`);
+      if (!question.choices.some(choice => choice.isCorrect)) {
+        setError(`Question ${i + 1}: Please mark one choice as the correct answer.`);
         return false;
       }
     }
-
     return true;
   };
 
-  const handleSubmit = async () => {
-    setError('');
-    setSuccess('');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
 
-    if (!validateGame()) {
-      return;
-    }
+    if (!validateGame()) return;
+    setIsLoadingSubmit(true);
 
     try {
-      if (!currentUser || currentUser.role !== 'TEACHER') {
-        setError('You must be logged in as a teacher to create games.');
+      if (!currentUser || currentUser.role !== "TEACHER") {
+        setError("You must be logged in as a teacher to create games.");
+        setIsLoadingSubmit(false);
         return;
       }
 
-      const gameData = {
-        activityName: gameTemplate.activityName,
-        maxScore: gameTemplate.maxScore,
-        maxExp: gameTemplate.maxExp,
-        isPremade: false,
-        gameMode: 'IMAGE_MULTIPLE_CHOICE' as const,
-        gameData: JSON.stringify({
-          questions: gameTemplate.questions,
-        }),
-        createdBy: {
-          id: currentUser.id,
-          name: currentUser.name
+      const processedQuestions = [...gameTemplate.questions];
+
+      for (let i = 0; i < processedQuestions.length; i++) {
+        const question = processedQuestions[i];
+        for (let j = 0; j < question.choices.length; j++) {
+          const choiceSlot = question.choices[j];
+          if (choiceSlot.file && !choiceSlot.backendUrl) { // Only upload if file exists and no backendUrl yet
+            const formData = new FormData();
+            formData.append("file", choiceSlot.file);
+            formData.append("gameType", "image-quiz"); // Specific gameType for backend folder organization
+
+            const response = await fetch(`${API_BASE_URL}/api/upload/image`, {
+              method: "POST",
+              body: formData,
+              // Add Authorization header if your API needs it
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.message || `Failed to upload image for Question ${i + 1}, Choice ${j + 1}. Status: ${response.status}`);
+            }
+            const data = await response.json();
+            processedQuestions[i].choices[j].backendUrl = data.imagePath;
+            processedQuestions[i].choices[j].file = undefined; // Clear file after successful upload
+          } else if (!choiceSlot.file && !choiceSlot.backendUrl) {
+            // This case should be caught by validateGame, but good to have a safeguard
+            throw new Error(`Image for Question ${i + 1}, Choice ${j + 1} is missing.`);
+          }
         }
+      }
+      
+      // Prepare final game data structure for the backend
+      // This structure must match what BlankImageMultipleChoiceGame.tsx expects for 'gameData'
+      const finalGameDataQuestions = processedQuestions.map(q => ({
+        id: q.id,
+        questionText: q.questionText,
+        choices: q.choices.map(choice => ({
+          id: choice.id, // Choice ID, e.g., "choice-timestamp-A"
+          imagePlaceholderText: choice.backendUrl, // This is what BlankImageMultipleChoiceGame expects for the image URL
+          isCorrect: choice.isCorrect,
+        })),
+      }));
+
+      const gamePayload = {
+        activityName: gameTemplate.activityName,
+        maxScore: Number(gameTemplate.maxScore),
+        maxExp: Number(gameTemplate.maxExp),
+        isPremade: false,
+        gameMode: "IMAGE_MULTIPLE_CHOICE" as const,
+        gameData: JSON.stringify({ questions: finalGameDataQuestions }),
+        createdBy: { id: currentUser.id }, // Assuming backend uses this structure
       };
 
-      await gameService.createGame(gameData);
-      setSuccess('Image Quiz created successfully!');
+      await gameService.createGame(gamePayload as any); // Cast if GameDTO is too strict for this specific payload
+      setSuccess("Image Multiple Choice Game created successfully! Redirecting...");
       
-      // Reset form
-      setGameTemplate({
-        activityName: '',
-        maxScore: 100,
-        maxExp: 50,
-        questions: [
-          {
-            id: `question${Date.now()}`,
-            questionText: '',
-            choices: [
-              { id: `choice${Date.now()}A`, imagePath: '', isCorrect: false },
-              { id: `choice${Date.now()}B`, imagePath: '', isCorrect: false },
-              { id: `choice${Date.now()}C`, imagePath: '', isCorrect: false },
-              { id: `choice${Date.now()}D`, imagePath: '', isCorrect: false },
-            ],
-          },
-        ],
+      setGameTemplate({ // Reset form
+        activityName: "", maxScore: 100, maxExp: 50,
+        questions: [createInitialQuestion()],
       });
+      setTimeout(() => navigate("/teacher/games/library"), 2000);
 
-      // Navigate back to game library after successful creation
-      setTimeout(() => {
-        navigate('/teacher/games/library');
-      }, 2000);
     } catch (err) {
-      setError('Failed to create game. Please try again.');
-      console.error('Error creating image quiz:', err);
+      setError(err instanceof Error ? err.message : "Failed to create game. Please try again.");
+      console.error("Error creating Image Multiple Choice game:", err);
+    } finally {
+      setIsLoadingSubmit(false);
     }
   };
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
-      <Typography variant="h4" gutterBottom>
-        Create Image Multiple Choice Game
-      </Typography>
+    <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <header className="mb-10 text-center">
+        <h1 className="text-3xl sm:text-4xl font-bold text-primary-text dark:text-primary-text-dark">
+          Create Image Multiple Choice Quiz
+        </h1>
+        <p className="text-gray-600 dark:text-gray-300 mt-2">
+          Design a quiz where students select the correct image.
+        </p>
+      </header>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
+        <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative dark:bg-red-700/20 dark:border-red-600/30 dark:text-red-300 flex items-start" role="alert">
+          <AlertCircle size={20} className="mr-2 flex-shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
       )}
-
       {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
+        <div className="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative dark:bg-green-700/20 dark:border-green-600/30 dark:text-green-300 flex items-start" role="alert">
+          <CheckCircle size={20} className="mr-2 flex-shrink-0 mt-0.5" />
+          <span>{success}</span>
+        </div>
       )}
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              md: 'repeat(2, 1fr) 1fr 1fr',
-            },
-            gap: 3,
-          }}
-        >
-          <TextField
-            fullWidth
-            label="Game Name"
-            value={gameTemplate.activityName}
-            onChange={(e) => handleGameTemplateChange('activityName', e.target.value)}
-            required
-          />
-          <TextField
-            fullWidth
-            type="number"
-            label="Max Score"
-            value={gameTemplate.maxScore}
-            onChange={(e) =>
-              handleGameTemplateChange('maxScore', parseInt(e.target.value))
-            }
-            required
-          />
-          <TextField
-            fullWidth
-            type="number"
-            label="Max Experience"
-            value={gameTemplate.maxExp}
-            onChange={(e) =>
-              handleGameTemplateChange('maxExp', parseInt(e.target.value))
-            }
-            required
-          />
-        </Box>
-      </Paper>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <section className="card p-6 md:p-8">
+          <h2 className="text-2xl font-semibold mb-6 text-primary-text dark:text-primary-text-dark border-b pb-3 border-gray-200 dark:border-gray-700">
+            Game Details
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-3">
+              <label htmlFor="activityName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Game Name / Title
+              </label>
+              <input
+                id="activityName" type="text" value={gameTemplate.activityName}
+                onChange={(e) => handleGameTemplateChange('activityName', e.target.value)}
+                className="input-field" placeholder="e.g., Philippine National Symbols Quiz" required disabled={isLoadingSubmit}
+              />
+            </div>
+            <div>
+              <label htmlFor="maxScore" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max Score</label>
+              <input
+                id="maxScore" type="number" value={gameTemplate.maxScore}
+                onChange={(e) => handleGameTemplateChange('maxScore', parseInt(e.target.value) || 0)}
+                className="input-field" min="1" required disabled={isLoadingSubmit}
+              />
+            </div>
+            <div>
+              <label htmlFor="maxExp" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max Experience (EXP)</label>
+              <input
+                id="maxExp" type="number" value={gameTemplate.maxExp}
+                onChange={(e) => handleGameTemplateChange('maxExp', parseInt(e.target.value) || 0)}
+                className="input-field" min="1" required disabled={isLoadingSubmit}
+              />
+            </div>
+          </div>
+        </section>
 
-      {gameTemplate.questions.map((question, questionIndex) => (
-        <Paper key={question.id} sx={{ p: 3, mb: 3 }}>
-          <Box
-            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
-          >
-            <Typography variant="h6">Question {questionIndex + 1}</Typography>
-            <IconButton
-              color="error"
-              onClick={() => removeQuestion(questionIndex)}
-              disabled={gameTemplate.questions.length === 1}
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Box>
+        <section className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark">
+              Questions ({gameTemplate.questions.length})
+            </h2>
+            <Button type="button" variant="outline" onClick={addQuestion} icon={<PlusCircle size={18}/>} disabled={isLoadingSubmit}>
+              Add Question
+            </Button>
+          </div>
 
-          <Box sx={{ display: 'grid', gap: 3 }}>
-            <TextField
-              fullWidth
-              label="Question Text"
-              value={question.questionText}
-              onChange={(e) =>
-                handleQuestionChange(questionIndex, 'questionText', e.target.value)
-              }
-              required
-              multiline
-              rows={2}
-            />
+          {gameTemplate.questions.map((question, questionIndex) => (
+            <div key={question.id} className="card p-6 relative group">
+              <div className="absolute top-3 right-3">
+                <Button
+                  type="button" variant="text" size="sm" onClick={() => removeQuestion(questionIndex)}
+                  disabled={gameTemplate.questions.length <= 1 || isLoadingSubmit}
+                  className="text-red-500 hover:bg-red-100 dark:hover:bg-red-700/20 !p-2"
+                  aria-label="Remove question"
+                > <Trash2 size={18} /> </Button>
+              </div>
 
-            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-              Answer Choices
-            </Typography>
-            <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: { 
-                xs: '1fr', 
-                sm: 'repeat(2, 1fr)', 
-                md: 'repeat(4, 1fr)' 
-              }, 
-              gap: 2 
-            }}>
-              {question.choices.map((choice, choiceIndex) => {
-                const currentPreviewUrl =
-                  previewUrls[questionIndex]?.[choiceIndex] || choice.imagePath;
+              <h3 className="text-lg font-medium mb-4 text-primary-text dark:text-primary-text-dark">
+                Question {questionIndex + 1}
+              </h3>
+              
+              <div className="mb-6">
+                <label htmlFor={`q-${question.id}-text`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Question Text
+                </label>
+                <textarea
+                  id={`q-${question.id}-text`} value={question.questionText}
+                  onChange={(e) => handleQuestionTextChange(questionIndex, e.target.value)}
+                  className="input-field min-h-[80px]" placeholder="e.g., Alin sa mga ito ang Pambansang Ibon ng Pilipinas?" required disabled={isLoadingSubmit}
+                />
+              </div>
 
-                return (
-                  <Box
-                    key={choice.id}
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 1,
-                      border: '1px solid #ddd',
-                      p: 2,
-                      borderRadius: 1,
-                    }}
-                  >
-                    <Typography variant="subtitle1">
-                      Choice {String.fromCharCode(65 + choiceIndex)}
-                    </Typography>
-                    <Box sx={{ position: 'relative', width: 150, height: 150 }}>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Image Choices (Mark one as correct):
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {question.choices.map((choice, choiceIndex) => (
+                  <div key={choice.id} className={`flex flex-col p-3 rounded-lg border-2 transition-colors
+                    ${choice.isCorrect 
+                      ? 'border-green-500 bg-green-50 dark:bg-green-700/20' 
+                      : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-800'}`
+                  }>
+                    <div className="w-full aspect-square border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg flex items-center justify-center relative mb-3 bg-gray-50 dark:bg-slate-700">
+                      {choice.previewUrl ? (
+                        <img src={choice.previewUrl} alt={`Preview Choice ${choiceIndex + 1}`} className="max-h-full max-w-full object-contain rounded-md" />
+                      ) : (
+                        <ImageIconLucide className="h-10 w-10 text-gray-400 dark:text-gray-500" />
+                      )}
                       <input
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        id={`choice-image-${questionIndex}-${choiceIndex}`}
-                        type="file"
-                        onChange={(e) =>
-                          handleImageUpload(questionIndex, choiceIndex, e)
-                        }
+                        id={`q-${question.id}-choiceimg-${choiceIndex}`} type="file" accept="image/*"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        onChange={(e) => handleImageSelect(questionIndex, choiceIndex, e)}
+                        disabled={isLoadingSubmit}
                       />
-                      <label htmlFor={`choice-image-${questionIndex}-${choiceIndex}`}>
-                        <Box
-                          sx={{
-                            width: '100%',
-                            height: '100%',
-                            border: '2px dashed',
-                            borderColor: 'divider',
-                            borderRadius: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            backgroundColor: currentPreviewUrl
-                              ? 'transparent'
-                              : 'action.hover',
-                            '&:hover': {
-                              borderColor: 'primary.main',
-                              backgroundColor: 'action.hover',
-                            },
-                          }}
-                        >
-                          {currentPreviewUrl ? (
-                            <Box
-                              component="img"
-                              src={currentPreviewUrl}
-                              alt={`Choice ${String.fromCharCode(65 + choiceIndex)} Image`}
-                              sx={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                borderRadius: 1,
-                              }}
-                            />
-                          ) : (
-                            <ImageIcon color="action" sx={{ fontSize: 50 }} />
-                          )}
-                        </Box>
-                      </label>
-                    </Box>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={choice.isCorrect}
-                          onChange={(e) =>
-                            handleChoiceChange(
-                              questionIndex,
-                              choiceIndex,
-                              'isCorrect',
-                              e.target.checked,
-                            )
-                          }
-                        />
-                      }
-                      label="Correct Answer"
-                    />
-                    <IconButton
-                      color="error"
-                      onClick={() => removeChoice(questionIndex, choiceIndex)}
-                      disabled={question.choices.length <= 2}
+                    </div>
+                    <Button
+                        type="button" variant="outline" size="sm"
+                        onClick={() => document.getElementById(`q-${question.id}-choiceimg-${choiceIndex}`)?.click()}
+                        className="w-full text-xs mb-2"
+                        icon={<UploadCloud size={14}/>}
+                        disabled={isLoadingSubmit}
                     >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                );
-              })}
-            </Box>
-          </Box>
-        </Paper>
-      ))}
+                        {choice.previewUrl ? 'Change Image' : 'Select Image'}
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => handleSetCorrectChoice(questionIndex, choiceIndex)}
+                      className={`w-full flex items-center justify-center px-3 py-2 text-xs font-medium rounded-md transition-colors
+                        ${choice.isCorrect 
+                          ? 'bg-green-600 text-white hover:bg-green-700' 
+                          : 'bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-500'}`
+                      }
+                      disabled={isLoadingSubmit}
+                    >
+                      {choice.isCorrect ? <CheckSquare size={14} className="mr-1.5"/> : <XSquare size={14} className="mr-1.5 opacity-50"/>}
+                      {choice.isCorrect ? 'Correct Answer' : 'Mark as Correct'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
 
-      <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 3 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={addQuestion}
-        >
-          Add Question
-        </Button>
-        <Button
-          variant="contained"
-          color="success"
-          onClick={handleSubmit}
-        >
-          Create Game
-        </Button>
-      </Box>
-    </Box>
+        <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-end items-center gap-4">
+          {gameTemplate.questions.length > 0 && (
+             <p className="text-sm text-gray-600 dark:text-gray-400 order-first sm:order-none mr-auto">
+                Total Questions: {gameTemplate.questions.length}
+            </p>
+          )}
+          <Button type="button" variant="outline" onClick={addQuestion} icon={<PlusCircle size={18}/>} disabled={isLoadingSubmit}>
+            Add Question
+          </Button>
+          <Button type="submit" variant="primary" size="lg" isLoading={isLoadingSubmit} disabled={isLoadingSubmit}>
+            Create Image Quiz
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 };
 

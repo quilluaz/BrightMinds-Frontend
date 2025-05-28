@@ -36,11 +36,11 @@ const PREFERRED_LIBRARY_GAMES: LibraryGameDisplayConfig[] = [
     icon: <Zap size={28} className="text-blue-500 dark:text-blue-400" />
   },
   {
-    idKey: 'likas-yaman-sort',
-    title: "Likas Yaman Sort",
-    description: "Learn about natural resources by sorting items into correct categories. Teaches uses and care.",
+    idKey: 'sorting-game',
+    title: "Sorting Game",
+    description: "Create interactive sorting activities where students categorize items into different groups. Perfect for teaching classification and organization skills.",
     gameMode: "SORTING",
-    subject: "Araling Panlipunan",
+    subject: "All Subjects",
     icon: <Brain size={28} className="text-purple-500 dark:text-purple-400" />
   },
   {

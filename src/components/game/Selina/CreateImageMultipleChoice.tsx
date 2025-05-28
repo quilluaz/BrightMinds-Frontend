@@ -121,6 +121,7 @@ const CreateImageMultipleChoice: React.FC = () => {
       // Create a FormData object to send the file
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('gameType', 'image-quiz');
 
       // Upload the file to the backend
       const response = await fetch(`${API_BASE_URL}/api/upload/image`, {

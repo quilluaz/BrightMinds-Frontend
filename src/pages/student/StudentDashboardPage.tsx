@@ -6,7 +6,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useClassroom } from '../../context/ClassroomContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ClassroomCard from '../../components/common/ClassroomCard';
-import JoinClassroomCard from '../../components/student/JoinClassroomCard';
 import { AssignedGameDTO, StudentClassroom } from '../../types';
 
 interface LatestActivityDisplay {
@@ -294,9 +293,6 @@ const StudentDashboardPage: React.FC = () => {
                         </Button>
                     </div>
                  )}
-            </div>
-            <div className="md:col-span-1 md:mt-10">
-                 <JoinClassroomCard onClassroomJoined={handleClassroomJoined} className="w-full" />
             </div>
         </div>
       </div>

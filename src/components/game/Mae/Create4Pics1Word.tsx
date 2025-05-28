@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   TextField,
@@ -7,15 +7,15 @@ import {
   Paper,
   IconButton,
   Alert,
-} from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import ImageIcon from '@mui/icons-material/Image';
-import { gameService } from '../../../services/game';
-import { useNavigate } from 'react-router-dom';
-import { GameDTO } from '../../../types';
-import { useAuth } from '../../../context/AuthContext';
-import { API_BASE_URL } from '../../../config';
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import ImageIcon from "@mui/icons-material/Image";
+import { gameService } from "../../../services/game";
+import { useNavigate } from "react-router-dom";
+import { GameDTO } from "../../../types";
+import { useAuth } from "../../../context/AuthContext";
+import { API_BASE_URL } from "../../../config";
 
 interface Question {
   id: string;
@@ -34,27 +34,27 @@ const Create4Pics1Word: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [gameTemplate, setGameTemplate] = useState<GameTemplate>({
-    activityName: '',
+    activityName: "",
     maxScore: 100,
     maxExp: 50,
     questions: [
       {
         id: `question${Date.now()}`,
-        answer: '',
-        images: ['', '', '', ''],
+        answer: "",
+        images: ["", "", "", ""],
       },
     ],
   });
 
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>('');
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
 
   const [previewUrls, setPreviewUrls] = useState<string[][]>(
-    gameTemplate.questions.map(q => q.images.map(() => ''))
+    gameTemplate.questions.map((q) => q.images.map(() => ""))
   );
 
   useEffect(() => {
-    setPreviewUrls(gameTemplate.questions.map(q => q.images.map(() => '')));
+    setPreviewUrls(gameTemplate.questions.map((q) => q.images.map(() => "")));
   }, [gameTemplate.questions]);
 
   const handleGameTemplateChange = (field: keyof GameTemplate, value: any) => {
@@ -64,7 +64,7 @@ const Create4Pics1Word: React.FC = () => {
   const handleQuestionChange = (
     questionIndex: number,
     field: keyof Question,
-    value: any,
+    value: any
   ) => {
     const newQuestions = [...gameTemplate.questions];
     newQuestions[questionIndex] = {
@@ -77,7 +77,7 @@ const Create4Pics1Word: React.FC = () => {
   const handleImageUpload = async (
     questionIndex: number,
     imageIndex: number,
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -85,16 +85,17 @@ const Create4Pics1Word: React.FC = () => {
     try {
       // Create a FormData object to send the file
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
+      formData.append("gameType", "4pics1word");
 
       // Upload the file to the backend
       const response = await fetch(`${API_BASE_URL}/api/upload/image`, {
-        method: 'POST',
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload image');
+        throw new Error("Failed to upload image");
       }
 
       const data = await response.json();
@@ -114,8 +115,8 @@ const Create4Pics1Word: React.FC = () => {
       newQuestions[questionIndex].images[imageIndex] = imagePath;
       setGameTemplate({ ...gameTemplate, questions: newQuestions });
     } catch (error) {
-      console.error('Error uploading image:', error);
-      setError('Failed to upload image. Please try again.');
+      console.error("Error uploading image:", error);
+      setError("Failed to upload image. Please try again.");
     }
   };
 
@@ -127,12 +128,12 @@ const Create4Pics1Word: React.FC = () => {
         ...gameTemplate.questions,
         {
           id: newQuestionId,
-          answer: '',
-          images: ['', '', '', ''],
+          answer: "",
+          images: ["", "", "", ""],
         },
       ],
     });
-    setPreviewUrls((prevUrls) => [...prevUrls, ['', '', '', '']]);
+    setPreviewUrls((prevUrls) => [...prevUrls, ["", "", "", ""]]);
   };
 
   const removeQuestion = (index: number) => {
@@ -143,12 +144,12 @@ const Create4Pics1Word: React.FC = () => {
 
   const validateGame = (): boolean => {
     if (!gameTemplate.activityName.trim()) {
-      setError('Please enter a game name');
+      setError("Please enter a game name");
       return false;
     }
 
     if (gameTemplate.questions.length === 0) {
-      setError('Please add at least one question');
+      setError("Please add at least one question");
       return false;
     }
 
@@ -157,7 +158,7 @@ const Create4Pics1Word: React.FC = () => {
         setError(`Question ${question.id}: Please enter the answer`);
         return false;
       }
-      if (question.images.some(image => !image.trim())) {
+      if (question.images.some((image) => !image.trim())) {
         setError(`Question ${question.id}: All images must be selected`);
         return false;
       }
@@ -167,16 +168,16 @@ const Create4Pics1Word: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     if (!validateGame()) {
       return;
     }
 
     try {
-      if (!currentUser || currentUser.role !== 'TEACHER') {
-        setError('You must be logged in as a teacher to create games.');
+      if (!currentUser || currentUser.role !== "TEACHER") {
+        setError("You must be logged in as a teacher to create games.");
         return;
       }
 
@@ -185,45 +186,45 @@ const Create4Pics1Word: React.FC = () => {
         maxScore: gameTemplate.maxScore,
         maxExp: gameTemplate.maxExp,
         isPremade: false,
-        gameMode: 'FOUR_PICS_ONE_WORD' as const,
+        gameMode: "FOUR_PICS_ONE_WORD" as const,
         gameData: JSON.stringify({
           questions: gameTemplate.questions,
         }),
         createdBy: {
           id: currentUser.id,
-          name: currentUser.name
-        }
+          name: currentUser.name,
+        },
       };
 
       await gameService.createGame(gameData);
-      setSuccess('4 Pics 1 Word Game created successfully!');
-      
+      setSuccess("4 Pics 1 Word Game created successfully!");
+
       // Reset form
       setGameTemplate({
-        activityName: '',
+        activityName: "",
         maxScore: 100,
         maxExp: 50,
         questions: [
           {
             id: `question${Date.now()}`,
-            answer: '',
-            images: ['', '', '', ''],
+            answer: "",
+            images: ["", "", "", ""],
           },
         ],
       });
 
       // Navigate back to game library after successful creation
       setTimeout(() => {
-        navigate('/teacher/games/library');
+        navigate("/teacher/games/library");
       }, 2000);
     } catch (err) {
-      setError('Failed to create game. Please try again.');
-      console.error('Error creating 4 pics 1 word game:', err);
+      setError("Failed to create game. Please try again.");
+      console.error("Error creating 4 pics 1 word game:", err);
     }
   };
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
+    <Box sx={{ p: 4, maxWidth: 1200, mx: "auto" }}>
       <Typography variant="h4" gutterBottom>
         Create 4 Pics 1 Word Game
       </Typography>
@@ -243,19 +244,20 @@ const Create4Pics1Word: React.FC = () => {
       <Paper sx={{ p: 3, mb: 3 }}>
         <Box
           sx={{
-            display: 'grid',
+            display: "grid",
             gridTemplateColumns: {
-              xs: '1fr',
-              md: 'repeat(2, 1fr) 1fr 1fr',
+              xs: "1fr",
+              md: "repeat(2, 1fr) 1fr 1fr",
             },
             gap: 3,
-          }}
-        >
+          }}>
           <TextField
             fullWidth
             label="Game Name"
             value={gameTemplate.activityName}
-            onChange={(e) => handleGameTemplateChange('activityName', e.target.value)}
+            onChange={(e) =>
+              handleGameTemplateChange("activityName", e.target.value)
+            }
             required
           />
           <TextField
@@ -264,7 +266,7 @@ const Create4Pics1Word: React.FC = () => {
             label="Max Score"
             value={gameTemplate.maxScore}
             onChange={(e) =>
-              handleGameTemplateChange('maxScore', parseInt(e.target.value))
+              handleGameTemplateChange("maxScore", parseInt(e.target.value))
             }
             required
           />
@@ -274,7 +276,7 @@ const Create4Pics1Word: React.FC = () => {
             label="Max Experience"
             value={gameTemplate.maxExp}
             onChange={(e) =>
-              handleGameTemplateChange('maxExp', parseInt(e.target.value))
+              handleGameTemplateChange("maxExp", parseInt(e.target.value))
             }
             required
           />
@@ -284,25 +286,28 @@ const Create4Pics1Word: React.FC = () => {
       {gameTemplate.questions.map((question, questionIndex) => (
         <Paper key={question.id} sx={{ p: 3, mb: 3 }}>
           <Box
-            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
-          >
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}>
             <Typography variant="h6">Question {questionIndex + 1}</Typography>
             <IconButton
               color="error"
               onClick={() => removeQuestion(questionIndex)}
-              disabled={gameTemplate.questions.length === 1}
-            >
+              disabled={gameTemplate.questions.length === 1}>
               <DeleteIcon />
             </IconButton>
           </Box>
 
-          <Box sx={{ display: 'grid', gap: 3 }}>
+          <Box sx={{ display: "grid", gap: 3 }}>
             <TextField
               fullWidth
               label="Answer"
               value={question.answer}
               onChange={(e) =>
-                handleQuestionChange(questionIndex, 'answer', e.target.value)
+                handleQuestionChange(questionIndex, "answer", e.target.value)
               }
               required
             />
@@ -310,73 +315,74 @@ const Create4Pics1Word: React.FC = () => {
             <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
               Images
             </Typography>
-            <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: { 
-                xs: '1fr', 
-                sm: 'repeat(2, 1fr)', 
-                md: 'repeat(4, 1fr)' 
-              }, 
-              gap: 2 
-            }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, 1fr)",
+                  md: "repeat(4, 1fr)",
+                },
+                gap: 2,
+              }}>
               {question.images.map((_, imageIndex) => {
-                const currentPreviewUrl = previewUrls[questionIndex]?.[imageIndex] || '';
+                const currentPreviewUrl =
+                  previewUrls[questionIndex]?.[imageIndex] || "";
 
                 return (
                   <Box
                     key={imageIndex}
                     sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
+                      display: "flex",
+                      flexDirection: "column",
                       gap: 1,
-                      border: '1px solid #ddd',
+                      border: "1px solid #ddd",
                       p: 2,
                       borderRadius: 1,
-                    }}
-                  >
+                    }}>
                     <Typography variant="subtitle1">
                       Image {imageIndex + 1}
                     </Typography>
-                    <Box sx={{ position: 'relative', width: 150, height: 150 }}>
+                    <Box sx={{ position: "relative", width: 150, height: 150 }}>
                       <input
                         accept="image/*"
-                        style={{ display: 'none' }}
+                        style={{ display: "none" }}
                         id={`image-upload-${questionIndex}-${imageIndex}`}
                         type="file"
                         onChange={(e) =>
                           handleImageUpload(questionIndex, imageIndex, e)
                         }
                       />
-                      <label htmlFor={`image-upload-${questionIndex}-${imageIndex}`}>
+                      <label
+                        htmlFor={`image-upload-${questionIndex}-${imageIndex}`}>
                         <Box
                           sx={{
-                            width: '100%',
-                            height: '100%',
-                            border: '2px dashed',
-                            borderColor: 'divider',
+                            width: "100%",
+                            height: "100%",
+                            border: "2px dashed",
+                            borderColor: "divider",
                             borderRadius: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
                             backgroundColor: currentPreviewUrl
-                              ? 'transparent'
-                              : 'action.hover',
-                            '&:hover': {
-                              borderColor: 'primary.main',
-                              backgroundColor: 'action.hover',
+                              ? "transparent"
+                              : "action.hover",
+                            "&:hover": {
+                              borderColor: "primary.main",
+                              backgroundColor: "action.hover",
                             },
-                          }}
-                        >
+                          }}>
                           {currentPreviewUrl ? (
                             <Box
                               component="img"
                               src={currentPreviewUrl}
                               alt={`Image ${imageIndex + 1}`}
                               sx={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
                                 borderRadius: 1,
                               }}
                             />
@@ -394,20 +400,15 @@ const Create4Pics1Word: React.FC = () => {
         </Paper>
       ))}
 
-      <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 3 }}>
+      <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 3 }}>
         <Button
           variant="contained"
           color="primary"
           startIcon={<AddIcon />}
-          onClick={addQuestion}
-        >
+          onClick={addQuestion}>
           Add Question
         </Button>
-        <Button
-          variant="contained"
-          color="success"
-          onClick={handleSubmit}
-        >
+        <Button variant="contained" color="success" onClick={handleSubmit}>
           Create Game
         </Button>
       </Box>
@@ -415,4 +416,4 @@ const Create4Pics1Word: React.FC = () => {
   );
 };
 
-export default Create4Pics1Word; 
+export default Create4Pics1Word;

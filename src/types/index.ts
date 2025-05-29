@@ -130,6 +130,15 @@ export interface ClassroomDTO {
   iconUrl?: string;
 }
 
+export interface Reward {
+  id: number; // Assuming ID is a number
+  badgeName: string;
+  earnedFor: string;
+  // Add other fields if necessary, e.g., createdAt, studentId
+  // createdAt?: string;
+  // studentId?: number;
+}
+
 export interface LeaderboardEntry {
   studentId: string;
   studentName: string;
@@ -137,6 +146,7 @@ export interface LeaderboardEntry {
   rank: number;
   avatarUrl?: string;
   classroomId?: string; // Added to track which classroom this score belongs to
+  rewards?: Reward[]; // Added field for student's badges
 }
 
 export interface CreateClassroomRequestDTO {

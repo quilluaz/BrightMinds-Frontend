@@ -10,8 +10,10 @@ import {
   AssignedGameDTO,
   LeaderboardEntry,
   StudentGameAttemptDTO,
+  Reward,
 } from "../../types";
 import { gameService } from "../../services/game";
+import api from "../../services/api";
 
 interface EnrichedAssignedGame extends AssignedGameDTO {
   attemptsMade: number;
@@ -99,7 +101,19 @@ const StudentClassroomViewPage: React.FC = () => {
       setIsLoadingLeaderboard(true);
       try {
         const fetchedLeaderboard = await getClassroomLeaderboard(classroomId);
-        setLeaderboard(fetchedLeaderboard);
+        
+        // Fetch badges for each student in the leaderboard
+        const leaderboardWithBadges = await Promise.all(fetchedLeaderboard.map(async (entry) => {
+          try {
+            const response = await api.get<Reward[]>(`/api/rewards?studentId=${entry.studentId}`);
+            return { ...entry, rewards: response.data };
+          } catch (error) {
+            console.error(`Failed to fetch badges for student ${entry.studentId}:`, error);
+            return { ...entry, rewards: [] }; // Return empty array on error
+          }
+        }));
+
+        setLeaderboard(leaderboardWithBadges);
       } catch (error) {
         console.error("Failed to fetch leaderboard:", error);
         setLeaderboard([]);
@@ -217,7 +231,6 @@ const StudentClassroomViewPage: React.FC = () => {
         )}
 
         {activeTab === "leaderboard" && (
-          // ... (leaderboard rendering - no changes)
           <div className="animate-fade-in">
             <h2 className="text-xl font-semibold mb-4 text-primary-text dark:text-primary-text-dark">
               Classroom Leaderboard

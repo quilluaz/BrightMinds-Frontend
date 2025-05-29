@@ -26,6 +26,7 @@ const LeaderboardTable: React.FC<LeaderboardTableProps> = ({ entries, highlighte
           <tr className="bg-primary-interactive bg-opacity-10 dark:bg-primary-interactive-dark dark:bg-opacity-20">
             <th className="py-3 px-4 text-left text-sm font-semibold text-primary-text dark:text-primary-text-dark">Rank</th>
             <th className="py-3 px-4 text-left text-sm font-semibold text-primary-text dark:text-primary-text-dark">Student</th>
+            <th className="py-3 px-4 text-left text-sm font-semibold text-primary-text dark:text-primary-text-dark">Badges</th>
             <th className="py-3 px-4 text-right text-sm font-semibold text-primary-text dark:text-primary-text-dark">Score</th>
           </tr>
         </thead>
@@ -70,6 +71,19 @@ const LeaderboardTable: React.FC<LeaderboardTableProps> = ({ entries, highlighte
                       You
                     </span>
                   )}
+                </div>
+              </td>
+              <td className="py-3 px-4 whitespace-nowrap">
+                <div className="flex items-center space-x-1">
+                  {entry.rewards && entry.rewards.map(reward => (
+                    <span 
+                      key={reward.id} 
+                      className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full"
+                      title={reward.earnedFor}
+                    >
+                      {reward.badgeName}
+                    </span>
+                  ))}
                 </div>
               </td>
               {/* Score text color */}

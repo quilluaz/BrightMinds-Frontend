@@ -20,8 +20,10 @@ import {
   UserRole,
   GameDTO,
   StudentGameAttemptDTO,
+  UpdateAssignedGameRequestDTO, // Added this type
 } from "../types";
 
+// These interfaces are from your original ClassroomContext.tsx
 interface BackendTeacherClassroomResponse {
   id: number;
   name: string;
@@ -37,19 +39,20 @@ interface BackendStudentInClassroomResponse extends BackendUserResponse {
 }
 
 interface BackendAssignedGameResponse {
-  id: number;
+  id: number; // This is ClassroomGame ID (Assignment ID)
   classroom: { id: number; name: string };
   game: {
-    activityId: number;
+    // This is GameInfo (Game Template Info)
+    activityId: number; // This is Game ID (Template ID)
     activityName: string;
     description?: string;
     subject?: string;
     gameMode?: GameDTO["gameMode"];
-    isPremade?: boolean;
+    isPremade?: boolean; // Game.isPremade
     gameData?: string;
   };
-  deadline: string;
-  isPremade: boolean;
+  deadline: string; // Assuming backend sends as ISO string or string that can be parsed by new Date()
+  isPremade: boolean; // This is ClassroomGame.isPremade (if assignment itself considered premade configuration)
   status?: AssignedGameDTO["status"];
   maxAttempts?: number;
 }
@@ -86,6 +89,10 @@ interface ClassroomContextType {
     maxAttempts?: number
   ) => Promise<AssignedGameDTO | null>;
   getClassroomLeaderboard: (classroomId: string) => Promise<LeaderboardEntry[]>;
+  getGameLeaderboard: (
+    classroomId: string,
+    gameId: string
+  ) => Promise<LeaderboardEntry[]>;
   updateClassroom: (
     classroomId: string,
     data: UpdateClassroomRequestDTO
@@ -100,6 +107,16 @@ interface ClassroomContextType {
     assignedGameId: string,
     score: number,
     attemptData: Omit<StudentGameAttemptDTO, "id" | "createdAt">
+  ) => Promise<void>;
+  // --- NEW FUNCTION SIGNATURES ---
+  updateAssignedGame: (
+    classroomId: string,
+    assignedGameId: string,
+    data: UpdateAssignedGameRequestDTO
+  ) => Promise<AssignedGameDTO | null>;
+  deleteAssignedGame: (
+    classroomId: string,
+    assignedGameId: string
   ) => Promise<void>;
 }
 
@@ -146,8 +163,6 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
       const response = await api.get<BackendTeacherClassroomResponse[]>(
         `${CLASSROOM_API_BASE_URL}/teacher/${currentUser.id}`
       );
-      console.log("API response for teacher classrooms:", response);
-      console.log("Actual response.data:", response.data);
       if (Array.isArray(response.data)) {
         setTeacherClassrooms(
           response.data.map(transformBackendTeacherClassroomToFrontend)
@@ -157,10 +172,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
           "Error: response.data is not an array. Actual data:",
           response.data
         );
-        // Optionally, set teacherClassrooms to an empty array or handle appropriately
         setTeacherClassrooms([]);
-        // You might want to throw an error here or set an error state
-        // throw new Error("Received unexpected data format for teacher classrooms.");
       }
     } catch (error) {
       console.error("Error fetching teacher classrooms:", error);
@@ -267,6 +279,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
           teacherName:
             `${joinedBackendClassroom.teacher.firstName} ${joinedBackendClassroom.teacher.lastName}`.trim(),
           iconUrl: joinedBackendClassroom.iconUrl,
+          activityCount: 0,
         };
         await fetchStudentClassrooms();
         return newStudentCls;
@@ -312,6 +325,7 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
               gameMode: bg.game.gameMode,
               isPremade: bg.game.isPremade,
               gameData: bg.game.gameData,
+              questions: [],
             },
             assignedAt: new Date().toISOString(),
             dueDate: bg.deadline,
@@ -378,63 +392,47 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         typeof gameToAssign.id !== "string" ||
         gameToAssign.id.trim() === ""
       ) {
-        console.error(
-          "Context: Invalid gameToAssign object or gameToAssign.id:",
-          gameToAssign
-        );
         throw new Error("Invalid game data provided for assignment.");
       }
-
       setIsLoading(true);
       try {
         const gameIdLong = parseInt(gameToAssign.id, 10);
-        if (isNaN(gameIdLong)) {
-          console.error(
-            `Context: Game ID "${gameToAssign.id}" is not a valid number format.`
-          );
-          throw new Error("Invalid game ID format.");
-        }
+        if (isNaN(gameIdLong)) throw new Error("Invalid game ID format.");
 
-        // For games assigned from the library, ClassroomGame.isPremade should be true.
-        // The GameDTO's isPremade field (gameToAssign.isPremade) refers to the game's nature.
         const isPremadeForAssignmentPayload = true;
-
         let queryParams = `gameId=${gameIdLong}&deadline=${encodeURIComponent(
           deadline
         )}&isPremade=${isPremadeForAssignmentPayload}`;
-
         if (maxAttempts !== undefined) {
           queryParams += `&maxAttempts=${maxAttempts}`;
         }
-
         const response = await api.post<BackendAssignedGameResponse>(
           `${CLASSROOM_API_BASE_URL}/${classroomId}/assign-game?${queryParams}`
         );
-        const assignedBackendGame = response.data;
+        const bg = response.data; // bg is BackendAssignedGameResponse
         return {
-          id: assignedBackendGame.id.toString(),
-          classroomId: assignedBackendGame.classroom.id.toString(),
-          gameId: assignedBackendGame.game.activityId.toString(),
-          gameTitle: assignedBackendGame.game.activityName,
-          assignedAt: new Date().toISOString(),
-          dueDate: assignedBackendGame.deadline,
-          status: assignedBackendGame.status || "PENDING",
-          maxAttempts: assignedBackendGame.maxAttempts,
+          // Manually map to AssignedGameDTO
+          id: bg.id.toString(),
+          classroomId: bg.classroom.id.toString(),
+          gameId: bg.game.activityId.toString(),
+          gameTitle: bg.game.activityName,
           game: {
-            id: assignedBackendGame.game.activityId.toString(),
-            title: assignedBackendGame.game.activityName,
-            description: assignedBackendGame.game.description,
-            subject: assignedBackendGame.game.subject,
-            gameMode: assignedBackendGame.game.gameMode,
-            isPremade: assignedBackendGame.game.isPremade,
+            id: bg.game.activityId.toString(),
+            title: bg.game.activityName,
+            description: bg.game.description,
+            subject: bg.game.subject,
+            gameMode: bg.game.gameMode,
+            isPremade: bg.game.isPremade,
+            gameData: bg.game.gameData,
+            questions: [],
           },
+          assignedAt: new Date().toISOString(),
+          dueDate: bg.deadline,
+          status: bg.status || "PENDING",
+          maxAttempts: bg.maxAttempts,
         };
       } catch (error: any) {
         console.error("Error assigning game in Context:", error);
-        // Check if the error is the one we threw, or a new one from the API
-        if (error.message === "Invalid game ID format.") {
-          throw error; // Re-throw the specific error
-        }
         throw new Error(
           error.response?.data?.message || "Failed to assign game."
         );
@@ -443,6 +441,23 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
       }
     },
     [currentUser, token]
+  );
+
+  const mapBackendLeaderboardToFrontend = useCallback(
+    (entries: BackendLeaderboardEntry[]): LeaderboardEntry[] => {
+      return entries
+        .sort((a, b) => (b.expAmount || 0) - (a.expAmount || 0))
+        .map((entry, index) => ({
+          studentId: entry.studentId.toString(),
+          studentName: `${entry.firstName} ${entry.lastName}`.trim(),
+          score: entry.expAmount || 0,
+          rank: index + 1,
+          avatarUrl:
+            entry.avatarImage ||
+            `https://api.dicebear.com/7.x/bottts/svg?seed=${entry.firstName}${entry.lastName}`,
+        }));
+    },
+    []
   );
 
   const getClassroomLeaderboard = useCallback(
@@ -459,25 +474,43 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         const response = await api.get<BackendLeaderboardEntry[]>(
           `${CLASSROOM_API_BASE_URL}/${classroomId}/leaderboard`
         );
-        return response.data
-          .sort((a, b) => (b.expAmount || 0) - (a.expAmount || 0))
-          .map((student, index) => ({
-            studentId: student.studentId.toString(),
-            studentName: `${student.firstName} ${student.lastName}`.trim(),
-            score: student.expAmount || 0,
-            rank: index + 1,
-            avatarUrl:
-              student.avatarImage ||
-              `https://api.dicebear.com/7.x/bottts/svg?seed=${student.firstName}${student.lastName}`,
-          }));
+        return mapBackendLeaderboardToFrontend(response.data);
       } catch (error: any) {
         console.error("Error fetching classroom leaderboard:", error);
         throw new Error(
-          error.response?.data?.message || "Failed to fetch leaderboard."
+          error.response?.data?.message ||
+            "Failed to fetch classroom leaderboard."
         );
       }
     },
-    [token]
+    [token, mapBackendLeaderboardToFrontend]
+  );
+
+  const getGameLeaderboard = useCallback(
+    async (
+      classroomId: string,
+      gameId: string
+    ): Promise<LeaderboardEntry[]> => {
+      if (!token) {
+        console.error("Auth token not found for getGameLeaderboard.");
+        return [];
+      }
+      try {
+        const response = await api.get<BackendLeaderboardEntry[]>(
+          `${CLASSROOM_API_BASE_URL}/${classroomId}/games/${gameId}/leaderboard`
+        );
+        return mapBackendLeaderboardToFrontend(response.data);
+      } catch (error: any) {
+        console.error(
+          `Error fetching leaderboard for game ${gameId} in classroom ${classroomId}:`,
+          error
+        );
+        throw new Error(
+          error.response?.data?.message || "Failed to fetch game leaderboard."
+        );
+      }
+    },
+    [token, mapBackendLeaderboardToFrontend]
   );
 
   const updateClassroom = useCallback(
@@ -556,17 +589,9 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
       }
       setIsLoading(true);
       try {
-        const classroomIdLong = parseInt(classroomId, 10);
-        const studentIdLong = parseInt(studentId, 10);
-
-        if (isNaN(classroomIdLong) || isNaN(studentIdLong)) {
-          throw new Error("Invalid Classroom or Student ID format.");
-        }
-
         await api.delete(
-          `${CLASSROOM_API_BASE_URL}/${classroomIdLong}/students/${studentIdLong}`
+          `${CLASSROOM_API_BASE_URL}/${classroomId}/students/${studentId}`
         );
-
         await fetchTeacherClassrooms();
       } catch (error: any) {
         console.error(
@@ -594,10 +619,9 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
       if (!token) throw new Error("Authentication required.");
       setIsLoading(true);
       try {
-        // Submit the attempt data
         await api.post(`/attempts/submit`, {
           ...attemptData,
-          classroomId, // Include classroomId in the attempt data
+          classroomId,
           score,
           assignedGameId,
           completedAt: new Date().toISOString(),
@@ -612,6 +636,82 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
       }
     },
     [token]
+  );
+
+  // --- NEW FUNCTIONS FOR EDITING/DELETING ASSIGNED GAMES ---
+  const updateAssignedGame = useCallback(
+    async (
+      classroomId: string,
+      assignedGameId: string,
+      data: UpdateAssignedGameRequestDTO
+    ): Promise<AssignedGameDTO | null> => {
+      if (!token || !currentUser || currentUser.role !== "TEACHER") {
+        throw new Error(
+          "Unauthorized: Only teachers can update assigned games."
+        );
+      }
+      setIsLoading(true);
+      try {
+        const response = await api.put<BackendAssignedGameResponse>(
+          `${CLASSROOM_API_BASE_URL}/${classroomId}/assigned-games/${assignedGameId}`,
+          data
+        );
+        // Manually map BackendAssignedGameResponse to AssignedGameDTO
+        const bg = response.data;
+        return {
+          id: bg.id.toString(),
+          classroomId: bg.classroom.id.toString(),
+          gameId: bg.game.activityId.toString(),
+          gameTitle: bg.game.activityName,
+          game: {
+            id: bg.game.activityId.toString(),
+            title: bg.game.activityName,
+            description: bg.game.description,
+            subject: bg.game.subject,
+            gameMode: bg.game.gameMode,
+            isPremade: bg.game.isPremade,
+            gameData: bg.game.gameData,
+            questions: [], // Defaulting as per existing pattern
+          },
+          assignedAt: new Date().toISOString(), // Or use a field from response if backend provides it
+          dueDate: bg.deadline, // Assuming it's an ISO string
+          status: bg.status || "PENDING",
+          maxAttempts: bg.maxAttempts,
+        };
+      } catch (error: any) {
+        console.error("Error updating assigned game in context:", error);
+        throw new Error(
+          error.response?.data?.message || "Failed to update assigned game."
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [token, currentUser] // Removed mapBackendAssignedGameToDTO if it wasn't defined elsewhere or preferred inline
+  );
+
+  const deleteAssignedGame = useCallback(
+    async (classroomId: string, assignedGameId: string): Promise<void> => {
+      if (!token || !currentUser || currentUser.role !== "TEACHER") {
+        throw new Error(
+          "Unauthorized: Only teachers can delete assigned games."
+        );
+      }
+      setIsLoading(true);
+      try {
+        await api.delete(
+          `${CLASSROOM_API_BASE_URL}/${classroomId}/assigned-games/${assignedGameId}`
+        );
+      } catch (error: any) {
+        console.error("Error deleting assigned game in context:", error);
+        throw new Error(
+          error.response?.data?.message || "Failed to delete assigned game."
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [token, currentUser]
   );
 
   return (
@@ -630,10 +730,13 @@ export const ClassroomProvider: React.FC<{ children: ReactNode }> = ({
         getStudentsInClassroom,
         assignGameToClassroom,
         getClassroomLeaderboard,
+        getGameLeaderboard,
         updateClassroom,
         deleteClassroom,
         removeStudentFromClassroom,
         submitGameResults,
+        updateAssignedGame, // Added to provider value
+        deleteAssignedGame, // Added to provider value
       }}>
       {children}
     </ClassroomContext.Provider>

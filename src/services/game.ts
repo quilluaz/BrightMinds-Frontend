@@ -2,21 +2,18 @@ import api from './api';
 import { GameDTO, StudentGameAttemptDTO } from '../types';
 
 // Define an interface for the raw game object received from the backend
-// This helps ensure type safety during mapping.
 interface BackendGame {
-  activityId: number; // Assuming activityId is a number from backend
+  activityId: number;
   activityName: string;
   description?: string;
   subject?: string;
-  gameMode?: GameDTO['gameMode']; // Use GameDTO's gameMode type
+  gameMode?: GameDTO['gameMode'];
   isPremade?: boolean;
   maxScore?: number;
   maxExp?: number;
   gameData?: string;
-  // Add any other fields that your backend Game entity sends
 }
 
-// Interface for creating a new game
 interface CreateGameDTO {
   activityName: string;
   description?: string;
@@ -31,10 +28,9 @@ interface CreateGameDTO {
 export const gameService = {
   getLibraryGames: async (): Promise<GameDTO[]> => {
     const response = await api.get<BackendGame[]>('/games');
-    // Map the backend response to the frontend GameDTO structure
     return response.data.map(backendGame => ({
-      id: backendGame.activityId.toString(), // Convert to string if your GameDTO id is string
-      title: backendGame.activityName,       // Explicitly map activityName to title
+      id: backendGame.activityId.toString(),
+      title: backendGame.activityName,
       description: backendGame.description,
       subject: backendGame.subject,
       gameMode: backendGame.gameMode,
@@ -77,14 +73,19 @@ export const gameService = {
   },
 
   submitGameAttempt: async (data: Omit<StudentGameAttemptDTO, 'id' | 'createdAt'>): Promise<StudentGameAttemptDTO> => {
-    const response = await api.post('/game-attempts', data);
+    // The backend expects /api/attempts/submit based on AttemptController.java
+    const response = await api.post('/attempts/submit', data);
     return response.data;
   },
 
-  getMyAttempts: async (assignedGameId: string): Promise<StudentGameAttemptDTO[]> => {
-    const response = await api.get(`/game-attempts/my-attempts`, { 
-      params: { assignedGameId }
-    });
+  // MODIFIED: Now requires studentId
+  getMyAttempts: async (assignedGameId: string, studentId: string): Promise<StudentGameAttemptDTO[]> => {
+    if (!studentId) {
+      console.error("getMyAttempts: studentId is required.");
+      return []; // Or throw an error
+    }
+    // Calls the endpoint: /api/attempts/assignment/{assignedGameId}/student/{studentId}
+    const response = await api.get(`/attempts/assignment/${assignedGameId}/student/${studentId}`);
     return response.data;
   },
 

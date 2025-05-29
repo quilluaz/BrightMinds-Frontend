@@ -1,142 +1,176 @@
-// src/pages/teacher/TeacherGameLibraryPage.tsx
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { gameService } from '../../services/game';
-import { GameDTO } from '../../types';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Users, BookOpen, Settings, Copy, AlertTriangle, Library, Trash2, Check, UserX, Eye } from 'lucide-react'; // Added Eye
+import { useClassroom } from '../../context/ClassroomContext';
+import Button from '../../components/common/Button';
+import GameCard from '../../components/common/GameCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import AssignGameModal from '../../components/teacher/AssignGameModal';
-import { Library, Sparkles, Zap, Brain, Puzzle, Plus, BookCopy, Tag } from 'lucide-react';
-import Button from '../../components/common/Button'; // Assuming you have this common button
+import LeaderboardTable from '../../components/common/LeaderboardTable';
+import ClassroomSettingsModal from '../../components/teacher/ClassroomSettingsModal';
+import Modal from '../../components/common/Modal';
+import { Classroom, AssignedGameDTO, LeaderboardEntry, User as StudentUser } from '../../types'; // Removed Game as GameCard now takes AssignedGameDTO
+import { useAuth } from '../../context/AuthContext';
+import ClassroomStatistics from '../../components/teacher/ClassroomStatistics';
+import GameStatisticsModal from '../../components/teacher/GameStatisticsModal'; // Import the new modal
 
-// Interface for defining the types of games that can be created.
-// This is used for the "Create Game" modal and for providing consistent UI elements.
-interface CreatableGameType {
-  gameMode: GameDTO['gameMode'];
-  title: string; // Title for display (e.g., in tabs, create modal)
-  description: string; // Description for the create modal
-  icon: React.ReactNode;
-}
-
-// Defines the game types teachers can create.
-const CREATABLE_GAME_TYPES: CreatableGameType[] = [
-  {
-    gameMode: "MATCHING",
-    title: "Matching Game",
-    description: "Test memory by matching pairs of words and/or images. Covers Anyong Tubig, Anyong Lupa, and Pambansang Sagisag.",
-    icon: <Sparkles size={28} className="text-green-500 dark:text-green-400" />
-  },
-  {
-    gameMode: "IMAGE_MULTIPLE_CHOICE",
-    title: "Image Quiz",
-    description: "Identify the correct image for each question. A fun Araling Panlipunan knowledge test!",
-    icon: <Zap size={28} className="text-blue-500 dark:text-blue-400" />
-  },
-  {
-    gameMode: "SORTING",
-    title: "Sorting Game",
-    description: "Create interactive sorting activities where students categorize items. Perfect for teaching classification and organization skills.",
-    icon: <Brain size={28} className="text-purple-500 dark:text-purple-400" />
-  },
-  {
-    gameMode: "FOUR_PICS_ONE_WORD",
-    title: "4 Pics 1 Word",
-    description: "Guess the common Tagalog word that connects four different pictures. Great for vocabulary!",
-    icon: <Puzzle size={28} className="text-yellow-500 dark:text-amber-400" />
-  },
-  // Add other game modes that teachers can create here
+const TABS = [
+    { key: 'overview', label: 'Overview' },
+    { key: 'games', label: 'Games' },
+    { key: 'students', label: 'Students' },
+    { key: 'leaderboard', label: 'Leaderboard' },
 ];
 
-// This defines the structure for games to be displayed in the library list.
-// It takes data directly from the backend and adds a resolved icon.
-interface DisplayableLibraryGame {
-  id: string; // Directly from backendGame.id
-  title: string;
-  description?: string;
-  subject?: string;
-  gameMode: GameDTO['gameMode'];
-  icon: React.ReactNode;
-  isPremade?: boolean; // From backend
-  actualGameDataFromBackend: GameDTO; // The full DTO from backend for assignment
-}
-
-const TeacherGameLibraryPage: React.FC = () => {
-  const [displayableGames, setDisplayableGames] = useState<DisplayableLibraryGame[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedGameToAssign, setSelectedGameToAssign] = useState<GameDTO | null>(null);
-  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-  const [isGameModeModalOpen, setIsGameModeModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<GameDTO['gameMode'] | 'all' | null>('all');
+const TeacherClassroomViewPage: React.FC = () => {
+  const { classroomId } = useParams<{ classroomId: string }>();
+  const {
+    teacherClassrooms,
+    getAssignedGames,
+    getClassroomLeaderboard, // Used by GameStatisticsModal via context
+    getStudentsInClassroom,
+    fetchTeacherClassrooms,
+    removeStudentFromClassroom,
+  } = useClassroom();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchAndProcessGames = async () => {
-      setIsLoading(true);
-      try {
-        const allLibraryGamesFromBackend: GameDTO[] = await gameService.getLibraryGames();
-        
-        const finalGamesList: DisplayableLibraryGame[] = allLibraryGamesFromBackend.map(backendGame => {
-          const creatableTypeConfig = CREATABLE_GAME_TYPES.find(ct => ct.gameMode === backendGame.gameMode);
-          return {
-            id: backendGame.id,
-            title: backendGame.title,
-            description: backendGame.description || creatableTypeConfig?.description || "A learning game.",
-            subject: backendGame.subject,
-            gameMode: backendGame.gameMode,
-            icon: creatableTypeConfig?.icon || <Library size={28} className="text-gray-500" />,
-            isPremade: backendGame.isPremade,
-            actualGameDataFromBackend: backendGame,
-          };
-        });
-        
-        setDisplayableGames(finalGamesList);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingAction, setIsLoadingAction] = useState(false);
+  const [classroom, setClassroom] = useState<Classroom | null>(null);
+  const [assignedGames, setAssignedGames] = useState<AssignedGameDTO[]>([]);
+  const [students, setStudents] = useState<StudentUser[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [averageScore, setAverageScore] = useState<number | null>(null); // Overall classroom avg score
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
-      } catch (error) {
-        console.error("Failed to fetch or process game library:", error);
-        setDisplayableGames([]); 
-      } finally {
-        setIsLoading(false);
+  const [isRemoveStudentModalOpen, setIsRemoveStudentModalOpen] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState<StudentUser | null>(null);
+  const [removeStudentError, setRemoveStudentError] = useState<string | null>(null);
+
+  // State for GameStatisticsModal
+  const [isGameStatsModalOpen, setIsGameStatsModalOpen] = useState(false);
+  const [selectedAssignedGame, setSelectedAssignedGame] = useState<AssignedGameDTO | null>(null);
+
+  const handleOpenGameStatsModal = (game: AssignedGameDTO) => {
+    setSelectedAssignedGame(game);
+    setIsGameStatsModalOpen(true);
+  };
+
+  const handleCloseGameStatsModal = () => {
+    setIsGameStatsModalOpen(false);
+    setSelectedAssignedGame(null);
+  };
+
+  const fetchClassroomData = useCallback(async (forceRefreshContext = false) => {
+    if (!classroomId) {
+      navigate('/teacher/classrooms');
+      return;
+    }
+    setIsLoading(true);
+
+    if (forceRefreshContext && fetchTeacherClassrooms) {
+      await fetchTeacherClassrooms();
+    }
+
+    try {
+      const currentClassrooms = teacherClassrooms; // Use the latest from context
+      const foundClassroom = currentClassrooms.find(c => c.id === classroomId);
+
+      if (foundClassroom) {
+        setClassroom(foundClassroom);
+
+        // Fetch assigned games for this classroom
+        const gamesData = await getAssignedGames(classroomId);
+        setAssignedGames(gamesData);
+        
+        // Fetch students and overall classroom leaderboard
+        const [studentsData, classroomLeaderboardData] = await Promise.all([
+          getStudentsInClassroom(classroomId),
+          getClassroomLeaderboard(classroomId) 
+        ]);
+
+        setStudents(studentsData);
+        setLeaderboard(classroomLeaderboardData);
+
+        if (classroomLeaderboardData.length > 0) {
+          const totalScore = classroomLeaderboardData.reduce((sum, entry) => sum + entry.score, 0);
+          setAverageScore(Math.round(totalScore / classroomLeaderboardData.length));
+        } else {
+          setAverageScore(0);
+        }
+      } else {
+        console.warn("Classroom not found in context, redirecting.");
+        navigate('/teacher/classrooms');
       }
-    };
-    fetchAndProcessGames();
-  }, []);
+    } catch (error) {
+      console.error("Failed to fetch classroom data:", error);
+      navigate('/teacher/classrooms');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [classroomId, getAssignedGames, getStudentsInClassroom, getClassroomLeaderboard, navigate, fetchTeacherClassrooms, teacherClassrooms]);
 
-  const handleOpenAssignModal = (gameDataForAssignment: GameDTO) => {
-    // No need to check for undefined here if the button is only enabled for existing games
-    setSelectedGameToAssign(gameDataForAssignment);
-    setIsAssignModalOpen(true);
-  };
 
-  const handleCloseAssignModal = () => {
-    setSelectedGameToAssign(null);
-    setIsAssignModalOpen(false);
-  };
+  useEffect(() => {
+    fetchClassroomData();
+  }, [fetchClassroomData]); // teacherClassrooms is now a dependency of fetchClassroomData
 
-  const handleCreateGame = (gameMode?: GameDTO['gameMode']) => {
-    if (!gameMode) return;
-    
-    const templateRoutes = {
-      'MATCHING': '/teacher/create-game/matching',
-      'IMAGE_MULTIPLE_CHOICE': '/teacher/create-game/image-quiz',
-      'SORTING': '/teacher/create-game/sorting',
-      'FOUR_PICS_ONE_WORD': '/teacher/create-game/4pics1word'
-    } as const;
-
-    const route = templateRoutes[gameMode as keyof typeof templateRoutes];
-    if (route) {
-      navigate(route);
-    } else {
-        alert(`Creation for ${gameMode} is not yet implemented.`);
+  const handleCopyCode = () => {
+    if (classroom?.code) {
+      navigator.clipboard.writeText(classroom.code)
+        .then(() => {
+          setCodeCopied(true);
+          setTimeout(() => setCodeCopied(false), 2000);
+        })
+        .catch(err => console.error('Failed to copy class code: ', err));
     }
   };
 
-  const handleTabClick = (gameMode: GameDTO['gameMode'] | 'all') => {
-    setActiveTab(gameMode);
+  const openRemoveStudentModal = (student: StudentUser) => {
+    setStudentToRemove(student);
+    setRemoveStudentError(null);
+    setIsRemoveStudentModalOpen(true);
   };
 
-  // Filter games based on the active tab; all games from the backend are in displayableGames
-  const filteredGames = activeTab === 'all'
-    ? displayableGames
-    : displayableGames.filter(game => game.gameMode === activeTab);
+  const closeRemoveStudentModal = () => {
+    setStudentToRemove(null);
+    setIsRemoveStudentModalOpen(false);
+    setRemoveStudentError(null);
+  };
+
+  const confirmRemoveStudent = async () => {
+    if (!studentToRemove || !classroomId) return;
+    
+    setIsLoadingAction(true);
+    setRemoveStudentError(null);
+    try {
+      if (removeStudentFromClassroom) {
+        await removeStudentFromClassroom(classroomId, studentToRemove.id.toString());
+        // Refetch students and potentially classroom data to update counts
+        const updatedStudents = await getStudentsInClassroom(classroomId);
+        setStudents(updatedStudents);
+        if (fetchTeacherClassrooms) { // Ensure context has this function
+            await fetchTeacherClassrooms(); // This updates teacherClassrooms in context
+            const updatedClassroomInContext = teacherClassrooms.find(c => c.id === classroomId);
+            if (updatedClassroomInContext) {
+                setClassroom(updatedClassroomInContext); // Update local classroom state
+            }
+        }
+      } else {
+        console.warn("removeStudentFromClassroom not implemented in context.");
+        // Fallback behavior can be removed if context function is always expected
+      }
+      closeRemoveStudentModal();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred.';
+      console.error("Error removing student:", error);
+      setRemoveStudentError(`Failed to remove student: ${errorMessage}`);
+    } finally {
+      setIsLoadingAction(false);
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -146,163 +180,259 @@ const TeacherGameLibraryPage: React.FC = () => {
     );
   }
 
+  if (!classroom) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h2 className="text-2xl font-bold mb-4 text-primary-text dark:text-primary-text-dark">Classroom Not Found</h2>
+        <p className="mb-6 text-gray-600 dark:text-gray-300">The classroom you are looking for does not exist or you may not have access.</p>
+        <Link to="/teacher/classrooms" className="btn btn-primary">
+          Back to My Classrooms
+        </Link>
+      </div>
+    );
+  }
+
+  const studentCount = classroom.studentCount;
+  const activityCount = assignedGames.length;
+
   return (
     <div className="container mx-auto px-4 py-8 animate-fade-in">
-      <div className="mb-10 pb-6 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center">
+      <header className="mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-primary-text dark:text-primary-text-dark flex items-center">
-              <Library size={32} className="mr-3 text-primary-interactive dark:text-primary-interactive-dark" />
-              Game Library
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-2 text-lg">
-              Browse available activities or create your own to assign to your classrooms.
-            </p>
+            <h1 className="text-3xl md:text-4xl font-bold text-primary-text dark:text-primary-text-dark">{classroom.name}</h1>
+            {classroom.description && (
+              <p className="text-gray-600 dark:text-gray-300 mt-2 max-w-2xl">{classroom.description}</p>
+            )}
           </div>
-          <Button
-            variant='primary'
-            size='lg'
-            onClick={() => setIsGameModeModalOpen(true)}
-            className="btn btn-primary flex items-center gap-2" // Assuming Button component takes className
-            icon={<Plus size={20}/>}
-          >
-            Create Game
-          </Button>
-        </div>
-      </div>
-
-      {isGameModeModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-primary-card-dark rounded-xl p-6 w-full max-w-md mx-auto">
-            <h2 className="text-2xl font-bold mb-6 text-primary-text dark:text-primary-text-dark text-center">Select Game Type to Create</h2>
-            <div className="grid grid-cols-1 gap-4">
-              {CREATABLE_GAME_TYPES.map((gameType) => (
-                <button
-                  key={gameType.gameMode}
-                  onClick={() => {
-                    setIsGameModeModalOpen(false);
-                    handleCreateGame(gameType.gameMode);
-                  }}
-                  className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-interactive"
-                >
-                  <div className="p-3 bg-gray-100 dark:bg-slate-700 rounded-full">
-                    {gameType.icon}
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-semibold text-lg text-primary-text dark:text-primary-text-dark">{gameType.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{gameType.description}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center space-x-3 mt-4 sm:mt-0">
+            {classroom.code && (
+              <div className="flex items-baseline mr-2">
+                <span className="text-sm font-semibold text-primary-text dark:text-primary-text-dark mr-1.5 uppercase">Code:</span>
+                <span className="font-mono text-3xl font-bold text-primary-text dark:text-primary-text-dark mr-1.5 tracking-wider">
+                  {classroom.code}
+                </span>
+                <Button
+                  variant="text"
+                  size="sm"
+                  onClick={handleCopyCode}
+                  icon={codeCopied ? <Check size={16} className="text-green-500"/> : <Copy size={16} />}
+                  className="!p-1 text-gray-500 dark:text-gray-400 hover:text-primary-text dark:hover:text-primary-text-dark self-center"
+                  aria-label="Copy class code"
+                />
+              </div>
+            )}
             <Button
-              variant='text'
-              onClick={() => setIsGameModeModalOpen(false)}
-              className="w-full mt-6"
+              variant="primary"
+              size="md"
+              icon={<Library size={18} />}
+              onClick={() => navigate(`/teacher/classrooms/${classroomId}/assign-game`)}
+              className="whitespace-nowrap"
             >
-              Cancel
+              Assign Game
+            </Button>
+            <Button
+              variant="outline"
+              size="md"
+              icon={<Settings size={18} />}
+              onClick={() => setIsSettingsModalOpen(true)}
+            >
+              Settings
             </Button>
           </div>
         </div>
-      )}
+      </header>
 
       <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
         <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto pb-px" aria-label="Tabs">
-          <button
-            key="all"
-            onClick={() => handleTabClick('all')}
-            className={`
-              ${activeTab === 'all'
-                ? 'border-primary-interactive text-primary-interactive dark:border-primary-interactive-dark dark:text-primary-interactive-dark'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600'
-              }
-              whitespace-nowrap py-3 px-1 sm:py-4 sm:px-1 border-b-2 font-medium text-sm transition-colors duration-200
-            `}
-          >
-            All Games
-          </button>
-          {CREATABLE_GAME_TYPES.map((gameType) => 
+          {TABS.map((tab) => (
             <button
-              key={gameType.gameMode}
-              onClick={() => handleTabClick(gameType.gameMode)}
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
               className={`
-                ${activeTab === gameType.gameMode
+                whitespace-nowrap py-3 px-1 sm:py-4 sm:px-1 border-b-2 font-medium text-sm transition-colors duration-200
+                ${activeTab === tab.key
                   ? 'border-primary-interactive text-primary-interactive dark:border-primary-interactive-dark dark:text-primary-interactive-dark'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600'
                 }
-                whitespace-nowrap py-3 px-1 sm:py-4 sm:px-1 border-b-2 font-medium text-sm transition-colors duration-200
               `}
             >
-              {gameType.title} {/* Use title from CREATABLE_GAME_TYPES for tab name */}
+              {tab.label}
             </button>
-          )}
+          ))}
         </nav>
       </div>
 
-      {filteredGames.length === 0 && !isLoading ? (
-        <div className="text-center py-10 bg-white dark:bg-primary-card-dark rounded-xl shadow border dark:border-gray-700">
-            <Library size={48} className="mx-auto text-gray-400 dark:text-gray-500 mb-4" />
-          <p className="text-xl text-gray-500 dark:text-gray-400">
-             {activeTab === 'all' ? "No games found in the library." : `No ${CREATABLE_GAME_TYPES.find(c => c.gameMode === activeTab)?.title || 'games'} found.`}
-          </p>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-            Try creating a new game or check back later!
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredGames.map((game) => ( // game is DisplayableLibraryGame
-            <div 
-              key={game.id} 
-              className="card bg-white dark:bg-primary-card-dark p-5 shadow-lg rounded-xl flex flex-col justify-between border border-gray-200 dark:border-gray-700 transition-all hover:shadow-xl hover:scale-[1.03]"
-            >
-              <div className="flex flex-col items-center text-center flex-grow">
-                <div className="p-3 bg-gray-100 dark:bg-slate-700 rounded-full mb-4">
-                  {game.icon}
-                </div>
-                <h3 className="font-bold text-xl mb-2 text-primary-text dark:text-primary-text-dark">{game.title}</h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 h-20 line-clamp-4">{game.description}</p>
-                
-                <div className="w-full space-y-1 mb-4">
-                  {game.subject && (
-                     <span className="inline-flex items-center text-xs font-medium bg-primary-accent/20 dark:bg-primary-accent-dark/30 text-primary-accent dark:text-primary-accent-dark px-2.5 py-1 rounded-full mr-1.5 mb-1 sm:mb-0">
-                      <BookCopy size={12} className="mr-1" /> {game.subject}
-                    </span>
-                  )}
-                   {game.gameMode && (
-                    <span className="inline-flex items-center text-xs font-medium bg-blue-100 dark:bg-blue-700/50 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full mb-1 sm:mb-0">
-                        <Tag size={12} className="mr-1" /> {game.gameMode.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
-                     </span>
-                  )}
-                   {game.isPremade && (
-                    <span className="inline-flex items-center text-xs font-medium bg-teal-100 dark:bg-teal-700/50 text-teal-700 dark:text-teal-300 px-2.5 py-1 rounded-full">
-                        <CheckCircle size={12} className="mr-1" /> Premade
-                     </span>
-                  )}
-                </div>
-              </div>
-              <Button
-                variant='primary' // Or your desired variant
-                onClick={() => handleOpenAssignModal(game.actualGameDataFromBackend)}
-                className="w-full mt-auto" // Ensure button is at the bottom
-                // Button is always enabled as actualGameDataFromBackend will exist for displayed games
-              >
-                Assign to Classroom
-              </Button>
+      <div className="mt-6">
+        {activeTab === 'overview' && (
+          <div className="animate-fade-in">
+            <h2 className="text-2xl font-semibold mb-6 text-primary-text dark:text-primary-text-dark">
+              Classroom Statistics
+            </h2>
+            <ClassroomStatistics
+              leaderboard={leaderboard} // Overall classroom leaderboard
+              assignedGames={assignedGames}
+              averageScore={averageScore} // Overall classroom average score
+              totalStudents={students.length}
+            />
+          </div>
+        )}
+
+        {activeTab === 'games' && (
+          <div className="animate-fade-in">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark">Learning Activities ({activityCount})</h2>
             </div>
-          ))}
-        </div>
+            {assignedGames.length === 0 ? (
+              <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm p-8 text-center border-2 border-dashed dark:border-gray-700">
+                <AlertTriangle size={40} className="mx-auto mb-4 text-yellow-500" />
+                <h3 className="text-xl font-semibold mb-2 text-primary-text dark:text-primary-text-dark">No Activities Assigned Yet</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Assign games and learning activities to engage your students from the "Assign Game" button above.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {assignedGames.map(ag => ( // ag is AssignedGameDTO
+                  <GameCard
+                    key={ag.id}
+                    assignedGame={ag} // Pass the whole AssignedGameDTO
+                    classroomId={classroomId!}
+                    onOpenStatsModal={handleOpenGameStatsModal} // New callback
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'students' && (
+          <div className="animate-fade-in">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark">Enrolled Students ({studentCount})</h2>
+            </div>
+            {students.length === 0 ? (
+              <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm p-8 text-center border-2 border-dashed dark:border-gray-700">
+                <Users size={40} className="mx-auto mb-4 text-gray-400" />
+                <h3 className="text-xl font-semibold mb-2 text-primary-text dark:text-primary-text-dark">No Students Enrolled</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Share the classroom code <code className="font-mono bg-gray-100 dark:bg-slate-700 p-1 rounded">{classroom.code}</code> with your students to let them join.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm overflow-hidden border dark:border-gray-700">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-slate-800">
+                      <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Name</th>
+                      <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Email</th>
+                      <th className="py-3 px-4 text-right text-sm font-semibold text-gray-600 dark:text-gray-300">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {students.map(student => (
+                      <tr key={student.id.toString()} className="hover:bg-gray-50 dark:hover:bg-slate-700">
+                        <td className="py-3 px-4 whitespace-nowrap text-primary-text dark:text-primary-text-dark">
+                          <div className="flex items-center">
+                            <img src={student.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${student.firstName}${student.lastName}`} alt={student.name} className="w-8 h-8 rounded-full mr-3"/>
+                            {student.name}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap text-primary-text dark:text-primary-text-dark">{student.email}</td>
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          {/* Consider link to student-specific stats page if exists */}
+                          {/* <Button variant="text" size="sm" onClick={() => navigate(`/teacher/classrooms/${classroomId}/students/${student.id}/progress`)} className="mr-2"> */}
+                          <Button variant="text" size="sm" className="mr-2 opacity-50 cursor-not-allowed" title="Student progress view not implemented">
+                            View Progress
+                          </Button>
+                          <Button
+                            variant="text"
+                            size="sm"
+                            onClick={() => openRemoveStudentModal(student)}
+                            className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-700/20"
+                            icon={<Trash2 size={14}/>}
+                          >
+                            Remove
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'leaderboard' && (
+          <div className="animate-fade-in">
+            <h2 className="text-2xl font-semibold mb-6 text-primary-text dark:text-primary-text-dark">Classroom Leaderboard</h2>
+            {leaderboard.length === 0 ? (
+                 <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow-sm p-8 text-center border dark:border-gray-700">
+                    <h3 className="text-xl font-semibold mb-2 text-primary-text dark:text-primary-text-dark">Leaderboard is Empty</h3>
+                    <p className="text-gray-600 dark:text-gray-300">
+                        No scores recorded yet. Scores will appear here as students complete activities.
+                    </p>
+                </div>
+            ) : (
+                <LeaderboardTable
+                  entries={leaderboard} // This is the overall classroom leaderboard
+                />
+            )}
+          </div>
+        )}
+      </div>
+
+      {classroom && (
+        <ClassroomSettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          classroom={classroom}
+        />
       )}
 
-      {selectedGameToAssign && isAssignModalOpen && (
-        <AssignGameModal
-          isOpen={isAssignModalOpen}
-          onClose={handleCloseAssignModal}
-          gameToAssign={selectedGameToAssign}
+      {studentToRemove && (
+        <Modal
+          isOpen={isRemoveStudentModalOpen}
+          onClose={closeRemoveStudentModal}
+          title="Confirm Student Removal"
+          size="sm"
+          footer={
+            <>
+              <Button variant="text" onClick={closeRemoveStudentModal} disabled={isLoadingAction}>
+                Cancel
+              </Button>
+              <Button variant="energetic" onClick={confirmRemoveStudent} isLoading={isLoadingAction} icon={<UserX size={16} />}>
+                Yes, Remove Student
+              </Button>
+            </>
+          }
+        >
+          <div className="text-center">
+            <AlertTriangle size={48} className="mx-auto text-red-500 mb-4" />
+            <p className="text-lg font-medium text-primary-text dark:text-primary-text-dark">
+              Are you sure you want to remove <span className="font-bold">{studentToRemove.name}</span> from this classroom?
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              This action will unenroll the student. Their past progress might be retained if they rejoin, but they will lose access until then.
+            </p>
+            {removeStudentError && (
+              <p className="text-red-500 text-xs mt-3 bg-red-100 dark:bg-red-900/30 p-2 rounded-md">{removeStudentError}</p>
+            )}
+          </div>
+        </Modal>
+      )}
+
+      {selectedAssignedGame && classroomId && (
+        <GameStatisticsModal
+          isOpen={isGameStatsModalOpen}
+          onClose={handleCloseGameStatsModal}
+          assignedGame={selectedAssignedGame}
+          classroomId={classroomId}
         />
       )}
     </div>
   );
 };
 
-export default TeacherGameLibraryPage;
+export default TeacherClassroomViewPage;

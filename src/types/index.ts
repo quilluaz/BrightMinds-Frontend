@@ -246,3 +246,8 @@ export interface ClassroomContextType {
     attemptData: Omit<StudentGameAttemptDTO, "id" | "createdAt">
   ) => Promise<void>;
 }
+
+export interface UpdateAssignedGameRequestDTO {
+  deadline?: string; // ISO string
+  maxAttempts?: number | null; // null for unlimited, or a number
+}

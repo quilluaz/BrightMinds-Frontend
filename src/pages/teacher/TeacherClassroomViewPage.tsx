@@ -1,16 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Users, BookOpen, BarChart2, Settings, Copy, AlertTriangle, Library, Trash2, Check, UserX } from 'lucide-react'; // Added UserX
+import { Users, BookOpen, Settings, Copy, AlertTriangle, Library, Trash2, Check, UserX, Eye } from 'lucide-react';
 import { useClassroom } from '../../context/ClassroomContext';
 import Button from '../../components/common/Button';
 import GameCard from '../../components/common/GameCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import LeaderboardTable from '../../components/common/LeaderboardTable';
 import ClassroomSettingsModal from '../../components/teacher/ClassroomSettingsModal';
-import Modal from '../../components/common/Modal'; // Import the common Modal
-import { Classroom, AssignedGameDTO, LeaderboardEntry, Game, User as StudentUser } from '../../types';
+import Modal from '../../components/common/Modal';
+import { Classroom, AssignedGameDTO, LeaderboardEntry, User as StudentUser } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import ClassroomStatistics from '../../components/teacher/ClassroomStatistics';
+import GameStatisticsModal from '../../components/teacher/GameStatisticsModal';
+
+const TABS = [
+    { key: 'overview', label: 'Overview' },
+    { key: 'games', label: 'Games' },
+    { key: 'students', label: 'Students' },
+    { key: 'leaderboard', label: 'Leaderboard' },
+];
 
 const TeacherClassroomViewPage: React.FC = () => {
   const { classroomId } = useParams<{ classroomId: string }>();
@@ -20,14 +28,14 @@ const TeacherClassroomViewPage: React.FC = () => {
     getClassroomLeaderboard,
     getStudentsInClassroom,
     fetchTeacherClassrooms,
-    removeStudentFromClassroom, // Assuming this will be implemented in context
+    removeStudentFromClassroom,
   } = useClassroom();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('overview');
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingAction, setIsLoadingAction] = useState(false); // For modal actions
+  const [isLoadingAction, setIsLoadingAction] = useState(false);
   const [classroom, setClassroom] = useState<Classroom | null>(null);
   const [assignedGames, setAssignedGames] = useState<AssignedGameDTO[]>([]);
   const [students, setStudents] = useState<StudentUser[]>([]);
@@ -36,11 +44,12 @@ const TeacherClassroomViewPage: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
 
-  // State for the remove student confirmation modal
   const [isRemoveStudentModalOpen, setIsRemoveStudentModalOpen] = useState(false);
   const [studentToRemove, setStudentToRemove] = useState<StudentUser | null>(null);
   const [removeStudentError, setRemoveStudentError] = useState<string | null>(null);
 
+  const [isGameStatsModalOpen, setIsGameStatsModalOpen] = useState(false);
+  const [selectedAssignedGame, setSelectedAssignedGame] = useState<AssignedGameDTO | null>(null);
 
   const fetchClassroomData = useCallback(async (forceRefreshContext = false) => {
     if (!classroomId) {
@@ -54,6 +63,7 @@ const TeacherClassroomViewPage: React.FC = () => {
     }
 
     try {
+      // Use the latest from context, which might have been updated by forceRefreshContext
       const currentClassrooms = teacherClassrooms;
       const foundClassroom = currentClassrooms.find(c => c.id === classroomId);
 
@@ -77,8 +87,11 @@ const TeacherClassroomViewPage: React.FC = () => {
           setAverageScore(0);
         }
       } else {
-        console.warn("Classroom not found in context, redirecting.");
-        navigate('/teacher/classrooms');
+        console.warn("Classroom not found in context after potential refresh, redirecting.");
+        // If still not found after context refresh, then redirect.
+        if (forceRefreshContext || teacherClassrooms.length > 0) { // Avoid redirect if context was empty initially and hasn't loaded
+             navigate('/teacher/classrooms');
+        }
       }
     } catch (error) {
       console.error("Failed to fetch classroom data:", error);
@@ -92,6 +105,38 @@ const TeacherClassroomViewPage: React.FC = () => {
   useEffect(() => {
     fetchClassroomData();
   }, [fetchClassroomData]);
+
+  const handleAssignmentUpdatedOrDeleted = useCallback(() => {
+    // Refetch assigned games primarily, or full classroom data if other stats might change
+    if (classroomId && getAssignedGames) {
+        setIsLoading(true); // Indicate loading for the games list or relevant sections
+        getAssignedGames(classroomId)
+            .then(gamesData => {
+                setAssignedGames(gamesData);
+                // If activityCount on the classroom object needs update, refetch classroom object
+                // This could be part of a broader fetchClassroomData(true) call if necessary
+                // For now, just focusing on assigned games list.
+                 if (fetchTeacherClassrooms) { // Also refetch classroom details if student count might change
+                    fetchTeacherClassrooms().then(() => {
+                        const updatedClassroom = teacherClassrooms.find(c => c.id === classroomId);
+                        if (updatedClassroom) setClassroom(updatedClassroom);
+                    });
+                }
+            })
+            .catch(error => console.error("Failed to refresh assigned games:", error))
+            .finally(() => setIsLoading(false));
+    }
+  }, [classroomId, getAssignedGames, fetchTeacherClassrooms, teacherClassrooms]);
+
+  const handleOpenGameStatsModal = (game: AssignedGameDTO) => {
+    setSelectedAssignedGame(game);
+    setIsGameStatsModalOpen(true);
+  };
+
+  const handleCloseGameStatsModal = () => {
+    setIsGameStatsModalOpen(false);
+    setSelectedAssignedGame(null);
+  };
 
   const handleCopyCode = () => {
     if (classroom?.code) {
@@ -117,33 +162,21 @@ const TeacherClassroomViewPage: React.FC = () => {
   };
 
   const confirmRemoveStudent = async () => {
-    if (!studentToRemove || !classroomId) return;
+    if (!studentToRemove || !classroomId || !removeStudentFromClassroom || !getStudentsInClassroom) return;
     
     setIsLoadingAction(true);
     setRemoveStudentError(null);
     try {
-      if (removeStudentFromClassroom) { // Check if context function exists
-        await removeStudentFromClassroom(classroomId, studentToRemove.id.toString());
-         // Successfully removed, now refetch data
-        const updatedStudents = await getStudentsInClassroom(classroomId);
-        setStudents(updatedStudents);
-        // Also refetch classroom data to update studentCount on the card and overview
-        if (fetchTeacherClassrooms) { // Ensure context has this function
-            await fetchTeacherClassrooms(); // This updates teacherClassrooms in context
-            const updatedClassroomInContext = teacherClassrooms.find(c => c.id === classroomId);
-            if (updatedClassroomInContext) {
-                setClassroom(updatedClassroomInContext); // Update local classroom state
-            }
-        }
-      } else {
-        // Fallback for when removeStudentFromClassroom is not implemented in context
-        console.warn("removeStudentFromClassroom not implemented in context. Simulating removal.");
-        alert(`Student ${studentToRemove.name} removed (simulated). Refreshing student list.`);
-        const updatedStudents = students.filter(s => s.id !== studentToRemove.id);
-        setStudents(updatedStudents);
-        if (classroom) {
-            setClassroom({...classroom, studentCount: Math.max(0, classroom.studentCount -1) });
-        }
+      await removeStudentFromClassroom(classroomId, studentToRemove.id.toString());
+      const updatedStudents = await getStudentsInClassroom(classroomId);
+      setStudents(updatedStudents);
+      // Refetch classroom details from context to update studentCount display
+      if (fetchTeacherClassrooms) {
+        await fetchTeacherClassrooms(); // This updates teacherClassrooms in context
+        const updatedClassroomInContext = teacherClassrooms.find(c => c.id === classroomId);
+         if (updatedClassroomInContext) {
+            setClassroom(updatedClassroomInContext);
+         }
       }
       closeRemoveStudentModal();
     } catch (error) {
@@ -176,20 +209,8 @@ const TeacherClassroomViewPage: React.FC = () => {
     );
   }
 
-  const studentCount = classroom.studentCount;
+  const studentCount = classroom.studentCount || students.length; // Fallback to live students length if studentCount isn't updated fast enough
   const activityCount = assignedGames.length;
-
-  const mapAssignedGameToGameCardProp = (assignedGame: AssignedGameDTO): Game => {
-    return {
-      id: assignedGame.game?.id || assignedGame.gameId || assignedGame.id,
-      title: assignedGame.game?.title || assignedGame.gameTitle || 'Untitled Game',
-      description: assignedGame.game?.description,
-      subject: assignedGame.game?.subject,
-      questions: assignedGame.game?.questions || [],
-      gameMode: assignedGame.game?.gameMode,
-      status: assignedGame.status as Game['status'] || 'not_started',
-    };
-  };
 
   return (
     <div className="container mx-auto px-4 py-8 animate-fade-in">
@@ -239,88 +260,38 @@ const TeacherClassroomViewPage: React.FC = () => {
         </div>
       </header>
 
-      <div className="mb-8 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex space-x-4 mb-6">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2 rounded-lg ${
-              activeTab === 'overview'
-                ? 'bg-primary-accent text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveTab('games')}
-            className={`px-4 py-2 rounded-lg ${
-              activeTab === 'games'
-                ? 'bg-primary-accent text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Games
-          </button>
-          <button
-            onClick={() => setActiveTab('students')}
-            className={`px-4 py-2 rounded-lg ${
-              activeTab === 'students'
-                ? 'bg-primary-accent text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Students
-          </button>
-          <button
-            onClick={() => setActiveTab('statistics')}
-            className={`px-4 py-2 rounded-lg ${
-              activeTab === 'statistics'
-                ? 'bg-primary-accent text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Statistics
-          </button>
-          <button
-            onClick={() => setActiveTab('leaderboard')}
-            className={`px-4 py-2 rounded-lg ${
-              activeTab === 'leaderboard'
-                ? 'bg-primary-accent text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            Leaderboard
-          </button>
-        </div>
+      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+        <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto pb-px" aria-label="Tabs">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`
+                whitespace-nowrap py-3 px-1 sm:py-4 sm:px-1 border-b-2 font-medium text-sm transition-colors duration-200
+                ${activeTab === tab.key
+                  ? 'border-primary-interactive text-primary-interactive dark:border-primary-interactive-dark dark:text-primary-interactive-dark'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600'
+                }
+              `}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
       </div>
 
       <div className="mt-6">
         {activeTab === 'overview' && (
           <div className="animate-fade-in">
-            <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark mb-6">Classroom Snapshot</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow p-6 border dark:border-gray-700">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-lg text-primary-text dark:text-primary-text-dark">Students</h3>
-                  <Users size={22} className="text-primary-interactive dark:text-primary-interactive-dark" />
-                </div>
-                <p className="text-4xl font-bold text-primary-text dark:text-primary-text-dark">{studentCount}</p>
-              </div>
-              <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow p-6 border dark:border-gray-700">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-lg text-primary-text dark:text-primary-text-dark">Activities</h3>
-                  <BookOpen size={22} className="text-primary-energetic dark:text-primary-energetic-dark" />
-                </div>
-                <p className="text-4xl font-bold text-primary-text dark:text-primary-text-dark">{activityCount}</p>
-              </div>
-              <div className="bg-white dark:bg-primary-card-dark rounded-xl shadow p-6 border dark:border-gray-700">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-lg text-primary-text dark:text-primary-text-dark">Avg. Score</h3>
-                  <BarChart2 size={22} className="text-primary-accent dark:text-primary-accent-dark" />
-                </div>
-                <p className="text-4xl font-bold text-primary-text dark:text-primary-text-dark">{averageScore !== null ? `${averageScore}%` : 'N/A'}</p>
-              </div>
-            </div>
+            <h2 className="text-2xl font-semibold mb-6 text-primary-text dark:text-primary-text-dark">
+              Classroom Statistics
+            </h2>
+            <ClassroomStatistics
+              leaderboard={leaderboard}
+              assignedGames={assignedGames}
+              averageScore={averageScore}
+              totalStudents={studentCount}
+            />
           </div>
         )}
 
@@ -339,12 +310,12 @@ const TeacherClassroomViewPage: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {assignedGames.map(assignedGame => (
+                {assignedGames.map(ag => (
                   <GameCard
-                    key={assignedGame.id}
-                    game={mapAssignedGameToGameCardProp(assignedGame)}
+                    key={ag.id}
+                    assignedGame={ag}
                     classroomId={classroomId!}
-                    showPerformance
+                    onOpenStatsModal={handleOpenGameStatsModal}
                   />
                 ))}
               </div>
@@ -386,13 +357,13 @@ const TeacherClassroomViewPage: React.FC = () => {
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap text-primary-text dark:text-primary-text-dark">{student.email}</td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <Button variant="text" size="sm" onClick={() => navigate(`/teacher/classrooms/${classroomId}/students/${student.id}`)} className="mr-2">
+                          <Button variant="text" size="sm" className="mr-2 opacity-50 cursor-not-allowed" title="Student progress view not implemented">
                             View Progress
                           </Button>
                           <Button
                             variant="text"
                             size="sm"
-                            onClick={() => openRemoveStudentModal(student)} // Changed to open modal
+                            onClick={() => openRemoveStudentModal(student)}
                             className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-700/20"
                             icon={<Trash2 size={14}/>}
                           >
@@ -405,20 +376,6 @@ const TeacherClassroomViewPage: React.FC = () => {
                 </table>
               </div>
             )}
-          </div>
-        )}
-
-        {activeTab === 'statistics' && (
-          <div className="animate-fade-in">
-            <h2 className="text-2xl font-semibold mb-6 text-primary-text dark:text-primary-text-dark">
-              Classroom Statistics
-            </h2>
-            <ClassroomStatistics
-              leaderboard={leaderboard}
-              assignedGames={assignedGames}
-              averageScore={averageScore}
-              totalStudents={students.length}
-            />
           </div>
         )}
 
@@ -435,6 +392,7 @@ const TeacherClassroomViewPage: React.FC = () => {
             ) : (
                 <LeaderboardTable
                   entries={leaderboard}
+                  highlightedUserId={currentUser?.id.toString()}
                 />
             )}
           </div>
@@ -444,12 +402,15 @@ const TeacherClassroomViewPage: React.FC = () => {
       {classroom && (
         <ClassroomSettingsModal
           isOpen={isSettingsModalOpen}
-          onClose={() => setIsSettingsModalOpen(false)}
+          onClose={() => {
+            setIsSettingsModalOpen(false);
+            // Refetch classroom data to reflect any name/description changes in the header
+            fetchClassroomData(true); // Pass true to force context refresh
+          }}
           classroom={classroom}
         />
       )}
 
-      {/* Remove Student Confirmation Modal */}
       {studentToRemove && (
         <Modal
           isOpen={isRemoveStudentModalOpen}
@@ -480,6 +441,16 @@ const TeacherClassroomViewPage: React.FC = () => {
             )}
           </div>
         </Modal>
+      )}
+
+      {selectedAssignedGame && classroomId && (
+        <GameStatisticsModal
+          isOpen={isGameStatsModalOpen}
+          onClose={handleCloseGameStatsModal}
+          assignedGame={selectedAssignedGame}
+          classroomId={classroomId}
+          onAssignmentUpdatedOrDeleted={handleAssignmentUpdatedOrDeleted}
+        />
       )}
     </div>
   );

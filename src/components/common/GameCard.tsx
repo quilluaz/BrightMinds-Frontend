@@ -1,126 +1,317 @@
 import React from "react";
-import { PlayCircle, Check, TrendingUp } from "lucide-react";
+import {
+  PlayCircle,
+  Check,
+  TrendingUp,
+  Eye,
+  Tag,
+  Info,
+  CalendarDays,
+  Repeat,
+  Infinity as InfinityIcon,
+  AlertTriangle,
+  Activity,
+  Award,
+  ChevronRight,
+  Clock,
+  Lock,
+} from "lucide-react";
 import { Link } from "react-router-dom";
-import { Game } from "../../types"; // Game type for displaying game details
+import { AssignedGameDTO } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 
 interface GameCardProps {
-  game: Game; // Represents the game template's details for display
+  assignedGame: AssignedGameDTO;
   classroomId: string;
-  assignedGameId?: string; // <<< NEW PROP: For the specific assignment ID
-  showPerformance?: boolean;
+  onOpenStatsModal?: (assignedGame: AssignedGameDTO) => void;
+  attemptsMade?: number;
+  highestScore?: number | null;
 }
 
 const GameCard: React.FC<GameCardProps> = ({
-  game,
+  assignedGame,
   classroomId,
-  assignedGameId, // <<< USE NEW PROP
-  showPerformance = false,
+  onOpenStatsModal,
+  attemptsMade,
+  highestScore,
 }) => {
   const { currentUser } = useAuth();
-  const isTeacher = currentUser?.role === "TEACHER"; // Corrected: TEACHER, not teacher
+  const isTeacher = currentUser?.role === "TEACHER";
 
-  const getStatusIcon = () => {
-    const status = game.status || "not_started";
-    if (status === "not_started") {
-      return (
-        <PlayCircle
-          size={20}
-          className="text-primary-energetic dark:text-primary-energetic-dark"
-        />
-      );
-    } else if (status === "completed") {
-      return <Check size={20} className="text-green-500 dark:text-green-400" />;
+  if (!assignedGame) {
+    return (
+      <div className="card border border-red-500 dark:border-red-700 h-full bg-white dark:bg-primary-card-dark flex flex-col opacity-60 filter grayscale-[50%] pointer-events-none">
+        <div className="p-5">
+          <h3 className="font-bold text-xl text-red-600 dark:text-red-400">Error</h3>
+          <p className="text-base text-gray-600 dark:text-gray-400">Game data unavailable.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const gameDetails = assignedGame.game;
+  const assignmentStatus = assignedGame.status || "PENDING";
+  const maxAttempts = assignedGame.maxAttempts;
+  const studentGameAttemptPath = `/student/classrooms/${classroomId}/game/${assignedGame.id}/attempt`;
+
+  // --- Determine if the card/action is effectively disabled for new student attempts ---
+  let isEffectivelyDisabled = false;
+  if (!isTeacher) {
+    if (assignmentStatus === "COMPLETED") {
+      isEffectivelyDisabled = false; // Student can still click to "View Score"
+    } else if (assignmentStatus === "OVERDUE") {
+      isEffectivelyDisabled = true;
+    } else if (maxAttempts != null && typeof attemptsMade === 'number' && attemptsMade >= maxAttempts) {
+      isEffectivelyDisabled = true;
+    }
+  }
+
+  // Fallback UI for students if essential gameDetails (nested .game object) are missing
+  if (!gameDetails && !isTeacher) {
+    let fallbackPlayButtonText = "Play Now";
+     if (assignmentStatus === "COMPLETED") fallbackPlayButtonText = "View Score";
+     else if (isEffectivelyDisabled) {
+        fallbackPlayButtonText = assignmentStatus === "OVERDUE" ? "Past Due" : "Max Attempts Reached";
+     }
+    
+    return (
+      <div className={`card h-full bg-white dark:bg-primary-card-dark flex flex-col
+                      ${isEffectivelyDisabled ? 'opacity-60 filter grayscale-[50%] cursor-not-allowed' : 'card-hover'}`}>
+        <div className="p-5 flex flex-col flex-grow">
+          <h3 className="font-semibold text-xl md:text-2xl mb-2 text-primary-text dark:text-primary-text-dark">
+            {assignedGame.gameTitle || "Game Activity"}
+          </h3>
+          {/* Description removed for student view as requested */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-base text-gray-700 dark:text-gray-300 mb-4">
+            <div className="flex items-center">
+              <CalendarDays size={18} className="mr-2 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0" />
+              <div>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">Deadline:</span>
+                <p className="font-semibold">{new Date(assignedGame.dueDate).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <Repeat size={18} className="mr-2 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0" />
+              <div>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">Attempts:</span>
+                <p className="font-semibold">
+                    {typeof attemptsMade === 'number' ? `${attemptsMade}/` : '0/'}
+                    {maxAttempts != null ? maxAttempts : <InfinityIcon size={16} className="inline" />}
+                </p>
+              </div>
+            </div>
+            {typeof highestScore === 'number' && (
+                <div className="flex items-center">
+                    <Award size={18} className="mr-2 text-yellow-500 dark:text-yellow-400 flex-shrink-0" />
+                     <div>
+                        <span className="text-gray-500 dark:text-gray-400 text-sm">Highest:</span>
+                        <p className="font-semibold text-yellow-600 dark:text-yellow-500">{highestScore} pts</p>
+                    </div>
+                </div>
+            )}
+            <div className="flex items-center">
+              <Activity size={18} className="mr-2 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0" />
+               <div>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">Status:</span>
+                <p className="font-semibold capitalize">{assignmentStatus.toLowerCase()}</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Link
+              to={studentGameAttemptPath}
+              onClick={(e) => isEffectivelyDisabled && e.preventDefault()}
+              className={`flex items-center justify-center w-full p-3 rounded-lg transition-colors group text-base font-medium
+                          ${isEffectivelyDisabled 
+                            ? 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' 
+                            : 'bg-primary-interactive hover:bg-primary-interactive/90 dark:bg-primary-interactive-dark dark:hover:bg-opacity-80 text-white'
+                          }`}
+              aria-disabled={isEffectivelyDisabled}
+            >
+              {isEffectivelyDisabled ? <Lock size={18} className="mr-2"/> : <PlayCircle size={18} className="mr-2" />}
+              {fallbackPlayButtonText}
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Main rendering logic if gameDetails are available
+  const title = gameDetails?.title || assignedGame.gameTitle || "Untitled Game";
+  const description = gameDetails?.description; // Keep for teacher, hide for student
+  const subject = gameDetails?.subject;
+  const gameModeText = gameDetails?.gameMode?.replace(/_/g, " ").toLowerCase() || "";
+  const gameMaxScore = gameDetails?.maxScore;
+
+  let playButtonText: string;
+  let playButtonIcon: JSX.Element;
+
+  if (isTeacher) { 
+      playButtonText = "View Details & Stats";
+      playButtonIcon = <Eye size={20} className="mr-2" />;
+  } else {
+    if (assignmentStatus === "COMPLETED") {
+      playButtonText = "View Score"; 
+      playButtonIcon = <Check size={20} className="mr-2" />;
+    } else if (isEffectivelyDisabled) { 
+        playButtonText = assignmentStatus === "OVERDUE" ? "Past Due" : "Max Attempts Reached";
+        playButtonIcon = assignmentStatus === "OVERDUE" 
+            ? <AlertTriangle size={20} className="mr-2" /> 
+            : <Repeat size={20} className="mr-2" />;
+    } else if (assignmentStatus === "in_progress") {
+        playButtonText = "Continue";
+        playButtonIcon = <TrendingUp size={20} className="mr-2" />;
+    } else { 
+        playButtonText = "Play Now";
+        playButtonIcon = <PlayCircle size={20} className="mr-2" />;
+    }
+  }
+
+  const getStatusDisplay = () => {
+    let icon = <Activity size={16} className="mr-2 flex-shrink-0" />;
+    let sTextColor = "text-gray-600 dark:text-gray-300";
+    let statusTextFormatted = assignmentStatus.replace(/_/g, ' ').toLowerCase();
+
+    switch (assignmentStatus) {
+      case "COMPLETED":
+        icon = <Check size={16} className="mr-2 text-green-500 dark:text-green-400 flex-shrink-0" />;
+        sTextColor = "text-green-600 dark:text-green-400 font-semibold";
+        break;
+      case "OVERDUE":
+        icon = <AlertTriangle size={16} className="mr-2 text-red-500 dark:text-red-400 flex-shrink-0" />;
+        sTextColor = "text-red-600 dark:text-red-400 font-semibold";
+        break;
+      case "PENDING":
+      case "not_started":
+        icon = <Clock size={16} className="mr-2 text-amber-600 dark:text-amber-500 flex-shrink-0" />;
+        sTextColor = "text-amber-700 dark:text-amber-500";
+        break;
+      case "in_progress":
+        icon = <TrendingUp size={16} className="mr-2 text-blue-500 dark:text-blue-400 flex-shrink-0" />;
+        sTextColor = "text-blue-600 dark:text-blue-400";
+        break;
+    }
+    return { icon, text: statusTextFormatted, sTextColor };
+  };
+  
+  const { icon: currentStatusIcon, text: currentStatusText, sTextColor: currentStatusTextColor } = getStatusDisplay();
+
+  const handleTeacherAction = () => {
+    if (isTeacher && onOpenStatsModal) {
+      onOpenStatsModal(assignedGame);
+    }
+  };
+  
+  let highestScoreFormatted: string | null = null;
+  if (typeof highestScore === 'number') {
+    if (typeof gameMaxScore === 'number' && gameMaxScore > 0) {
+        const percentage = Math.round((highestScore / gameMaxScore) * 100);
+        highestScoreFormatted = `${highestScore}/${gameMaxScore} (${percentage}%)`;
     } else {
-      return (
-        <TrendingUp
-          size={20}
-          className="text-primary-interactive dark:text-primary-interactive-dark"
-        />
-      );
+        highestScoreFormatted = `${highestScore} pts`;
     }
-  };
-
-  const getActionText = () => {
-    if (isTeacher) {
-      return showPerformance ? "View Performance" : "View Details";
-    }
-    const status = game.status || "not_started";
-    if (status === "not_started") {
-      return "Play Now";
-    } else if (status === "completed") {
-      return "Play Again"; // Or "View Score"
-    } else { // in_progress or PENDING or OVERDUE
-      return "Continue";
-    }
-  };
-
-  const getLinkPath = () => {
-    if (isTeacher) {
-      // Teacher links to game details or performance, using the game template ID (game.id)
-      return showPerformance
-        ? `/teacher/classrooms/${classroomId}/games/${game.id}/performance`
-        : `/teacher/classrooms/${classroomId}/games/${game.id}`;
-    } else {
-      // Student links to an attempt page using the specific ASSIGNMENT ID
-      if (!assignedGameId) {
-        console.warn("GameCard: assignedGameId is missing for student link. Falling back to game.id, which might be incorrect for attempts.");
-        // Fallback or error, ideally assignedGameId should always be provided for student attempts
-        return `/student/classrooms/${classroomId}/game/${game.id}/attempt`; 
-      }
-      return `/student/classrooms/${classroomId}/game/${assignedGameId}/attempt`;
-    }
-  };
+  }
 
   return (
-    <div className="card card-hover border border-gray-100 dark:border-gray-700 h-full bg-white dark:bg-primary-card-dark">
-      <div className="flex flex-col h-full p-4">
-        <div>
-          <h3 className="font-bold text-lg mb-2 text-primary-text dark:text-primary-text-dark">
-            {game.title}
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3"> {/* Added line-clamp */}
-            {game.description}
+    <div className={`card h-full bg-white dark:bg-primary-card-dark flex flex-col
+                   ${!isTeacher && isEffectivelyDisabled ? 'opacity-50 filter grayscale-[60%] cursor-not-allowed' : 'card-hover'}`}>
+      <div className="p-5 flex flex-col flex-grow">
+        <h3 className="font-semibold text-xl md:text-2xl mb-2 text-primary-text dark:text-primary-text-dark">
+          {title}
+        </h3>
+        {isTeacher && description && ( // Description only for teacher
+          <p className="text-gray-500 dark:text-gray-400 text-base mb-4 line-clamp-3 flex-grow">
+            {description}
           </p>
+        )}
+        {!isTeacher && <div className="flex-grow mb-4"></div>} {/* Placeholder for student to push content down */}
 
-          {game.subject && ( /* Display subject if available */
-            <div className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 bg-primary-interactive bg-opacity-10 text-primary-interactive dark:bg-primary-interactive-dark dark:bg-opacity-20 dark:text-primary-interactive-dark">
-              {game.subject}
+
+        {/* Student Info Section - improved layout */}
+        {!isTeacher && (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-base mb-5"> {/* Increased font to text-base, gap-y-2.5 */}
+            <div className="flex items-center col-span-2">
+              {currentStatusIcon}
+              <span className="text-gray-500 dark:text-gray-400 text-sm">Status:</span>
+              <span className={`ml-1.5 capitalize font-semibold ${currentStatusTextColor}`}>{currentStatusText}</span>
             </div>
-          )}
-        </div>
-
-        <div className="mt-auto">
-          {/* Displaying score for completed games for students might need more context,
-              as 'game.score' on the Game template might not be student-specific.
-              This often comes from attempt data. For now, we'll keep it as is if your 'Game' type can hold a score.
-          */}
-          {game.status === "completed" &&
-            game.score !== undefined &&
-            !isTeacher && (
-              <div className="flex items-center mb-3">
-                <div className="bg-primary-accent bg-opacity-20 text-primary-text dark:bg-primary-accent-dark dark:bg-opacity-20 dark:text-primary-text-dark px-3 py-1 rounded-full text-sm font-medium">
-                  Your Score: {game.score}% {/* Ensure score is percentage or adjust display */}
-                </div>
+            <div className="flex items-start"> {/* Changed to items-start for multi-line text */}
+              <CalendarDays size={18} className="mr-2.5 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0 mt-0.5" />
+              <div>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">Deadline:</span>
+                <p className="font-semibold text-primary-text dark:text-primary-text-dark">{new Date(assignedGame.dueDate).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
               </div>
+            </div>
+            <div className="flex items-start">
+              <Repeat size={18} className="mr-2.5 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0 mt-0.5" />
+               <div>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">Attempts:</span>
+                <p className="font-semibold text-primary-text dark:text-primary-text-dark">
+                    {typeof attemptsMade === 'number' ? `${attemptsMade}/` : '0/'}
+                    {maxAttempts != null ? maxAttempts : <InfinityIcon size={16} className="inline" />}
+                </p>
+              </div>
+            </div>
+            {highestScoreFormatted && (assignmentStatus === "COMPLETED" || (typeof attemptsMade === 'number' && attemptsMade > 0)) && (
+                <div className="flex items-start col-span-2 sm:col-span-1">
+                    <Award size={18} className="mr-2.5 text-yellow-500 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <span className="text-gray-500 dark:text-gray-400 text-sm">Your Highest:</span>
+                        <p className="font-semibold text-yellow-600 dark:text-yellow-500">{highestScoreFormatted}</p>
+                    </div>
+                </div>
             )}
+          </div>
+        )}
 
-          <Link
-            to={getLinkPath()}
-            className="flex items-center justify-between w-full mt-2 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors">
-            <span className="flex items-center">
-              {getStatusIcon()}
-              <span className="ml-2 font-medium text-primary-text dark:text-primary-text-dark">
-                {getActionText()}
-              </span>
+        {/* Tags for Game Mode and Subject (now text-sm) */}
+        <div className="flex flex-wrap gap-2 mb-4 text-sm">
+          {gameModeText && (
+            <span className="inline-flex items-center px-3 py-1.5 rounded-full font-medium bg-purple-100 text-purple-700 dark:bg-purple-800 dark:text-purple-200 capitalize shadow-sm">
+              <Tag size={15} className="mr-1.5" /> {gameModeText}
             </span>
-
-            {isTeacher && showPerformance && game.status !== 'not_started' && ( /* Added status check */
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Avg. Score: {game.score !== undefined ? `${game.score}%` : "N/A"} {/* Example display */}
+          )}
+          {subject && (
+            <span className="inline-flex items-center px-3 py-1.5 rounded-full font-medium bg-sky-100 text-sky-700 dark:bg-sky-800 dark:text-sky-200 shadow-sm">
+              <Info size={15} className="mr-1.5" /> {subject}
+            </span>
+          )}
+          {isTeacher && gameDetails && ( 
+             <span className={`inline-flex items-center px-3 py-1.5 rounded-full font-medium capitalize shadow-sm ${currentStatusTextColor.replace('text-', 'bg-').replace('-600', '-100').replace('-500', '-100').replace('-700', '-100').replace('-400', '-800')} ${currentStatusTextColor}`}>
+                {React.cloneElement(currentStatusIcon, { size: 15, className: `mr-1.5 ${currentStatusIcon.props.className}` })} {currentStatusText}
               </span>
-            )}
-          </Link>
+           )}
+        </div>
+        
+        <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+          {isTeacher ? (
+            <button
+              onClick={handleTeacherAction}
+              className="flex items-center justify-center w-full p-3 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors group text-base font-medium"
+            >
+              {playButtonIcon}
+              <span className="ml-2 text-primary-text dark:text-primary-text-dark group-hover:text-primary-interactive dark:group-hover:text-primary-interactive-dark">
+                {playButtonText}
+              </span>
+              <ChevronRight size={20} className="ml-auto text-gray-400 dark:text-gray-500 group-hover:text-primary-interactive dark:group-hover:text-primary-interactive-dark" />
+            </button>
+          ) : (
+            <Link
+              to={studentGameAttemptPath}
+              className={`flex items-center justify-center w-full p-3.5 rounded-lg transition-colors group text-base font-semibold // Increased padding and font
+                          ${!isEffectivelyDisabled 
+                            ? 'bg-primary-interactive hover:bg-opacity-90 dark:bg-primary-interactive-dark dark:hover:bg-opacity-80 text-white' 
+                            : 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400' // Removed cursor-not-allowed, parent div handles it
+                          }`}
+              onClick={(e) => isEffectivelyDisabled && e.preventDefault()}
+              aria-disabled={isEffectivelyDisabled}
+            >
+              {isEffectivelyDisabled ? <Lock size={20} className="mr-2"/> : playButtonIcon}
+              <span className="ml-1.5">{playButtonText}</span>
+              {!isEffectivelyDisabled && <ChevronRight size={20} className="ml-auto" />}
+            </Link>
+          )}
         </div>
       </div>
     </div>

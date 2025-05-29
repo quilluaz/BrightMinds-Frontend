@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { BookOpen, Gamepad2, Sparkles, Users, LayoutGrid, Zap, Brain, Puzzle, Bell, ActivitySquare, AlertTriangle } from 'lucide-react'; // Added AlertTriangle
+import { BookOpen, Gamepad2, Sparkles, Users, LayoutGrid, Zap, Brain, Puzzle, Bell, ActivitySquare, AlertTriangle } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { useAuth } from '../../context/AuthContext';
 import { useClassroom } from '../../context/ClassroomContext';
@@ -9,14 +9,14 @@ import ClassroomCard from '../../components/common/ClassroomCard';
 import { AssignedGameDTO, StudentClassroom } from '../../types';
 
 interface LatestActivityDisplay {
-  id: string; // Should be unique for the key prop, e.g., assignedGame.id
-  gameId: string; // The actual game ID for linking
+  id: string; // This is assignedGame.id, used for the link's :assignedGameId param and key
+  gameIdForDisplay: string; 
   title: string;
   description?: string;
   classroomIdForLink: string;
   classroomName?: string;
-  dueDate?: string; // Added dueDate
-  status?: AssignedGameDTO['status']; // Added status
+  dueDate?: string; 
+  status?: AssignedGameDTO['status']; 
 }
 
 const StudentDashboardPage: React.FC = () => {
@@ -24,7 +24,7 @@ const StudentDashboardPage: React.FC = () => {
   const {
     studentClassrooms,
     fetchStudentClassrooms,
-    getAssignedGames, // Assuming this is the function to get games for a classroom
+    getAssignedGames,
   } = useClassroom();
   const navigate = useNavigate();
   const [latestActivities, setLatestActivities] = useState<LatestActivityDisplay[]>([]);
@@ -33,10 +33,10 @@ const StudentDashboardPage: React.FC = () => {
   useEffect(() => {
     if (!currentUser) {
       navigate('/login');
-      return; // Added return
+      return;
     } else if (currentUser.role !== 'STUDENT') {
-      navigate('/teacher/classrooms'); // Redirect non-students (e.g. teachers to their classrooms)
-      return; // Added return
+      navigate('/teacher/classrooms');
+      return;
     }
   }, [currentUser, navigate]);
 
@@ -44,17 +44,15 @@ const StudentDashboardPage: React.FC = () => {
     if (currentUser?.role === 'STUDENT' && fetchStudentClassrooms) {
       setIsLoadingDashboard(true);
       fetchStudentClassrooms().finally(() => setIsLoadingDashboard(false));
-    } else if (currentUser) { // If not student but logged in, stop loading
+    } else if (currentUser) {
         setIsLoadingDashboard(false);
     }
-    // If no currentUser, loading will be handled by redirect or a general loading screen
   }, [currentUser, fetchStudentClassrooms]);
 
   useEffect(() => {
     if (currentUser?.role === 'STUDENT' && studentClassrooms.length > 0 && getAssignedGames) {
       const fetchAllGamesForDashboard = async () => {
-        // Fetch games for a limited number of classrooms to avoid too many API calls on dashboard
-        const classroomsToFetchFor = studentClassrooms.slice(0, 5); // Example: fetch for first 5
+        const classroomsToFetchFor = studentClassrooms.slice(0, 5);
         
         const gamePromises = classroomsToFetchFor.map(async (classroom) => {
           try {
@@ -66,7 +64,7 @@ const StudentDashboardPage: React.FC = () => {
             };
           } catch (error) {
             console.error(`Error fetching games for classroom ${classroom.classroomId}:`, error);
-            return { classroomId: classroom.classroomId, classroomName: classroom.classroomName, games: [] }; // Return empty games on error
+            return { classroomId: classroom.classroomId, classroomName: classroom.classroomName, games: [] };
           }
         });
 
@@ -76,11 +74,11 @@ const StudentDashboardPage: React.FC = () => {
 
           results.forEach(result => {
             result.games.forEach(assignedGame => {
-              // Filter for games that are PENDING or OVERDUE to show as "new" or "due"
-              if (assignedGame.status === 'PENDING' || assignedGame.status === 'OVERDUE') {
+              // MODIFIED FILTER: Show only PENDING activities in "Upcoming Activities"
+              if (assignedGame.status === 'PENDING') {
                 combinedActivities.push({
-                  id: assignedGame.id, // Use assignedGame.id as the unique key for the list item
-                  gameId: assignedGame.game?.id || assignedGame.gameId || assignedGame.id, // Actual game ID for the link
+                  id: assignedGame.id, 
+                  gameIdForDisplay: assignedGame.game?.id || assignedGame.gameId || assignedGame.id, 
                   title: assignedGame.game?.title || assignedGame.gameTitle || 'Untitled Game',
                   description: assignedGame.game?.description || `New activity in ${result.classroomName}`,
                   classroomIdForLink: result.classroomId,
@@ -92,7 +90,6 @@ const StudentDashboardPage: React.FC = () => {
             });
           });
 
-          // Sort by due date (earliest first), then by assignedAt if needed
           combinedActivities.sort((a, b) => {
             if (a.dueDate && b.dueDate) {
               return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
@@ -100,7 +97,7 @@ const StudentDashboardPage: React.FC = () => {
             return 0;
           });
           
-          setLatestActivities(combinedActivities.slice(0, 4)); // Show top 4 relevant activities
+          setLatestActivities(combinedActivities.slice(0, 4));
         } catch (error) {
           console.error("Error processing games for dashboard activities:", error);
           setLatestActivities([]);
@@ -115,19 +112,17 @@ const StudentDashboardPage: React.FC = () => {
 
   const handleClassroomJoined = useCallback(() => {
     if (fetchStudentClassrooms) {
-      // Add a small delay to allow backend to process and then refetch
       setTimeout(() => fetchStudentClassrooms(), 500);
     }
   }, [fetchStudentClassrooms]);
 
-  if (!currentUser || isLoadingDashboard) { // Show loading if no current user yet or dashboard is loading
+  if (!currentUser || isLoadingDashboard) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
-   // This case should ideally be caught by the redirect useEffect earlier
   if (currentUser.role !== 'STUDENT') {
     return (
         <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
@@ -136,7 +131,6 @@ const StudentDashboardPage: React.FC = () => {
       </div>
     );
   }
-
 
   const firstName = currentUser.firstName || currentUser.name.split(' ')[0];
 
@@ -173,8 +167,8 @@ const StudentDashboardPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {latestActivities.map((activity) => (
                 <Link
-                to={`/student/classrooms/${activity.classroomIdForLink}/games/${activity.gameId}`}
-                key={activity.id} // Use assignedGame.id for the key
+                to={`/student/classrooms/${activity.classroomIdForLink}/game/${activity.id}/attempt`}
+                key={activity.id} 
                 className="group block"
                 >
                 <div className="bg-white dark:bg-primary-card-dark p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 border-2 border-transparent hover:border-primary-energetic dark:hover:border-primary-energetic-dark">
@@ -214,7 +208,6 @@ const StudentDashboardPage: React.FC = () => {
         )}
       </div>
 
-      {/* Practice Zone and Classrooms sections remain the same */}
       <div className="animate-slide-up animation-delay-400">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold text-primary-text dark:text-primary-text-dark flex items-center">

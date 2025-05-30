@@ -45,7 +45,6 @@ interface GameLevelState {
 interface GameTemplateState {
   activityName: string;
   maxScore: number;
-  maxExp: number;
   levels: GameLevelState[];
 }
 
@@ -55,7 +54,6 @@ const CreateSortingGame: React.FC = () => {
   const [gameTemplate, setGameTemplate] = useState<GameTemplateState>({
     activityName: "",
     maxScore: 100,
-    maxExp: 50,
     levels: [
       {
         level: 1,
@@ -394,11 +392,8 @@ const CreateSortingGame: React.FC = () => {
       setError("Please enter a game name.");
       return false;
     }
-    if (
-      Number(gameTemplate.maxScore) <= 0 ||
-      Number(gameTemplate.maxExp) <= 0
-    ) {
-      setError("Max Score and Max EXP must be positive values.");
+    if (Number(gameTemplate.maxScore) <= 0) {
+      setError("Max Score must be a positive value.");
       return false;
     }
     if (gameTemplate.levels.length === 0) {
@@ -535,7 +530,7 @@ const CreateSortingGame: React.FC = () => {
       const gamePayload = {
         activityName: gameTemplate.activityName,
         maxScore: Number(gameTemplate.maxScore),
-        maxExp: Number(gameTemplate.maxExp),
+        maxExp: 50, // Keeping the existing maxExp value
         isPremade: false,
         gameMode: "SORTING" as const,
         gameData: JSON.stringify({ levels: processedLevels }),
@@ -547,7 +542,6 @@ const CreateSortingGame: React.FC = () => {
       setGameTemplate({
         /* Reset form */ activityName: "",
         maxScore: 100,
-        maxExp: 50,
         levels: [
           {
             level: 1,
@@ -647,28 +641,6 @@ const CreateSortingGame: React.FC = () => {
                 onChange={(e) =>
                   handleGameTemplateChange(
                     "maxScore",
-                    parseInt(e.target.value) || 0
-                  )
-                }
-                className="input-field"
-                min="1"
-                required
-                disabled={isLoadingSubmit}
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="maxExp"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Max Experience (EXP)
-              </label>
-              <input
-                id="maxExp"
-                type="number"
-                value={gameTemplate.maxExp}
-                onChange={(e) =>
-                  handleGameTemplateChange(
-                    "maxExp",
                     parseInt(e.target.value) || 0
                   )
                 }

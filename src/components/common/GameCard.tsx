@@ -42,8 +42,12 @@ const GameCard: React.FC<GameCardProps> = ({
     return (
       <div className="card border border-red-500 dark:border-red-700 h-full bg-white dark:bg-primary-card-dark flex flex-col opacity-60 filter grayscale-[50%] pointer-events-none">
         <div className="p-5">
-          <h3 className="font-bold text-xl text-red-600 dark:text-red-400">Error</h3>
-          <p className="text-base text-gray-600 dark:text-gray-400">Game data unavailable.</p>
+          <h3 className="font-bold text-xl text-red-600 dark:text-red-400">
+            Error
+          </h3>
+          <p className="text-base text-gray-600 dark:text-gray-400">
+            Game data unavailable.
+          </p>
         </div>
       </div>
     );
@@ -51,7 +55,7 @@ const GameCard: React.FC<GameCardProps> = ({
 
   const gameDetails = assignedGame.game;
   // Use a local variable for effective status to avoid mutating props/state directly in getStatusDisplay
-  const assignmentStatusFromProp = assignedGame.status || "PENDING"; 
+  const assignmentStatusFromProp = assignedGame.status || "PENDING";
   const maxAttempts = assignedGame.maxAttempts;
   const studentGameAttemptPath = `/student/classrooms/${classroomId}/game/${assignedGame.id}/attempt`;
 
@@ -59,60 +63,109 @@ const GameCard: React.FC<GameCardProps> = ({
   if (!isTeacher) {
     // Check based on assignmentStatusFromProp first
     if (assignmentStatusFromProp === "COMPLETED") {
-      isEffectivelyDisabled = false; 
+      isEffectivelyDisabled = false;
     } else if (assignmentStatusFromProp === "OVERDUE") {
       isEffectivelyDisabled = true;
-    } else if (maxAttempts != null && typeof attemptsMade === 'number' && attemptsMade >= maxAttempts) {
+    } else if (
+      maxAttempts != null &&
+      typeof attemptsMade === "number" &&
+      attemptsMade >= maxAttempts
+    ) {
       isEffectivelyDisabled = true;
     }
   }
-  
+
   if (!gameDetails && !isTeacher) {
     let fallbackPlayButtonText = "Play Now";
-     if (assignmentStatusFromProp === "COMPLETED") fallbackPlayButtonText = "View Score";
-     else if (isEffectivelyDisabled) {
-        fallbackPlayButtonText = assignmentStatusFromProp === "OVERDUE" ? "Past Due" : "Max Attempts Reached";
-     }
-    
+    if (assignmentStatusFromProp === "COMPLETED")
+      fallbackPlayButtonText = "View Score";
+    else if (isEffectivelyDisabled) {
+      fallbackPlayButtonText =
+        assignmentStatusFromProp === "OVERDUE"
+          ? "Past Due"
+          : "Max Attempts Reached";
+    }
+
     return (
-      <div className={`card h-full bg-white dark:bg-primary-card-dark flex flex-col
-                      ${isEffectivelyDisabled ? 'opacity-60 filter grayscale-[50%] cursor-not-allowed' : 'card-hover'}`}>
+      <div
+        className={`card h-full bg-white dark:bg-primary-card-dark flex flex-col
+                      ${
+                        isEffectivelyDisabled
+                          ? "opacity-60 filter grayscale-[50%] cursor-not-allowed"
+                          : "card-hover"
+                      }`}>
         <div className="p-5 flex flex-col flex-grow">
           <h3 className="font-semibold text-xl md:text-2xl mb-2 text-primary-text dark:text-primary-text-dark">
             {assignedGame.gameTitle || "Game Activity"}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-base text-gray-700 dark:text-gray-300 mb-4">
             <div className="flex items-center">
-              <CalendarDays size={18} className="mr-2 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0" />
+              <CalendarDays
+                size={18}
+                className="mr-2 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0"
+              />
               <div>
-                <span className="text-gray-500 dark:text-gray-400 text-sm">Deadline:</span>
-                <p className="font-semibold">{new Date(assignedGame.dueDate).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <Repeat size={18} className="mr-2 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0" />
-              <div>
-                <span className="text-gray-500 dark:text-gray-400 text-sm">Attempts:</span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
+                  Deadline:
+                </span>
                 <p className="font-semibold">
-                    {typeof attemptsMade === 'number' ? `${attemptsMade}/` : '0/'}
-                    {maxAttempts != null ? maxAttempts : <InfinityIcon size={16} className="inline" />}
+                  {new Date(assignedGame.dueDate).toLocaleDateString([], {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </p>
               </div>
             </div>
-            {typeof highestScore === 'number' && (
-                <div className="flex items-center">
-                    <Award size={18} className="mr-2 text-yellow-500 dark:text-yellow-400 flex-shrink-0" />
-                     <div>
-                        <span className="text-gray-500 dark:text-gray-400 text-sm">Highest:</span>
-                        <p className="font-semibold text-yellow-600 dark:text-yellow-500">{highestScore} pts</p>
-                    </div>
+            <div className="flex items-center">
+              <Repeat
+                size={18}
+                className="mr-2 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0"
+              />
+              <div>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
+                  Attempts:
+                </span>
+                <p className="font-semibold">
+                  {typeof attemptsMade === "number" ? `${attemptsMade}/` : "0/"}
+                  {maxAttempts != null ? (
+                    maxAttempts
+                  ) : (
+                    <InfinityIcon size={16} className="inline" />
+                  )}
+                </p>
+              </div>
+            </div>
+            {typeof highestScore === "number" && (
+              <div className="flex items-center">
+                <Award
+                  size={18}
+                  className="mr-2 text-yellow-500 dark:text-yellow-400 flex-shrink-0"
+                />
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">
+                    Highest:
+                  </span>
+                  <p className="font-semibold text-yellow-600 dark:text-yellow-500">
+                    {highestScore} pts
+                  </p>
                 </div>
+              </div>
             )}
             <div className="flex items-center">
-              <Activity size={18} className="mr-2 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0" />
-               <div>
-                <span className="text-gray-500 dark:text-gray-400 text-sm">Status:</span>
-                <p className="font-semibold capitalize">{assignmentStatusFromProp.toLowerCase()}</p>
+              <Activity
+                size={18}
+                className="mr-2 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0"
+              />
+              <div>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
+                  Status:
+                </span>
+                <p className="font-semibold capitalize">
+                  {assignmentStatusFromProp.toLowerCase()}
+                </p>
               </div>
             </div>
           </div>
@@ -121,13 +174,17 @@ const GameCard: React.FC<GameCardProps> = ({
               to={studentGameAttemptPath}
               onClick={(e) => isEffectivelyDisabled && e.preventDefault()}
               className={`flex items-center justify-center w-full p-3 rounded-lg transition-colors group text-base font-medium
-                          ${isEffectivelyDisabled 
-                            ? 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' 
-                            : 'bg-primary-interactive hover:bg-primary-interactive/90 dark:bg-primary-interactive-dark dark:hover:bg-opacity-80 text-white'
+                          ${
+                            isEffectivelyDisabled
+                              ? "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                              : "bg-primary-interactive hover:bg-primary-interactive/90 dark:bg-primary-interactive-dark dark:hover:bg-opacity-80 text-white"
                           }`}
-              aria-disabled={isEffectivelyDisabled}
-            >
-              {isEffectivelyDisabled ? <Lock size={18} className="mr-2"/> : <PlayCircle size={18} className="mr-2" />}
+              aria-disabled={isEffectivelyDisabled}>
+              {isEffectivelyDisabled ? (
+                <Lock size={18} className="mr-2" />
+              ) : (
+                <PlayCircle size={18} className="mr-2" />
+              )}
               {fallbackPlayButtonText}
             </Link>
           </div>
@@ -135,102 +192,145 @@ const GameCard: React.FC<GameCardProps> = ({
       </div>
     );
   }
-  
+
   const title = gameDetails?.title || assignedGame.gameTitle || "Untitled Game";
-  const description = gameDetails?.description; 
+  const description = gameDetails?.description;
   const subject = gameDetails?.subject;
-  const gameModeText = gameDetails?.gameMode?.replace(/_/g, " ").toLowerCase() || "";
+  const gameModeText =
+    gameDetails?.gameMode?.replace(/_/g, " ").toLowerCase() || "";
   const gameMaxScore = gameDetails?.maxScore;
 
   const getStatusDisplay = () => {
     let effectiveStatus = assignmentStatusFromProp;
-    const actualAttemptsMade = typeof attemptsMade === 'number' ? attemptsMade : 0;
+    const actualAttemptsMade =
+      typeof attemptsMade === "number" ? attemptsMade : 0;
+    const now = new Date();
+    const dueDate = new Date(assignedGame.dueDate);
 
-    // If student view, and status is PENDING/not_started but attempts have been made, show as IN_PROGRESS for display
-    if (!isTeacher && (effectiveStatus === "PENDING" || effectiveStatus === "not_started") && actualAttemptsMade > 0) {
-      effectiveStatus = "IN_PROGRESS"; 
+    // If any attempt has been made, show as completed
+    if (actualAttemptsMade > 0) {
+      effectiveStatus = "COMPLETED";
+    }
+    // If no attempts and past deadline, show as overdue
+    else if (now > dueDate) {
+      effectiveStatus = "OVERDUE";
     }
 
     let icon = <Activity size={16} className="mr-2 flex-shrink-0" />;
     let sTextColor = "text-gray-600 dark:text-gray-300";
-    let statusTextFormatted = effectiveStatus.replace(/_/g, ' ').toLowerCase();
+    let statusTextFormatted = "";
 
     switch (effectiveStatus) {
       case "COMPLETED":
-        icon = <Check size={16} className="mr-2 text-green-500 dark:text-green-400 flex-shrink-0" />;
+        icon = (
+          <Check
+            size={16}
+            className="mr-2 text-green-500 dark:text-green-400 flex-shrink-0"
+          />
+        );
         sTextColor = "text-green-600 dark:text-green-400 font-semibold";
-        statusTextFormatted = "completed";
+        statusTextFormatted = "Completed";
         break;
       case "OVERDUE":
-        icon = <AlertTriangle size={16} className="mr-2 text-red-500 dark:text-red-400 flex-shrink-0" />;
+        icon = (
+          <AlertTriangle
+            size={16}
+            className="mr-2 text-red-500 dark:text-red-400 flex-shrink-0"
+          />
+        );
         sTextColor = "text-red-600 dark:text-red-400 font-semibold";
-        statusTextFormatted = "overdue";
+        statusTextFormatted = "Overdue";
         break;
       case "PENDING":
-      case "not_started": // This case now implies attemptsMade === 0 for students
-        icon = <Clock size={16} className="mr-2 text-amber-600 dark:text-amber-500 flex-shrink-0" />;
-        sTextColor = "text-amber-700 dark:text-amber-500 font-semibold"; // Made it font-semibold like others
-        statusTextFormatted = "ongoing"; // Changed from "pending"
-        break;
-      case "IN_PROGRESS": // Covers actual IN_PROGRESS from backend or inferred from PENDING + attempts > 0
-        icon = <TrendingUp size={16} className="mr-2 text-blue-500 dark:text-blue-400 flex-shrink-0" />;
-        sTextColor = "text-blue-600 dark:text-blue-400 font-semibold"; // Made it font-semibold
-        statusTextFormatted = "in progress";
+      case "not_started":
+        icon = (
+          <Clock
+            size={16}
+            className="mr-2 text-gray-500 dark:text-gray-400 flex-shrink-0"
+          />
+        );
+        sTextColor = "text-gray-600 dark:text-gray-400 font-semibold";
+        statusTextFormatted = "Not yet attempted";
         break;
       default:
-        statusTextFormatted = effectiveStatus.toLowerCase();
-        break;
+        statusTextFormatted = effectiveStatus.replace(/_/g, " ").toLowerCase();
     }
-    return { icon, text: statusTextFormatted, sTextColor };
+
+    return {
+      icon,
+      text: statusTextFormatted,
+      sTextColor,
+    };
   };
-  
-  const { icon: currentStatusIcon, text: currentStatusText, sTextColor: currentStatusTextColor } = getStatusDisplay();
+
+  const {
+    icon: currentStatusIcon,
+    text: currentStatusText,
+    sTextColor: currentStatusTextColor,
+  } = getStatusDisplay();
 
   let playButtonText: string;
   let playButtonIcon: JSX.Element;
 
-  if (isTeacher) { 
-      playButtonText = "View Details & Stats";
-      playButtonIcon = <Eye size={20} className="mr-2" />;
+  if (isTeacher) {
+    playButtonText = "View Details & Stats";
+    playButtonIcon = <Eye size={20} className="mr-2" />;
   } else {
     // Use assignmentStatusFromProp for button logic as it reflects the true state for disabling/enabling play
     if (assignmentStatusFromProp === "COMPLETED") {
-      playButtonText = "View Score"; 
+      playButtonText = "View Score";
       playButtonIcon = <Check size={20} className="mr-2" />;
-    } else if (isEffectivelyDisabled) { 
-        playButtonText = assignmentStatusFromProp === "OVERDUE" ? "Past Due" : "Max Attempts Reached";
-        playButtonIcon = assignmentStatusFromProp === "OVERDUE" 
-            ? <AlertTriangle size={20} className="mr-2" /> 
-            : <Lock size={20} className="mr-2" />; // Changed icon to Lock
-    } else if (assignmentStatusFromProp === "IN_PROGRESS" || ( (assignmentStatusFromProp === "PENDING" || assignmentStatusFromProp === "not_started") && typeof attemptsMade === 'number' && attemptsMade > 0) ) {
-        playButtonText = "Continue"; // If attempts made, show "Continue"
-        playButtonIcon = <TrendingUp size={20} className="mr-2" />;
-    } else { // PENDING with 0 attempts
-        playButtonText = "Play Now";
-        playButtonIcon = <PlayCircle size={20} className="mr-2" />;
+    } else if (isEffectivelyDisabled) {
+      playButtonText =
+        assignmentStatusFromProp === "OVERDUE"
+          ? "Past Due"
+          : "Max Attempts Reached";
+      playButtonIcon =
+        assignmentStatusFromProp === "OVERDUE" ? (
+          <AlertTriangle size={20} className="mr-2" />
+        ) : (
+          <Lock size={20} className="mr-2" />
+        ); // Changed icon to Lock
+    } else if (
+      assignmentStatusFromProp === "IN_PROGRESS" ||
+      ((assignmentStatusFromProp === "PENDING" ||
+        assignmentStatusFromProp === "not_started") &&
+        typeof attemptsMade === "number" &&
+        attemptsMade > 0)
+    ) {
+      playButtonText = "Continue"; // If attempts made, show "Continue"
+      playButtonIcon = <TrendingUp size={20} className="mr-2" />;
+    } else {
+      // PENDING with 0 attempts
+      playButtonText = "Play Now";
+      playButtonIcon = <PlayCircle size={20} className="mr-2" />;
     }
   }
-
 
   const handleTeacherAction = () => {
     if (isTeacher && onOpenStatsModal) {
       onOpenStatsModal(assignedGame);
     }
   };
-  
+
   let highestScoreFormatted: string | null = null;
-  if (typeof highestScore === 'number') {
-    if (typeof gameMaxScore === 'number' && gameMaxScore > 0) {
-        const percentage = Math.round((highestScore / gameMaxScore) * 100);
-        highestScoreFormatted = `${highestScore}/${gameMaxScore} (${percentage}%)`;
+  if (typeof highestScore === "number") {
+    if (typeof gameMaxScore === "number" && gameMaxScore > 0) {
+      const percentage = Math.round((highestScore / gameMaxScore) * 100);
+      highestScoreFormatted = `${highestScore}/${gameMaxScore} (${percentage}%)`;
     } else {
-        highestScoreFormatted = `${highestScore} pts`;
+      highestScoreFormatted = `${highestScore} pts`;
     }
   }
 
   return (
-    <div className={`card h-full bg-white dark:bg-primary-card-dark flex flex-col
-                   ${!isTeacher && isEffectivelyDisabled ? 'opacity-50 filter grayscale-[60%] cursor-not-allowed' : 'card-hover'}`}>
+    <div
+      className={`card h-full bg-white dark:bg-primary-card-dark flex flex-col
+                   ${
+                     !isTeacher && isEffectivelyDisabled
+                       ? "opacity-50 filter grayscale-[60%] cursor-not-allowed"
+                       : "card-hover"
+                   }`}>
       <div className="p-5 flex flex-col flex-grow">
         <h3 className="font-semibold text-xl md:text-2xl mb-2 text-primary-text dark:text-primary-text-dark">
           {title}
@@ -242,40 +342,76 @@ const GameCard: React.FC<GameCardProps> = ({
         )}
         {!isTeacher && <div className="flex-grow mb-4"></div>}
 
-
         {!isTeacher && (
           <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-base mb-5">
             <div className="flex items-center col-span-2">
               {currentStatusIcon}
-              <span className="text-gray-500 dark:text-gray-400 text-sm">Status:</span>
-              <span className={`ml-1.5 capitalize font-semibold ${currentStatusTextColor}`}>{currentStatusText}</span>
-            </div>
-            <div className="flex items-start"> 
-              <CalendarDays size={18} className="mr-2.5 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0 mt-0.5" />
-              <div>
-                <span className="text-gray-500 dark:text-gray-400 text-sm">Deadline:</span>
-                <p className="font-semibold text-primary-text dark:text-primary-text-dark">{new Date(assignedGame.dueDate).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
-              </div>
+              <span className="text-gray-500 dark:text-gray-400 text-sm">
+                Status:
+              </span>
+              <span
+                className={`ml-1.5 capitalize font-semibold ${currentStatusTextColor}`}>
+                {currentStatusText}
+              </span>
             </div>
             <div className="flex items-start">
-              <Repeat size={18} className="mr-2.5 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0 mt-0.5" />
-               <div>
-                <span className="text-gray-500 dark:text-gray-400 text-sm">Attempts:</span>
+              <CalendarDays
+                size={18}
+                className="mr-2.5 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0 mt-0.5"
+              />
+              <div>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
+                  Deadline:
+                </span>
                 <p className="font-semibold text-primary-text dark:text-primary-text-dark">
-                    {typeof attemptsMade === 'number' ? `${attemptsMade}/` : '0/'}
-                    {maxAttempts != null ? maxAttempts : <InfinityIcon size={16} className="inline" />}
+                  {new Date(assignedGame.dueDate).toLocaleString([], {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  })}
                 </p>
               </div>
             </div>
-            {highestScoreFormatted && (assignmentStatusFromProp === "COMPLETED" || (typeof attemptsMade === 'number' && attemptsMade > 0)) && (
+            <div className="flex items-start">
+              <Repeat
+                size={18}
+                className="mr-2.5 text-primary-interactive dark:text-primary-interactive-dark flex-shrink-0 mt-0.5"
+              />
+              <div>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
+                  Attempts:
+                </span>
+                <p className="font-semibold text-primary-text dark:text-primary-text-dark">
+                  {typeof attemptsMade === "number" ? `${attemptsMade}/` : "0/"}
+                  {maxAttempts != null ? (
+                    maxAttempts
+                  ) : (
+                    <InfinityIcon size={16} className="inline" />
+                  )}
+                </p>
+              </div>
+            </div>
+            {highestScoreFormatted &&
+              (assignmentStatusFromProp === "COMPLETED" ||
+                (typeof attemptsMade === "number" && attemptsMade > 0)) && (
                 <div className="flex items-start col-span-2 sm:col-span-1">
-                    <Award size={18} className="mr-2.5 text-yellow-500 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                        <span className="text-gray-500 dark:text-gray-400 text-sm">Your Highest:</span>
-                        <p className="font-semibold text-yellow-600 dark:text-yellow-500">{highestScoreFormatted}</p>
-                    </div>
+                  <Award
+                    size={18}
+                    className="mr-2.5 text-yellow-500 dark:text-yellow-400 flex-shrink-0 mt-0.5"
+                  />
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 text-sm">
+                      Your Highest:
+                    </span>
+                    <p className="font-semibold text-yellow-600 dark:text-yellow-500">
+                      {highestScoreFormatted}
+                    </p>
+                  </div>
                 </div>
-            )}
+              )}
           </div>
         )}
 
@@ -290,39 +426,54 @@ const GameCard: React.FC<GameCardProps> = ({
               <Info size={15} className="mr-1.5" /> {subject}
             </span>
           )}
-          {isTeacher && gameDetails && ( 
-             <span className={`inline-flex items-center px-3 py-1.5 rounded-full font-medium capitalize shadow-sm ${currentStatusTextColor.replace('text-', 'bg-').replace('-600', '-100').replace('-500', '-100').replace('-700', '-100').replace('-400', '-800')} ${currentStatusTextColor}`}>
-                {React.cloneElement(currentStatusIcon, { size: 15, className: `mr-1.5 ${currentStatusIcon.props.className}` })} {currentStatusText}
-              </span>
-           )}
+          {isTeacher && gameDetails && (
+            <span
+              className={`inline-flex items-center px-3 py-1.5 rounded-full font-medium capitalize shadow-sm ${currentStatusTextColor
+                .replace("text-", "bg-")
+                .replace("-600", "-100")
+                .replace("-500", "-100")
+                .replace("-700", "-100")
+                .replace("-400", "-800")} ${currentStatusTextColor}`}>
+              {React.cloneElement(currentStatusIcon, {
+                size: 15,
+                className: `mr-1.5 ${currentStatusIcon.props.className}`,
+              })}{" "}
+              {currentStatusText}
+            </span>
+          )}
         </div>
-        
+
         <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
           {isTeacher ? (
             <button
               onClick={handleTeacherAction}
-              className="flex items-center justify-center w-full p-3 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors group text-base font-medium"
-            >
+              className="flex items-center justify-center w-full p-3 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors group text-base font-medium">
               {playButtonIcon}
               <span className="ml-2 text-primary-text dark:text-primary-text-dark group-hover:text-primary-interactive dark:group-hover:text-primary-interactive-dark">
                 {playButtonText}
               </span>
-              <ChevronRight size={20} className="ml-auto text-gray-400 dark:text-gray-500 group-hover:text-primary-interactive dark:group-hover:text-primary-interactive-dark" />
+              <ChevronRight
+                size={20}
+                className="ml-auto text-gray-400 dark:text-gray-500 group-hover:text-primary-interactive dark:group-hover:text-primary-interactive-dark"
+              />
             </button>
           ) : (
             <Link
               to={studentGameAttemptPath}
               className={`flex items-center justify-center w-full p-3.5 rounded-lg transition-colors group text-base font-semibold
-                          ${!isEffectivelyDisabled 
-                            ? 'bg-primary-interactive hover:bg-opacity-90 dark:bg-primary-interactive-dark dark:hover:bg-opacity-80 text-white' 
-                            : 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400'
+                          ${
+                            !isEffectivelyDisabled
+                              ? "bg-primary-interactive hover:bg-opacity-90 dark:bg-primary-interactive-dark dark:hover:bg-opacity-80 text-white"
+                              : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400"
                           }`}
               onClick={(e) => isEffectivelyDisabled && e.preventDefault()}
-              aria-disabled={isEffectivelyDisabled}
-            >
-              {playButtonIcon} {/* Icon is now dynamic based on actual playability */}
+              aria-disabled={isEffectivelyDisabled}>
+              {playButtonIcon}{" "}
+              {/* Icon is now dynamic based on actual playability */}
               <span className="ml-1.5">{playButtonText}</span>
-              {!isEffectivelyDisabled && <ChevronRight size={20} className="ml-auto" />}
+              {!isEffectivelyDisabled && (
+                <ChevronRight size={20} className="ml-auto" />
+              )}
             </Link>
           )}
         </div>

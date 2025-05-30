@@ -148,14 +148,6 @@ const LoginPage: React.FC = () => {
               disabled={isLoading}>
               Log In
             </Button>
-
-            <div className="mt-4 text-center">
-              <Link
-                to="/forgot-password"
-                className="text-sm text-primary-interactive hover:underline dark:text-primary-interactive-dark">
-                Forgot your password?
-              </Link>
-            </div>
           </form>
 
           <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">

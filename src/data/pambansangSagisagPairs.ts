@@ -4,7 +4,7 @@ import { MatchingPair } from "../types";
 export const pambansangSagisagPairs: MatchingPair[] = [
   {
     id: 1,
-    word: "Watawat ng Pilipinas", // Philippine Flag
+    word: "Watawat", // Philippine Flag
     english: "National Flag",
     imageUrl: "/images/matching-card/watawat.jpg", // Example path
   },

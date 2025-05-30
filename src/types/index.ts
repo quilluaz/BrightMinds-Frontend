@@ -8,6 +8,7 @@ export interface User {
   name: string;
   role: UserRole;
   avatarUrl?: string;
+  profilePhoto?: string;
 }
 
 export interface BackendUserResponse {
@@ -17,6 +18,7 @@ export interface BackendUserResponse {
   lastName: string;
   role: UserRole;
   password?: string;
+  profilePhoto?: string;
 }
 
 export interface LoginRequestData {
